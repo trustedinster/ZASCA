@@ -29,13 +29,7 @@ class UserRegistrationForm(UserCreationForm):
             'placeholder': _('请输入邮箱收到的验证码')
         })
     )
-    confirm_password = forms.CharField(
-        label=_('确认密码'),
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
-            'placeholder': _('请再次输入密码')
-        })
-    )
+    # 移除不需要的confirm_password字段，因为UserCreationForm使用password1和password2
     agree_terms = forms.BooleanField(
         required=True,
         label=_('我已阅读并同意服务条款和隐私政策'),
@@ -53,6 +47,13 @@ class UserRegistrationForm(UserCreationForm):
                 'placeholder': _('请输入用户名')
             }),
         }
+
+    def clean_agree_terms(self):
+        """验证用户是否同意条款"""
+        agree_terms = self.cleaned_data.get('agree_terms')
+        if not agree_terms:
+            raise forms.ValidationError(_('您必须同意服务条款和隐私政策才能注册'))
+        return agree_terms
 
     def save(self, commit=True):
         """保存用户"""

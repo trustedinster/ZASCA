@@ -51,7 +51,8 @@ class RegisterView(CreateView):
         """表单验证成功后的处理"""
         # 在保存用户之前，验证邮箱验证码（行为验证码在获取邮箱验证码时已验证）
         request = self.request
-        email = request.POST.get('email')
+        # 从表单中获取email，而不是从POST数据中获取
+        email = form.cleaned_data.get('email')
         email_code = request.POST.get('email_code')
         if not (email and email_code):
             form.add_error(None, '邮箱验证码缺失')
@@ -342,6 +343,230 @@ def send_register_email_code(request):
                 <div class="content">
                     <p>您好！</p>
                     <p>感谢您注册ZASCA账户。</p>
+                    <p>您的验证码是：</p>
+                    <div class="code">{code}</div>
+                    <p>此验证码将在10分钟后失效，请及时使用。</p>
+                    <p>如果您没有进行相关操作，请忽略此邮件。</p>
+                </div>
+                <div class="footer">
+                    <p>© 2026 ZASCA. All rights reserved.</p>
+                    <p>此邮件由系统自动发送，请勿回复。</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        '''
+        
+        # 使用配置的SMTP设置直接发送HTML邮件
+        msg = MIMEMultipart('alternative')  # 使用alternative类型支持HTML和纯文本
+        msg['From'] = from_email
+        msg['To'] = email
+        msg['Subject'] = subject
+        
+        # 添加纯文本版本作为备选
+        text_body = message_body
+        part1 = MIMEText(text_body, 'plain', 'utf-8')
+        part2 = MIMEText(html_body, 'html', 'utf-8')
+        
+        msg.attach(part1)
+        msg.attach(part2)
+        
+        # 根据配置决定是否使用STARTTLS
+        server = smtplib.SMTP(cfg.smtp_host, cfg.smtp_port)
+        server.ehlo()
+
+        if cfg.smtp_use_tls:
+            server.starttls()
+            server.ehlo()
+
+        server.login(cfg.smtp_username, cfg.smtp_password)
+        text = msg.as_string()
+        server.sendmail(from_email, [email], text)
+        server.quit()
+    else:
+        return JsonResponse({'status': 'error', 'message': 'SMTP配置不完整'}, status=500)
+
+    return JsonResponse({'status': 'ok'})
+
+
+class ForgotPasswordView(TemplateView):
+    """忘记密码视图"""
+    
+    template_name = 'accounts/forgot_password.html'
+
+    def get_context_data(self, **kwargs):
+        """获取模板上下文数据"""
+        context = super().get_context_data(**kwargs)
+        from apps.dashboard.models import SystemConfig
+        sc = SystemConfig.get_config()
+        # 使用与后端验证相同的逻辑来确定captcha_id
+        captcha_id, _ = geetest_utils._get_runtime_keys()
+        context['GEETEST_ID'] = captcha_id
+        context['CAPTCHA_PROVIDER'] = sc.captcha_provider
+        # 仅在turnstile模式下提供turnstile的site key
+        if sc.captcha_provider == 'turnstile':
+            context['TURNSTILE_SITE_KEY'] = sc.captcha_id  # 使用统一的captcha_id字段
+        else:
+            context['TURNSTILE_SITE_KEY'] = None
+        return context
+
+    def post(self, request, *args, **kwargs):
+        """处理POST请求"""
+        email = request.POST.get('email')
+        email_code = request.POST.get('email_code')
+        new_password1 = request.POST.get('new_password1')
+        new_password2 = request.POST.get('new_password2')
+        
+        # 验证输入
+        if not (email and email_code and new_password1 and new_password2):
+            messages.error(request, '请填写所有必需字段')
+            return self.render_to_response(self.get_context_data())
+
+        if new_password1 != new_password2:
+            messages.error(request, '两次输入的密码不一致')
+            return self.render_to_response(self.get_context_data())
+        
+        # 验证密码强度
+        if len(new_password1) < 8:
+            messages.error(request, '密码长度至少为8位')
+            return self.render_to_response(self.get_context_data())
+        
+        # 验证邮箱验证码
+        cache_key = f'forgot_password_email_code:{email}'
+        expected = cache.get(cache_key)
+        if not expected or expected != email_code:
+            messages.error(request, '邮箱验证码错误或已过期')
+            return self.render_to_response(self.get_context_data())
+        
+        # 查找用户
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            messages.error(request, '该邮箱对应的用户不存在')
+            return self.render_to_response(self.get_context_data())
+        
+        # 根据系统配置决定是否需要行为验证码（仅 geetest 时启用）
+        from apps.dashboard.models import SystemConfig
+        provider = SystemConfig.get_config().captcha_provider
+        if provider == 'geetest':
+            # 在认证之前做 Geetest v4 二次校验
+            lot_number = request.POST.get('lot_number')
+            captcha_output = request.POST.get('captcha_output')
+            pass_token = request.POST.get('pass_token')
+            gen_time = request.POST.get('gen_time')
+            captcha_id = request.POST.get('captcha_id')
+
+            if not (lot_number and captcha_output and pass_token and gen_time):
+                messages.error(request, '请完成验证码验证')
+                return self.render_to_response(self.get_context_data())
+
+            ok, resp = geetest_utils.verify_geetest_v4(lot_number, captcha_output, pass_token, gen_time, captcha_id=captcha_id)
+            if not ok:
+                messages.error(request, '验证码校验失败')
+                return self.render_to_response(self.get_context_data())
+        elif provider == 'turnstile':
+            # Turnstile token param is usually 'cf-turnstile-response'
+            tf_token = request.POST.get('cf-turnstile-response') or request.POST.get('turnstile_token')
+            if not tf_token:
+                messages.error(request, '请完成 Turnstile 验证')
+                return self.render_to_response(self.get_context_data())
+            ok, resp = geetest_utils.verify_turnstile(tf_token, remoteip=request.META.get('REMOTE_ADDR'))
+            if not ok:
+                messages.error(request, 'Turnstile 验证失败')
+                return self.render_to_response(self.get_context_data())
+        
+        # 重置用户密码
+        user.set_password(new_password1)
+        user.save()
+        
+        # 清除验证码缓存
+        cache.delete(cache_key)
+        
+        messages.success(request, '密码重置成功，请使用新密码登录')
+        return redirect('accounts:login')
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def send_forgot_password_email_code(request):
+    """Send a one-time code to the supplied email for password reset.
+
+    Requires behavior captcha validation to have been passed in this session if captcha_provider == 'geetest' or 'turnstile'
+    (adapter should call /accounts/geetest/validate/ first and backend can check session or just trust front-end - here we trust front-end token by requiring v4 params in this request).
+    """
+    email = request.POST.get('email')
+    # v4 captcha params optional but recommended to prevent abuse
+    lot_number = request.POST.get('lot_number')
+    captcha_output = request.POST.get('captcha_output')
+    pass_token = request.POST.get('pass_token')
+    gen_time = request.POST.get('gen_time')
+    captcha_id = request.POST.get('captcha_id')
+
+    # Validate email
+    if not email:
+        return JsonResponse({'status': 'error', 'message': '缺少email'}, status=400)
+
+    # Check system config: if provider is geetest, require v4 params and validate them
+    from apps.dashboard.models import SystemConfig
+    cfg = SystemConfig.get_config()
+    provider = getattr(cfg, 'captcha_provider', 'none')
+
+    if provider == 'geetest':
+        if not (lot_number and captcha_output and pass_token and gen_time):
+            return JsonResponse({'status': 'error', 'message': '请先完成行为验证'}, status=400)
+        ok, resp = geetest_utils.verify_geetest_v4(lot_number, captcha_output, pass_token, gen_time, captcha_id=captcha_id)
+        if not ok:
+            return JsonResponse({'status': 'error', 'message': '行为验证失败'}, status=400)
+    elif provider == 'turnstile':
+        # Turnstile token param is usually 'cf-turnstile-response'
+        tf_token = request.POST.get('cf-turnstile-response') or request.POST.get('turnstile_token')
+        if not tf_token:
+            return JsonResponse({'status': 'error', 'message': '请先完成Turnstile验证'}, status=400)
+        ok, resp = geetest_utils.verify_turnstile(tf_token, remoteip=request.META.get('REMOTE_ADDR'))
+        if not ok:
+            return JsonResponse({'status': 'error', 'message': 'Turnstile 验证失败'}, status=400)
+
+    # Check if user exists
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': '该邮箱对应的用户不存在'}, status=400)
+
+    # generate code and store in cache
+    code = _gen_code(6)
+    cache_key = f'forgot_password_email_code:{email}'
+    cache.set(cache_key, code, timeout=10 * 60)  # 10 minutes
+
+    # send email using direct SMTP connection
+    subject = 'ZASCA 重置密码验证码'
+    message_body = f'您的重置密码验证码是: {code}，有效期10分钟。'
+    from_email = cfg.smtp_from_email
+    
+    if cfg.smtp_host and cfg.smtp_port and cfg.smtp_username and cfg.smtp_password and cfg.smtp_from_email:
+        # Create HTML email template for password reset
+        html_body = f'''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>{subject}</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; }}
+                .header {{ background-color: #f8f9fa; padding: 20px; text-align: center; border-bottom: 1px solid #dee2e6; }}
+                .content {{ padding: 20px 0; }}
+                .code {{ font-size: 24px; font-weight: bold; color: #007bff; letter-spacing: 5px; text-align: center; margin: 20px 0; }}
+                .footer {{ padding: 20px 0; text-align: center; border-top: 1px solid #dee2e6; color: #6c757d; font-size: 12px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h2>ZASCA 验证码服务</h2>
+                </div>
+                <div class="content">
+                    <p>您好！</p>
+                    <p>您正在重置ZASCA账户的密码。</p>
                     <p>您的验证码是：</p>
                     <div class="code">{code}</div>
                     <p>此验证码将在10分钟后失效，请及时使用。</p>

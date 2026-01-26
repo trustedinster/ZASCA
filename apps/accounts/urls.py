@@ -16,4 +16,6 @@ urlpatterns = [
     path('geetest/register/', views.geetest_register, name='geetest_register'),
     path('geetest/validate/', views.geetest_validate, name='geetest_validate'),
     path('email/send-code/', views.send_register_email_code, name='send_register_email_code'),
+    path('forgot-password/', views.ForgotPasswordView.as_view(), name='forgot_password'),
+    path('email/send-forgot-password-code/', views.send_forgot_password_email_code, name='send_forgot_password_email_code'),
 ]

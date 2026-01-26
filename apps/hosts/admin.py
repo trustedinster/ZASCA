@@ -2,6 +2,7 @@
 主机管理后台配置
 """
 from django.contrib import admin
+from django import forms
 from django.utils.html import format_html
 from django.urls import reverse
 from django.http import HttpResponseRedirect
@@ -9,10 +10,30 @@ from django.contrib import messages
 from .models import Host, HostGroup
 
 
+class HostAdminForm(forms.ModelForm):
+    """自定义Host表单，用于处理密码字段"""
+    password = forms.CharField(
+        widget=forms.PasswordInput(),
+        required=False,
+        help_text="留空则不修改密码"
+    )
+
+    class Meta:
+        model = Host
+        fields = '__all__'
+
+    def save(self, commit=True):
+        # 如果提供了新密码，则使用setter更新加密存储
+        if self.cleaned_data.get('password'):
+            self.instance.password = self.cleaned_data['password']
+        return super().save(commit)
+
+
 @admin.register(Host)
 class HostAdmin(admin.ModelAdmin):
     """主机管理后台"""
 
+    form = HostAdminForm
     list_display = ('name', 'hostname', 'port', 'username', 'host_type', 'status', 'created_at')
     list_filter = ('status', 'host_type', 'created_at', 'use_ssl')
     search_fields = ('name', 'hostname', 'username')

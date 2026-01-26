@@ -1,6 +1,6 @@
 // email_code.js
-// Handles "Get code" button on registration page.
-// If CAPTCHA_PROVIDER == 'geetest', it will open geetest popup via initGeetest4 and then POST v4 params + email to /accounts/email/send-code/
+// Handles "Get code" button on registration and forgot password pages.
+// If CAPTCHA_PROVIDER == 'geetest', it will open geetest popup via initGeetest4 and then POST v4 params + email to /accounts/email/send-code/ or /accounts/email/send-forgot-password-code/
 // Otherwise, it will POST only the email to the endpoint.
 
 (function(){
@@ -13,6 +13,10 @@
         var emailInput = document.querySelector('input[name="email"]') || document.querySelector('input[type="email"]');
         var email = emailInput && emailInput.value && emailInput.value.trim();
         if(!email){ alert('请先输入邮箱'); return; }
+
+        // Check if we're on the forgot password page
+        var isForgotPassword = window.location.pathname.includes('forgot-password');
+        var endpoint = isForgotPassword ? '/accounts/email/send-forgot-password-code/' : '/accounts/email/send-code/';
 
         // CAPTCHA_PROVIDER is injected in template context as CAPTCHA_PROVIDER
         var provider = window.CAPTCHA_PROVIDER || document.body.getAttribute('data-captcha-provider') || 'none';
@@ -27,7 +31,7 @@
         }
 
         function postCode(payload){
-            fetch('/accounts/email/send-code/', {
+            fetch(endpoint, {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: {
