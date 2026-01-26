@@ -13,14 +13,21 @@ from .models import Host, HostGroup
 class HostAdminForm(forms.ModelForm):
     """自定义Host表单，用于处理密码字段"""
     password = forms.CharField(
-        widget=forms.PasswordInput(),
+        widget=forms.PasswordInput(render_value=True),
         required=False,
-        help_text="留空则不修改密码"
+        help_text="留空则不修改密码",
+        label="密码"
     )
 
     class Meta:
         model = Host
         fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # 如果编辑现有对象，清空密码字段，不显示原密码
+        if self.instance.pk:
+            self.fields['password'].help_text = "留空则不修改密码。为安全起见，此处不显示原密码。"
 
     def save(self, commit=True):
         # 如果提供了新密码，则使用setter更新加密存储
