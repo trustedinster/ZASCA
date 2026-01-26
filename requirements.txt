@@ -1,0 +1,32 @@
+# Django核心
+Django>=4.2,<5.0
+djangorestframework>=3.14.0
+django-cors-headers>=4.0.0
+
+# Winrm客户端
+pywinrm>=0.4.2
+
+# 缓存和异步任务
+redis>=4.5.5
+celery>=5.3.1
+django-celery-beat>=2.5.0
+
+# 安全和认证
+django-allauth>=0.54.0
+django-axes>=6.1.0
+cryptography>=41.0.0
+
+# 监控和日志
+django-extensions>=3.2.3
+structlog>=23.1.0
+
+# 前端相关
+django-bootstrap5>=23.3
+Pillow>=10.0.0
+markdown>=3.4.0
+
+# 开发工具
+python-dotenv>=1.0.0
+
+# HTTP requests for external APIs
+requests>=2.25.0

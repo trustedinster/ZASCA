@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}个人资料 - ZASCA{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/accounts.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>个人资料</h1>
+    </div>
+
+    <div class="profile-container">
+        <div class="profile-header">
+            <img src="{{ user.profile.avatar.url|default:'/static/img/default-avatar.png' }}" 
+                 alt="头像" 
+                 class="profile-avatar" 
+                 id="profile-avatar">
+            <div class="profile-info">
+                <h2 class="profile-name">{{ user.get_full_name|default:user.username }}</h2>
+                <p class="profile-email">{{ user.email }}</p>
+            </div>
+        </div>
+
+        <div class="profile-content">
+            <form method="post" 
+                  action="{% url 'accounts:profile' %}" 
+                  class="profile-form needs-validation" 
+                  novalidate>
+                {% csrf_token %}
+                
+                <div class="form-section">
+                    <h3 class="form-section-title">账户信息</h3>
+                    <div class="form-group">
+                        <label for="username" class="form-label">用户名</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="username" 
+                               name="username" 
+                               value="{{ user.username }}" 
+                               disabled>
+                    </div>
+                    <div class="form-group">
+                        <label for="email" class="form-label">电子邮箱</label>
+                        <input type="email" 
+                               class="form-control {% if form.email.errors %}is-invalid{% endif %}" 
+                               id="email" 
+                               name="email" 
+                               value="{{ form.email.value|default:user.email }}" 
+                               required>
+                        {% if form.email.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.email.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">保存更改</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/accounts.js' %}"></script>
+{% endblock %}

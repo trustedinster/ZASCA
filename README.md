@@ -11,6 +11,7 @@ ZASCA（Zero Agent Share Computer Administrator）是一个不需要在共享计
 - 🌐 **多机管理**：支持一控多架构，可同时管理多台云电脑
 - 💻 **跨平台支持**：Web端可在能运行Python 3.10以上的任意Linux、Windows版本上使用
 - 🔌 **灵活部署**：主机端只需端口映射，不强制要求公网IPv4
+- 👥 **用户开户系统**：支持用户自助申请和管理员审核流程
 
 ## 系统架构
 
@@ -100,6 +101,63 @@ winrm set winrm/config/client '@{TrustedHosts="*"}'
 
 3. 在Web端添加主机信息
 
+### 用户开户系统
+
+#### 系统概述
+ZASCA 用户开户系统是一个为云电脑用户创建账户并在目标主机上创建相应用户的功能。系统利用WinRM协议连接到云电脑主机，在目标机器上创建用户账户，实现了零代理的多机管理。
+
+#### 核心模型
+- **AccountOpeningRequest (开户申请模型)**: 记录用户提交的开户申请信息
+  - 申请人信息 (applicant, contact_email, contact_phone)
+  - 开户信息 (username, user_fullname, user_email, user_description)
+  - 目标主机 (target_host)
+  - 审核信息 (status, approved_by, approval_date, approval_notes)
+  - 结果信息 (cloud_user_id, cloud_user_password, result_message)
+
+- **CloudComputerUser (云电脑用户模型)**: 记录在各个云电脑主机上创建的用户信息
+  - 用户信息 (username, fullname, email, description)
+  - 主机信息 (host, status, is_admin, groups)
+  - 创建信息 (created_from_request)
+
+#### 系统流程
+1. **申请阶段**: 用户提交开户申请
+2. **审核阶段**: 管理员审核申请
+3. **处理阶段**: 系统连接目标主机并创建用户
+4. **完成阶段**: 记录结果并更新状态
+
+#### 用户端功能
+- **提交开户申请**: 普通用户可以提交开户申请
+- **查看申请状态**: 查看自己提交的申请状态
+
+#### 管理员功能
+- **审核申请**: 批准或拒绝开户申请
+- **执行开户**: 在云电脑上创建用户账户
+- **用户管理**: 管理已创建的云电脑用户
+- **批量操作**: 支持批量审核和用户状态管理
+
+#### 使用流程
+1. **普通用户使用流程**
+   - 访问 "提交开户申请" 页面
+   - 填写申请信息 (用户名、姓名、邮箱等)
+   - 选择目标主机
+   - 提交申请并等待审核
+   - 查看申请状态
+
+2. **管理员使用流程**
+   - 查看待处理的开户申请
+   - 审核申请信息
+   - 批准或拒绝申请
+   - 对于已批准的申请，执行开户操作
+   - 监控开户结果
+
+#### URL 路径
+- `/operations/account-openings/` - 开户申请列表
+- `/operations/account-openings/create/` - 创建开户申请
+- `/operations/account-openings/<id>/approve/` - 批准申请
+- `/operations/account-openings/<id>/reject/` - 拒绝申请
+- `/operations/account-openings/<id>/process/` - 处理开户
+- `/operations/cloud-users/` - 云电脑用户列表
+
 ### 用户开户流程
 
 1. 管理员在Web端创建开户请求
@@ -115,7 +173,7 @@ ZASCA/
 ├── apps/
 │   ├── accounts/       # 用户管理应用
 │   ├── hosts/          # 主机管理应用
-│   ├── operations/     # 操作记录应用
+│   ├── operations/     # 操作记录应用（含开户系统）
 │   └── dashboard/      # 仪表盘应用
 ├── config/             # 配置文件
 ├── static/             # 静态文件
@@ -140,7 +198,10 @@ ZASCA/
 
 ## 许可证
 
-MIT License
+GNU GENERAL PUBLIC LICENSE Version 2
+
+本软件根据GPL 2.0许可证发布。您可以自由使用、修改和分发本软件，
+但必须保留原始版权声明和许可证声明。
 
 ## 联系方式
 

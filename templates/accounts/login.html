@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}登录 - ZASCA{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/accounts.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-logo">ZASCA</div>
+            <h1 class="auth-title">欢迎回来</h1>
+            <p class="auth-subtitle">请登录您的账户</p>
+        </div>
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'accounts:login' %}" class="auth-form needs-validation" novalidate>
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}" class="form-label">用户名</label>
+                <input type="text" 
+                       class="form-control {% if form.username.errors %}is-invalid{% endif %}" 
+                       id="{{ form.username.id_for_label }}" 
+                       name="{{ form.username.name }}" 
+                       value="{{ form.username.value|default:'' }}"
+                       required>
+                {% if form.username.errors %}
+                <div class="invalid-feedback">
+                    {{ form.username.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}" class="form-label">密码</label>
+                <input type="password" 
+                       class="form-control {% if form.password.errors %}is-invalid{% endif %}" 
+                       id="{{ form.password.id_for_label }}" 
+                       name="{{ form.password.name }}" 
+                       required>
+                {% if form.password.errors %}
+                <div class="invalid-feedback">
+                    {{ form.password.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <div class="form-check">
+                    <input type="checkbox" 
+                           class="form-check-input" 
+                           id="{{ form.remember.id_for_label }}" 
+                           name="{{ form.remember.name }}"
+                           {% if form.remember.value %}checked{% endif %}>
+                    <label class="form-check-label" for="{{ form.remember.id_for_label }}">
+                        记住我
+                    </label>
+                </div>
+            </div>
+
+            <!-- Geetest v4 hidden fields -->
+            <input type="hidden" name="lot_number" id="lot_number">
+            <input type="hidden" name="captcha_output" id="captcha_output">
+            <input type="hidden" name="pass_token" id="pass_token">
+            <input type="hidden" name="gen_time" id="gen_time">
+            <input type="hidden" name="captcha_id" id="captcha_id" value="{{ GEETEST_ID }}">
+
+            {% if CAPTCHA_PROVIDER == 'geetest' %}
+            <button type="submit" class="btn btn-primary btn-block" data-geetest-trigger data-captcha-id="{{ GEETEST_ID }}">登录</button>
+            {% elif CAPTCHA_PROVIDER == 'turnstile' %}
+            <button type="submit" class="btn btn-primary btn-block" data-turnstile-trigger data-turnstile-sitekey="{{ TURNSTILE_SITE_KEY }}">登录</button>
+            {% else %}
+            <button type="submit" class="btn btn-primary btn-block">登录</button>
+            {% endif %}
+        </form>
+
+        <div class="text-center mt-3">
+            还没有账号？<a href="{% url 'accounts:register' %}" class="btn-link">立即注册</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/accounts.js' %}"></script>
+<script src="{% static 'js/gt4.js' %}"></script>
+<script src="{% static 'js/geetest_v4_adapter.js' %}"></script>
+<script>
+    window.CAPTCHA_PROVIDER = '{{ CAPTCHA_PROVIDER|escapejs }}';
+    {% if CAPTCHA_PROVIDER == 'geetest' %}
+    window.GEETEST_CAPTCHA_ID = '{{ GEETEST_ID|escapejs }}';
+    {% elif CAPTCHA_PROVIDER == 'turnstile' %}
+    window.TURNSTILE_SITE_KEY = '{{ TURNSTILE_SITE_KEY|escapejs }}';
+    var s = document.createElement('script');
+    s.src = '{% static "js/turnstile_adapter.js" %}';
+    document.head.appendChild(s);
+    {% endif %}
+</script>
+{% endblock %}

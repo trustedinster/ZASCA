@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}注册 - ZASCA{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/accounts.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-logo">ZASCA</div>
+            <h1 class="auth-title">创建账户</h1>
+            <p class="auth-subtitle">开始使用ZASCA管理您的云电脑</p>
+        </div>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'accounts:register' %}" class="auth-form needs-validation" novalidate>
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}" class="form-label">用户名</label>
+                <input type="text" 
+                       class="form-control {% if form.username.errors %}is-invalid{% endif %}" 
+                       id="{{ form.username.id_for_label }}" 
+                       name="{{ form.username.name }}" 
+                       value="{{ form.username.value|default:'' }}"
+                       required
+                       minlength="3"
+                       maxlength="150">
+                <div class="form-text">3-150个字符，只能包含字母、数字和@/./+/-/_</div>
+                {% if form.username.errors %}
+                <div class="invalid-feedback">
+                    {{ form.username.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.email.id_for_label }}" class="form-label">电子邮箱</label>
+                <div class="input-group">
+                    <input type="email"
+                           class="form-control {% if form.email.errors %}is-invalid{% endif %}"
+                           id="{{ form.email.id_for_label }}"
+                           name="{{ form.email.name }}"
+                           value="{{ form.email.value|default:'' }}"
+                           required>
+                    <button type="button" class="btn btn-outline-primary" id="get-email-code">获取验证码</button>
+                </div>
+                {% if form.email.errors %}
+                <div class="invalid-feedback">
+                    {{ form.email.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="id_email_code" class="form-label">邮箱验证码</label>
+                <input type="text" name="email_code" id="id_email_code" class="form-control" placeholder="请输入邮箱验证码" required>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}" class="form-label">密码</label>
+                <input type="password" 
+                       class="form-control {% if form.password.errors %}is-invalid{% endif %}" 
+                       id="{{ form.password.id_for_label }}" 
+                       name="{{ form.password.name }}" 
+                       required
+                       minlength="8">
+                <div class="form-text">至少8个字符</div>
+                {% if form.password.errors %}
+                <div class="invalid-feedback">
+                    {{ form.password.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.confirm_password.id_for_label }}" class="form-label">确认密码</label>
+                <input type="password" 
+                       class="form-control {% if form.confirm_password.errors %}is-invalid{% endif %}" 
+                       id="{{ form.confirm_password.id_for_label }}" 
+                       name="{{ form.confirm_password.name }}" 
+                       required
+                       minlength="8">
+                {% if form.confirm_password.errors %}
+                <div class="invalid-feedback">
+                    {{ form.confirm_password.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <div class="form-check">
+                    <input type="checkbox" 
+                           class="form-check-input {% if form.agree_terms.errors %}is-invalid{% endif %}" 
+                           id="{{ form.agree_terms.id_for_label }}" 
+                           name="{{ form.agree_terms.name }}"
+                           required>
+                    <label class="form-check-label" for="{{ form.agree_terms.id_for_label }}">
+                        我已阅读并同意 <a href="#" class="btn-link">服务条款</a> 和 <a href="#" class="btn-link">隐私政策</a>
+                    </label>
+                    {% if form.agree_terms.errors %}
+                    <div class="invalid-feedback">
+                        {{ form.agree_terms.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Geetest v4 hidden fields -->
+            <input type="hidden" name="lot_number" id="lot_number">
+            <input type="hidden" name="captcha_output" id="captcha_output">
+            <input type="hidden" name="pass_token" id="pass_token">
+            <input type="hidden" name="gen_time" id="gen_time">
+            <input type="hidden" name="captcha_id" id="captcha_id" value="{{ GEETEST_ID }}">
+
+            <button type="submit" class="btn btn-primary btn-block">注册</button>
+        </form>
+
+        <div class="text-center mt-3">
+            已有账号？<a href="{% url 'accounts:login' %}" class="btn-link">立即登录</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/accounts.js' %}"></script>
+<script src="{% static 'js/gt4.js' %}"></script>
+<script src="{% static 'js/geetest_v4_adapter.js' %}"></script>
+<script src="{% static 'js/email_code.js' %}"></script>
+<script>
+    window.CAPTCHA_PROVIDER = '{{ CAPTCHA_PROVIDER|escapejs }}';
+    {% if CAPTCHA_PROVIDER == 'geetest' %}
+    window.GEETEST_CAPTCHA_ID = '{{ GEETEST_ID|escapejs }}';
+    {% elif CAPTCHA_PROVIDER == 'turnstile' %}
+    window.TURNSTILE_SITE_KEY = '{{ TURNSTILE_SITE_KEY|escapejs }}';
+    var s = document.createElement('script');
+    s.src = '{% static "js/turnstile_adapter.js" %}';
+    document.head.appendChild(s);
+    {% endif %}
+</script>
+{% endblock %}
