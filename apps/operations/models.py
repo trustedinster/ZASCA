@@ -562,10 +562,45 @@ class AccountOpeningRequest(models.Model):
             from utils.winrm_client import WinrmClient
             import secrets
             import string
+            import os
             
             # 连接到产品关联的主机
             product = self.target_product
             host = product.host
+            
+            # 如果是DEMO模式，不执行实际的WinRM操作
+            if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+                # 在DEMO模式下模拟创建用户
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f'DEMO模式: 模拟创建用户 {self.username} 在产品 {product.display_name}')
+                
+                # 使用用户指定的密码，如果没有指定则生成简单密码
+                if self.requested_password:
+                    password = self.requested_password
+                else:
+                    password = 'DemoPass123!'  # 在DEMO模式下使用简单密码
+                
+                # 模拟成功创建用户
+                self.status = 'completed'
+                self.result_message = f"用户 {self.username} 已在DEMO模式下成功创建（模拟）"
+                self.save(update_fields=['status', 'result_message'])
+                
+                # 创建云电脑用户记录
+                cloud_user, created = CloudComputerUser.objects.get_or_create(
+                    username=self.username,
+                    product=self.target_product,
+                    defaults={
+                        'fullname': self.user_fullname,
+                        'email': self.user_email,
+                        'description': self.user_description,
+                        'created_from_request': self
+                    }
+                )
+                
+                return
+            
+            # 非DEMO模式下正常执行
             client = WinrmClient(
                 hostname=host.hostname,
                 port=host.port,
@@ -779,6 +814,14 @@ class CloudComputerUser(models.Model):
         """
         在远程主机上禁用用户
         """
+        import os
+        if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+            # 在DEMO模式下，不执行实际操作
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f'DEMO模式: 模拟禁用用户 {self.username} 在产品 {self.product.display_name}')
+            return
+        
         try:
             from utils.winrm_client import WinrmClient
             
@@ -810,6 +853,14 @@ class CloudComputerUser(models.Model):
         """
         在远程主机上启用用户
         """
+        import os
+        if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+            # 在DEMO模式下，不执行实际操作
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f'DEMO模式: 模拟启用用户 {self.username} 在产品 {self.product.display_name}')
+            return
+        
         try:
             from utils.winrm_client import WinrmClient
             
@@ -841,6 +892,14 @@ class CloudComputerUser(models.Model):
         """
         在远程主机上删除用户
         """
+        import os
+        if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+            # 在DEMO模式下，不执行实际操作
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f'DEMO模式: 模拟删除用户 {self.username} 在产品 {self.product.display_name}')
+            return
+        
         try:
             from utils.winrm_client import WinrmClient
             

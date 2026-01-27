@@ -77,6 +77,39 @@ class HostAdmin(admin.ModelAdmin):
         except Exception as e:
             messages.warning(request, f"主机 {obj.name} 保存成功，但连接测试失败: {str(e)}")
 
+    def delete_model(self, request, obj):
+        """
+        重写delete_model方法，确保删除主机前处理相关联的对象
+        """
+        # 导入相关模型
+        from apps.operations.models import Product, PublicHostInfo
+        
+        # 删除关联的 Product 对象
+        Product.objects.filter(host=obj).delete()
+        
+        # 删除关联的 PublicHostInfo 对象
+        PublicHostInfo.objects.filter(internal_host=obj).delete()
+        
+        # 删除主机本身
+        super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        """
+        重写delete_queryset方法，处理批量删除时的外键约束问题
+        """
+        from apps.operations.models import Product, PublicHostInfo
+        
+        # 逐个处理每个要删除的主机，确保先删除相关联的对象
+        for obj in queryset:
+            # 删除关联的 Product 对象
+            Product.objects.filter(host=obj).delete()
+            
+            # 删除关联的 PublicHostInfo 对象
+            PublicHostInfo.objects.filter(internal_host=obj).delete()
+        
+        # 执行批量删除
+        super().delete_queryset(request, queryset)
+
 
 @admin.register(HostGroup)
 class HostGroupAdmin(admin.ModelAdmin):

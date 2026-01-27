@@ -84,6 +84,13 @@ class Host(models.Model):
         """
         测试主机连接状态
         """
+        # 如果是DEMO模式，所有主机都显示为在线且不执行实际连接测试
+        import os
+        if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+            self.status = 'online'
+            super().save(update_fields=['status', 'updated_at'])
+            return
+        
         from utils.winrm_client import WinrmClient
         try:
             # 创建WinRM客户端测试连接

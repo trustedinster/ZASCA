@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from .models import SystemTask, AccountOpeningRequest, CloudComputerUser, Product
 from apps.hosts.models import Host
+from utils.winrm_client import WinrmClient
 
 
 @admin.register(SystemTask)
@@ -166,3 +167,50 @@ class CloudComputerUserAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.select_related('product', 'product__host', 'created_from_request', 'created_from_request__applicant')
+
+    def save_model(self, request, obj, form, change):
+        """
+        重写save_model方法，在保存时处理管理员权限变更
+        """
+        # 检查是否是更新操作并有is_admin字段变更
+        if change and 'is_admin' in form.changed_data:
+            old_obj = CloudComputerUser.objects.get(pk=obj.pk)
+            old_is_admin = old_obj.is_admin
+            new_is_admin = obj.is_admin
+            
+            # 先保存数据库记录
+            super().save_model(request, obj, form, change)
+            
+            # 根据管理员权限变更调用相应的WinRM操作
+            if old_is_admin != new_is_admin:
+                try:
+                    # 连接到产品关联的主机
+                    product = obj.product
+                    host = product.host
+                    client = WinrmClient(
+                        hostname=host.hostname,
+                        port=host.port,
+                        username=host.username,
+                        password=host.password,
+                        use_ssl=host.use_ssl
+                    )
+                    
+                    if new_is_admin:
+                        # 授予管理员权限
+                        success = client.op_user(obj.username)
+                        if success:
+                            self.message_user(request, f'成功为用户 {obj.username} 授予管理员权限')
+                        else:
+                            self.message_user(request, f'为用户 {obj.username} 授予管理员权限失败', level='error')
+                    else:
+                        # 剥夺管理员权限
+                        success = client.deop_user(obj.username)
+                        if success:
+                            self.message_user(request, f'成功撤销用户 {obj.username} 的管理员权限')
+                        else:
+                            self.message_user(request, f'撤销用户 {obj.username} 的管理员权限失败', level='error')
+                except Exception as e:
+                    self.message_user(request, f'处理管理员权限时发生错误: {str(e)}', level='error')
+        else:
+            # 新建或没有is_admin字段变更的情况
+            super().save_model(request, obj, form, change)

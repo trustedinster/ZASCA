@@ -103,6 +103,10 @@ class LoginView(TemplateView):
             context['TURNSTILE_SITE_KEY'] = sc.captcha_id  # 使用统一的captcha_id字段
         else:
             context['TURNSTILE_SITE_KEY'] = None
+        
+        # 传递DEMO模式标志到模板
+        context['is_demo_mode'] = getattr(self.request, 'is_demo_mode', False)
+        
         return context
 
     def post(self, request, *args, **kwargs):
@@ -542,7 +546,12 @@ def send_forgot_password_email_code(request):
     message_body = f'您的重置密码验证码是: {code}，有效期10分钟。'
     from_email = cfg.smtp_from_email
     
-    if cfg.smtp_host and cfg.smtp_port and cfg.smtp_username and cfg.smtp_password and cfg.smtp_from_email:
+    import os
+    if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+        # 在DEMO模式下，模拟发送邮件成功但不实际发送
+        logger = __import__('logging').getLogger(__name__)
+        logger.info(f'DEMO模式: 模拟发送忘记密码验证码邮件至 {email}, 验证码: {code}')
+    elif cfg.smtp_host and cfg.smtp_port and cfg.smtp_username and cfg.smtp_password and cfg.smtp_from_email:
         # Create HTML email template for password reset
         html_body = f'''
         <!DOCTYPE html>

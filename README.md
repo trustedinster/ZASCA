@@ -1,3 +1,4 @@
+README.md
 # ZASCA (Zero Agent Share Computer Administrator)
 
 ## 简介
@@ -12,6 +13,7 @@ ZASCA（Zero Agent Share Computer Administrator）是一个不需要在共享计
 - 💻 **跨平台支持**：Web端可在能运行Python 3.10以上的任意Linux、Windows版本上使用
 - 🔌 **灵活部署**：主机端只需端口映射，不强制要求公网IPv4
 - 👥 **用户开户系统**：支持用户自助申请和管理员审核流程
+- 🎯 **演示模式**：内置DEMO模式，方便快速体验系统功能
 
 ## 系统架构
 
@@ -86,6 +88,42 @@ python manage.py createsuperuser
 ```bash
 python manage.py runserver
 ```
+
+## DEMO模式
+
+### 启用DEMO模式
+
+ZASCA提供便捷的DEMO模式，方便快速体验系统功能，无需配置数据库和外部服务。
+
+```bash
+# 设置环境变量启用DEMO模式
+export ZASCA_DEMO=1
+
+# 或者在一行命令中运行
+ZASCA_DEMO=1 python manage.py runserver
+```
+
+### DEMO模式特性
+
+- 🔐 **数据库**: 使用 DEMO.sqlite3 (数据不会持久保存)
+- 👤 **预设用户**:
+  - 用户名: User, 密码: demo_user_password
+  - 用户名: Admin, 密码: demo_admin_password
+  - 用户名: SuperAdmin, 密码: DemoSuperAdmin123!
+- 🛠️ **主机状态**: 所有主机始终显示为在线状态
+- 📧 **邮件功能**: 邮件发送功能被模拟（不会实际发送邮件）
+- 🚀 **WinRM指令**: 不会实际执行（仅模拟）
+- 🔐 **密码策略**: 忽略密码复杂度要求
+- 📋 **权限设定**: 
+  - Admin用户具有工作人员权限但不是超级用户
+  - 拥有特定权限：View登录日志、View日志记录、View开户申请、Change开户申请、View云电脑用户、Change云电脑用户、View产品
+
+### DEMO登录界面
+
+在DEMO模式下，登录页面将显示用户选择下拉框：
+- 选择"User (demo)"或"Admin (demo)"将自动填入对应账号和密码
+- 用户名和密码输入框将被禁用（只读状态）
+- 如需使用其他账户，可选择"-- 选择DEMO用户 (留空则手动输入) --"后手动输入账号信息
 
 ## 使用指南
 

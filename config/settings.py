@@ -51,6 +51,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'config.demo_middleware.DemoModeMiddleware',  # DEMO模式中间件
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
@@ -214,6 +215,33 @@ GEETEST_KEY = os.environ.get('GEETEST_KEY')
 GEETEST_FALLBACK_LOCAL = os.environ.get('GEETEST_FALLBACK_LOCAL', 'True').lower() == 'true'
 # 缓存极验服务状态的秒数（用于短期内避免重复探测）
 GEETEST_SERVER_STATUS_CACHE_SECONDS = int(os.environ.get('GEETEST_SERVER_STATUS_CACHE_SECONDS', '300'))
+
+# DEMO模式配置
+if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+    # 使用DEMO数据库
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'DEMO.sqlite3',
+        }
+    }
+    
+    # 禁用密码验证器以允许简单密码
+    AUTH_PASSWORD_VALIDATORS = []
+    
+    # 允许所有主机
+    ALLOWED_HOSTS = ['*']
+    
+    # DEBUG模式开启
+    DEBUG = True
+    
+    # 设置固定密钥
+    SECRET_KEY = 'demo-mode-secret-key-for-testing-purposes-only'
+
+# DEMO模式启动消息
+if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+    from config.demo_startup import show_demo_startup_message
+    show_demo_startup_message()
 
 # Create logs directory if it doesn't exist
 os.makedirs(BASE_DIR / 'logs', exist_ok=True)

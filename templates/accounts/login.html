@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" {% if is_demo_mode %}data-demo-mode="true"{% endif %}>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -297,8 +297,19 @@
                     <form method="post" action="{% url 'accounts:login' %}" class="signin-form" id="loginForm" novalidate>
                         {% csrf_token %}
                         
+                        {% if is_demo_mode %}
+                        <div class="form-group">
+                            <select id="user-selector" class="form-control">
+                                <option value="">-- 选择DEMO用户 (留空则手动输入) --</option>
+                                <option value="User">User (demo)</option>
+                                <option value="Admin">Admin (demo)</option>
+                            </select>
+                        </div>
+                        {% endif %}
+                        
                         <div class="form-group">
                             <input type="text" 
+                                   id="username-field"
                                    class="form-control {% if form.username.errors %}is-invalid{% endif %}" 
                                    placeholder="用户名" 
                                    name="{{ form.username.html_name }}"
@@ -384,6 +395,40 @@
         s.src = '/static/js/turnstile_adapter.js';
         document.head.appendChild(s);
         {% endif %}
+
+        // 检查是否处于DEMO模式
+        const isDemoMode = document.documentElement.getAttribute('data-demo-mode') === 'true';
+        
+        if (isDemoMode) {
+            // 设置DEMO用户密码
+            const demoPasswords = {
+                'User': 'demo_user_password',
+                'Admin': 'demo_admin_password'
+            };
+
+            $('#user-selector').on('change', function() {
+                const selectedUser = $(this).val();
+                if (selectedUser) {
+                    // 填入用户名和密码
+                    $('#username-field').val(selectedUser);
+                    $('#password-field').val(demoPasswords[selectedUser] || '');
+                    
+                    // 禁用用户名和密码输入框（对于DEMO用户）
+                    $('#username-field').prop('readonly', true);
+                    $('#password-field').prop('readonly', true);
+                    $('#username-field').css('background-color', '#f5f5f5');
+                    $('#password-field').css('background-color', '#f5f5f5');
+                } else {
+                    // 如果选择了默认选项，启用输入框并清空
+                    $('#username-field').prop('readonly', false);
+                    $('#password-field').prop('readonly', false);
+                    $('#username-field').css('background-color', '#1a1a25');
+                    $('#password-field').css('background-color', '#1a1a25');
+                    $('#username-field').val('');
+                    $('#password-field').val('');
+                }
+            });
+        }
 
         // 密码可见性切换
         $(".toggle-password").click(function() {

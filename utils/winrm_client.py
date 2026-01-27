@@ -156,6 +156,17 @@ class WinrmClient:
         异常:
             Exception: 当所有重试尝试都失败时抛出
         """
+        import os
+        # 如果是DEMO模式，模拟执行命令而不实际执行
+        if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+            logger.info(f"DEMO模式: 模拟执行远程命令: {command}, 参数: {arguments}")
+            # 模拟成功执行的结果
+            return WinrmResult(
+                status_code=0,
+                std_out="Command executed successfully in demo mode",
+                std_err=""
+            )
+        
         logger.info(f"执行远程命令: {command}, 参数: {arguments}")
 
         for attempt in range(self.max_retries):
@@ -213,6 +224,17 @@ class WinrmClient:
         异常:
             Exception: 当所有重试尝试都失败时抛出
         """
+        import os
+        # 如果是DEMO模式，模拟执行PowerShell而不实际执行
+        if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+            logger.info(f"DEMO模式: 模拟执行PowerShell脚本: {script[:50]}...")
+            # 模拟成功执行的结果
+            return WinrmResult(
+                status_code=0,
+                std_out="PowerShell script executed successfully in demo mode",
+                std_err=""
+            )
+        
         logger.info(f"执行PowerShell脚本: {script[:50]}...")
 
         for attempt in range(self.max_retries):
@@ -517,3 +539,47 @@ class WinrmClient:
         
         logger.info(f"生成强密码完成，长度: {len(password)}")
         return password
+    def op_user(self, username: str) -> bool:
+        """
+        为指定用户授予管理员权限
+
+        参数:
+            username: 用户名
+
+        返回:
+            bool: 是否成功授予权限
+        """
+        try:
+            script = f'net localgroup Administrators {username} /add'
+            result = self.execute_powershell(script)
+            if result.success:
+                logger.info(f"为用户{username}授予管理员权限成功")
+                return True
+            else:
+                logger.error(f"为用户{username}授予管理员权限失败: 错误: {result.std_err}")
+                return False
+        except Exception as e:
+            logger.error(f"为用户{username}授予管理员权限失败: 错误: {str(e)}")
+            return False
+    def deop_user(self, username: str):
+        """
+        撤销指定用户的管理员权限
+
+        参数:
+            username: 用户名
+
+        返回:
+            bool: 是否成功撤销权限
+        """
+        try:
+            script = f'net localgroup Administrators {username} /delete'
+            result = self.execute_powershell(script)
+            if result.success:
+                logger.info(f"撤销用户{username}的管理员权限成功")
+                return True
+            else:
+                logger.error(f"撤销用户{username}的管理员权限失败: 错误: {result.std_err}")
+                return False
+        except Exception as e:
+            logger.error(f"撤销用户{username}的管理员权限失败: 错误: {str(e)}")
+            return False
