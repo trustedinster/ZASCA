@@ -359,12 +359,12 @@
                                         var response = JSON.parse(xhr.responseText);
                                         if (response.status === 'ok') {
                                             alert('验证码已发送，请查收邮件');
-                                            // Disable the button temporarily
+                                            // Disable the button temporarily with countdown - using consistent format
                                             emailCodeBtn.disabled = true;
-                                            var originalText = emailCodeBtn.textContent;
+                                            var originalText = emailCodeBtn.textContent.replace(/\s*\(\d+s\)$/, ''); // Remove any existing countdown text
                                             var countdown = 60;
                                             var timer = setInterval(function() {
-                                                emailCodeBtn.textContent = countdown + '秒后重试';
+                                                emailCodeBtn.textContent = originalText + ` (${countdown}s)`;
                                                 countdown--;
                                                 if (countdown < 0) {
                                                     clearInterval(timer);
@@ -373,9 +373,17 @@
                                                 }
                                             }, 1000);
                                         } else {
+                                            // Re-enable button on failure
+                                            emailCodeBtn.disabled = false;
+                                            var originalText = emailCodeBtn.textContent.replace(/\s*\(\d+s\)$/, ''); // Remove any existing countdown text
+                                            emailCodeBtn.textContent = originalText;
                                             alert('发送失败: ' + (response.message || '未知错误'));
                                         }
                                     } else {
+                                        // Re-enable button on failure
+                                        emailCodeBtn.disabled = false;
+                                        var originalText = emailCodeBtn.textContent.replace(/\s*\(\d+s\)$/, ''); // Remove any existing countdown text
+                                        emailCodeBtn.textContent = originalText;
                                         alert('发送失败: 请稍后重试');
                                     }
                                 }

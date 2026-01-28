@@ -266,22 +266,19 @@
     </style>
 </head>
 <body>
-    <!-- 消息提示 -->
-    {% if messages %}
-    <div class="container mt-3">
-        {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-6 text-center mb-5">
                 <h2 class="heading-section">注册新账户</h2>
+                <!-- 消息提示 -->
+                {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+                {% endif %}
             </div>
         </div>
         <div class="row justify-content-center">
@@ -337,6 +334,8 @@
                                 <button type="button" class="btn btn-outline-primary" id="get-email-code" data-geetest-trigger data-captcha-id="{{ GEETEST_ID }}" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%);">获取验证码</button>
                             {% elif CAPTCHA_PROVIDER == 'turnstile' %}
                                 <button type="button" class="btn btn-outline-primary" id="get-email-code" data-turnstile-trigger data-turnstile-sitekey="{{ TURNSTILE_SITE_KEY }}" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%);">获取验证码</button>
+                            {% elif CAPTCHA_PROVIDER == 'local' %}
+                                <button type="button" class="btn btn-outline-primary" id="get-email-code" data-local-captcha-trigger data-action="get-code" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%);">获取验证码</button>
                             {% else %}
                                 <button type="button" class="btn btn-outline-primary" id="get-email-code" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%);">获取验证码</button>
                             {% endif %}
@@ -395,6 +394,10 @@
                                 <button type="submit" class="form-control btn btn-primary submit px-3" data-turnstile-trigger data-turnstile-sitekey="{{ TURNSTILE_SITE_KEY }}">
                                     创建账户
                                 </button>
+                            {% elif CAPTCHA_PROVIDER == 'local' %}
+                                <button type="button" class="form-control btn btn-primary submit px-3" data-local-captcha-trigger data-action="submit">
+                                    创建账户
+                                </button>
                             {% else %}
                                 <button type="submit" class="form-control btn btn-primary submit px-3">
                                     创建账户
@@ -417,7 +420,15 @@
     <script src="/static/js/base.js"></script>
     <script src="/static/js/accounts.js"></script>
     <script src="/static/js/gt4.js"></script>
+    <!-- 根据验证码提供商加载对应的适配器 -->
+    {% if CAPTCHA_PROVIDER == 'geetest' %}
     <script src="/static/js/geetest_v4_adapter.js"></script>
+    {% elif CAPTCHA_PROVIDER == 'local' %}
+    <script src="/static/js/local_captcha_adapter.js"></script>
+    {% elif CAPTCHA_PROVIDER == 'turnstile' %}
+    <script src="/static/js/turnstile_adapter.js"></script>
+    {% endif %}
+    <!-- 通用的邮箱验证码处理脚本 -->
     <script src="/static/js/email_code.js"></script>
     <script>
         window.CAPTCHA_PROVIDER = '{{ CAPTCHA_PROVIDER|escapejs }}';

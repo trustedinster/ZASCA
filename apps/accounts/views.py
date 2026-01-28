@@ -9,7 +9,7 @@ from django.views.generic import CreateView, UpdateView, TemplateView
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_http_methods
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.utils.decorators import method_decorator
 from django.conf import settings
@@ -18,12 +18,17 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import random
+from PIL import Image
+import os
 
 from .models import User
 from .forms import UserRegistrationForm, UserUpdateForm, UserLoginForm
 from . import geetest_utils
+from . import captcha_utils
+from . import rate_limit
 
 
+@method_decorator(rate_limit.register_rate_limit, name='dispatch')
 class RegisterView(CreateView):
     """用户注册视图"""
 
@@ -39,10 +44,10 @@ class RegisterView(CreateView):
         # 使用与后端验证相同的逻辑来确定captcha_id
         captcha_id, _ = geetest_utils._get_runtime_keys()
         context['GEETEST_ID'] = captcha_id
-        context['CAPTCHA_PROVIDER'] = sc.captcha_provider
+        context['CAPTCHA_PROVIDER'] = sc.get_captcha_config(scene='register')[0]  # 获取注册场景的配置
         # 仅在turnstile模式下提供turnstile的site key
-        if sc.captcha_provider == 'turnstile':
-            context['TURNSTILE_SITE_KEY'] = sc.captcha_id  # 使用统一的captcha_id字段
+        if sc.get_captcha_config(scene='register')[0] == 'turnstile':
+            context['TURNSTILE_SITE_KEY'] = sc.get_captcha_config(scene='register')[1]  # 使用统一的captcha_id字段
         else:
             context['TURNSTILE_SITE_KEY'] = None
         return context
@@ -67,6 +72,24 @@ class RegisterView(CreateView):
         # Optionally clear the code to prevent reuse
         cache.delete(cache_key)
 
+        # 额外验证：如果使用本地验证码，需要验证验证码
+        from apps.dashboard.models import SystemConfig
+        provider, _, _ = SystemConfig.get_config().get_captcha_config(scene='register')  # 获取注册场景的配置
+        if provider == 'local':
+            # 本地验证码验证
+            lot_number = request.POST.get('lot_number')  # 这里用作captcha_id
+            captcha_input = request.POST.get('captcha_output')  # 这里用作用户输入
+            
+            if not (lot_number and captcha_input):
+                form.add_error(None, '请完成验证码验证')
+                return self.form_invalid(form)
+            
+            # 验证本地验证码
+            from . import captcha_utils
+            if not captcha_utils.verify_captcha(lot_number, captcha_input):
+                form.add_error(None, '本地验证码校验失败')
+                return self.form_invalid(form)
+
         response = super().form_valid(form)
         messages.success(
             self.request,
@@ -83,6 +106,7 @@ class RegisterView(CreateView):
         return super().form_invalid(form)
 
 
+@method_decorator(rate_limit.login_rate_limit, name='dispatch')
 class LoginView(TemplateView):
     """用户登录视图"""
 
@@ -114,9 +138,9 @@ class LoginView(TemplateView):
         form = UserLoginForm(request.POST)
 
         if form.is_valid():
-            # 根据系统配置决定是否需要行为验证码（仅 geetest 时启用）
+            # 根据系统配置决定是否需要行为验证码
             from apps.dashboard.models import SystemConfig
-            provider = SystemConfig.get_config().captcha_provider
+            provider, _, _ = SystemConfig.get_config().get_captcha_config(scene='login')  # 获取登录场景的配置
             if provider == 'geetest':
                 # 在认证之前做 Geetest v4 二次校验
                 lot_number = request.POST.get('lot_number')
@@ -148,6 +172,34 @@ class LoginView(TemplateView):
                 ok, resp = geetest_utils.verify_turnstile(tf_token, remoteip=request.META.get('REMOTE_ADDR'))
                 if not ok:
                     form.add_error(None, 'Turnstile 验证失败')
+                    context = self.get_context_data(**kwargs)
+                    context['form'] = form
+                    return self.render_to_response(context)
+            elif provider == 'local':
+                # 本地验证码验证
+                lot_number = request.POST.get('lot_number')  # 这里用作captcha_id
+                captcha_input = request.POST.get('captcha_output')  # 这里用作用户输入
+                
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"Local captcha validation in login: lot_number={lot_number}, captcha_input={captcha_input}")
+                
+                if not (lot_number and captcha_input):
+                    logger.warning(f"Missing captcha data in login: lot_number={lot_number}, captcha_input={captcha_input}")
+                    form.add_error(None, '请完成验证码验证')
+                    context = self.get_context_data(**kwargs)
+                    context['form'] = form
+                    return self.render_to_response(context)
+                
+                # 验证本地验证码，这里使用consume=True，因为这是最终验证
+                from . import captcha_utils
+                is_valid = captcha_utils.verify_captcha(lot_number, captcha_input, consume=True, check_attempts=True)
+                
+                logger.info(f"Final captcha validation result in login: {is_valid}")
+                
+                if not is_valid:
+                    logger.warning(f"Local captcha validation failed in login: {lot_number}")
+                    form.add_error(None, '本地验证码校验失败')
                     context = self.get_context_data(**kwargs)
                     context['form'] = form
                     return self.render_to_response(context)
@@ -245,6 +297,7 @@ def geetest_register(request):
 
 @require_http_methods(['POST'])
 @csrf_protect
+@rate_limit.general_api_rate_limit
 def geetest_validate(request):
     """可以做一次性的验证接口（可选）。前端可直接把三个字段POST到此处获取验证结果"""
     # 支持 v4 参数（lot_number / captcha_output / pass_token / gen_time / captcha_id）
@@ -270,6 +323,7 @@ def _gen_code(length=6):
 
 @csrf_exempt
 @require_http_methods(['POST'])
+@rate_limit.email_code_rate_limit
 def send_register_email_code(request):
     """Send a one-time code to the supplied email for registration.
 
@@ -293,9 +347,39 @@ def send_register_email_code(request):
     # Validate email
     if not email:
         return JsonResponse({'status': 'error', 'message': '缺少email'}, status=400)
+    
+    # 验证邮箱后缀
+    from apps.dashboard.models import SystemConfig
+    config = SystemConfig.get_config()
+    
+    # 邮箱后缀验证逻辑
+    email_suffix = '@' + email.split('@')[1] if '@' in email else ''
+    
+    if config.email_suffix_mode == 'whitelist':
+        # 白名单模式：只有在列表中的后缀才允许
+        allowed_suffixes = []
+        if config.email_suffix_list:
+            allowed_suffixes = [suffix.strip() for suffix in config.email_suffix_list.strip().split('\n') if suffix.strip()]
+        if email_suffix not in allowed_suffixes:
+            return JsonResponse({'status': 'error', 'message': f'邮箱后缀 {email_suffix} 不在允许的列表中'}, status=400)
+    elif config.email_suffix_mode == 'blacklist':
+        # 黑名单模式：在列表中的后缀不允许
+        blocked_suffixes = []
+        if config.email_suffix_list:
+            blocked_suffixes = [suffix.strip() for suffix in config.email_suffix_list.strip().split('\n') if suffix.strip()]
+        if email_suffix in blocked_suffixes:
+            return JsonResponse({'status': 'error', 'message': f'邮箱后缀 {email_suffix} 已被禁止使用'}, status=400)
+    
+    # 验证邮箱格式
+    from django.core.validators import validate_email
+    from django.core.exceptions import ValidationError
+    try:
+        validate_email(email)
+    except ValidationError:
+        return JsonResponse({'status': 'error', 'message': '请输入有效的邮箱地址'}, status=400)
 
     # Check system config: if provider is geetest, require v4 params and validate them
-    provider = getattr(cfg, 'captcha_provider', 'none')
+    provider, _, _ = cfg.get_captcha_config(scene='email')  # 获取邮箱场景的配置
 
     if provider == 'geetest':
         if not (lot_number and captcha_output and pass_token and gen_time):
@@ -311,6 +395,18 @@ def send_register_email_code(request):
         ok, resp = geetest_utils.verify_turnstile(tf_token, remoteip=request.META.get('REMOTE_ADDR'))
         if not ok:
             return JsonResponse({'status': 'error', 'message': 'Turnstile 验证失败'}, status=400)
+    elif provider == 'local':
+        # 本地验证码验证
+        lot_number = request.POST.get('lot_number')  # 这里用作captcha_id
+        captcha_input = request.POST.get('captcha_output')  # 这里用作用户输入
+        
+        if not (lot_number and captcha_input):
+            return JsonResponse({'status': 'error', 'message': '请先完成本地验证码验证'}, status=400)
+        
+        # 验证本地验证码，这里使用consume=True，因为这是最终验证
+        from . import captcha_utils
+        if not captcha_utils.verify_captcha(lot_number, captcha_input, consume=True):
+            return JsonResponse({'status': 'error', 'message': '本地验证码验证失败'}, status=400)
 
     # generate code and store in cache
     code = _gen_code(6)
@@ -393,6 +489,91 @@ def send_register_email_code(request):
     return JsonResponse({'status': 'ok'})
 
 
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
+@rate_limit.avatar_upload_rate_limit
+def upload_avatar(request):
+    """上传头像"""
+    if request.method == 'POST' and request.FILES.get('avatar'):
+        avatar_file = request.FILES['avatar']
+        user = request.user
+        
+        # 验证文件扩展名
+        allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif']
+        ext = os.path.splitext(avatar_file.name)[1].lower()
+        if ext not in allowed_extensions:
+            return JsonResponse({'status': 'error', 'message': '不支持的图片格式'})
+        
+        # 验证文件大小 (5MB)
+        if avatar_file.size > 5 * 1024 * 1024:
+            return JsonResponse({'status': 'error', 'message': '图片大小不能超过5MB'})
+        
+        try:
+            # 验证文件确实是图像文件，并检查是否包含恶意内容
+            image = Image.open(avatar_file)
+            image.verify()  # 验证图像完整性
+            
+            # 重新打开文件，因为verify()会将指针移到末尾
+            avatar_file.seek(0)
+            
+            # 再次打开图像用于尺寸检查
+            image = Image.open(avatar_file)
+            
+            # 检查图像尺寸是否合理（防止像素炸弹）
+            max_width, max_height = 5000, 5000  # 最大允许尺寸
+            if image.width > max_width or image.height > max_height:
+                return JsonResponse({'status': 'error', 'message': '图片尺寸过大'})
+            
+            # 限制最小图像尺寸
+            min_width, min_height = 10, 10
+            if image.width < min_width or image.height < min_height:
+                return JsonResponse({'status': 'error', 'message': '图片尺寸过小'})
+            
+        except Exception:
+            return JsonResponse({'status': 'error', 'message': '上传的文件不是有效的图片'})
+        
+        # 重置文件指针以供保存
+        avatar_file.seek(0)
+        
+        # 保存头像
+        user.avatar = avatar_file
+        user.save()
+        
+        return JsonResponse({'status': 'success', 'message': '头像上传成功'})
+    
+    return JsonResponse({'status': 'error', 'message': '没有上传文件'})
+
+
+# Local Captcha endpoints
+@require_http_methods(['GET'])
+def local_captcha_generate(request):
+    """Generate a local image captcha and return the captcha ID"""
+    result = captcha_utils.generate_captcha()
+    return JsonResponse({'captcha_id': result['captcha_id']})
+
+
+def local_captcha_image(request, captcha_id):
+    """Return the image for the given captcha ID"""
+    return captcha_utils.get_captcha_image(request, captcha_id)
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+@rate_limit.general_api_rate_limit
+def local_captcha_verify(request):
+    """Verify the user's input against the captcha"""
+    captcha_id = request.POST.get('captcha_id')
+    user_input = request.POST.get('captcha_input')
+    
+    # 验证时设置consume=False，这样验证后不会删除，可用于后续的表单提交验证
+    # 设置较低的尝试次数限制，防止暴力破解
+    if captcha_utils.verify_captcha(captcha_id, user_input, consume=False, max_attempts=3):
+        return JsonResponse({'result': 'success'})
+    else:
+        return JsonResponse({'result': 'failure'}, status=400)
+
+
 class ForgotPasswordView(TemplateView):
     """忘记密码视图"""
     
@@ -406,10 +587,10 @@ class ForgotPasswordView(TemplateView):
         # 使用与后端验证相同的逻辑来确定captcha_id
         captcha_id, _ = geetest_utils._get_runtime_keys()
         context['GEETEST_ID'] = captcha_id
-        context['CAPTCHA_PROVIDER'] = sc.captcha_provider
+        context['CAPTCHA_PROVIDER'] = sc.get_captcha_config(scene='email')[0]  # 获取邮箱场景的配置
         # 仅在turnstile模式下提供turnstile的site key
-        if sc.captcha_provider == 'turnstile':
-            context['TURNSTILE_SITE_KEY'] = sc.captcha_id  # 使用统一的captcha_id字段
+        if sc.get_captcha_config(scene='email')[0] == 'turnstile':
+            context['TURNSTILE_SITE_KEY'] = sc.get_captcha_config(scene='email')[1]  # 使用统一的captcha_id字段
         else:
             context['TURNSTILE_SITE_KEY'] = None
         return context
@@ -449,9 +630,9 @@ class ForgotPasswordView(TemplateView):
             messages.error(request, '该邮箱对应的用户不存在')
             return self.render_to_response(self.get_context_data())
         
-        # 根据系统配置决定是否需要行为验证码（仅 geetest 时启用）
+        # 根据系统配置决定是否需要行为验证码
         from apps.dashboard.models import SystemConfig
-        provider = SystemConfig.get_config().captcha_provider
+        provider, _, _ = SystemConfig.get_config().get_captcha_config(scene='email')  # 获取邮箱场景的配置
         if provider == 'geetest':
             # 在认证之前做 Geetest v4 二次校验
             lot_number = request.POST.get('lot_number')
@@ -478,6 +659,20 @@ class ForgotPasswordView(TemplateView):
             if not ok:
                 messages.error(request, 'Turnstile 验证失败')
                 return self.render_to_response(self.get_context_data())
+        elif provider == 'local':
+            # 本地验证码验证
+            lot_number = request.POST.get('lot_number')  # 这里用作captcha_id
+            captcha_input = request.POST.get('captcha_output')  # 这里用作用户输入
+            
+            if not (lot_number and captcha_input):
+                messages.error(request, '请完成验证码验证')
+                return self.render_to_response(self.get_context_data())
+            
+            # 验证本地验证码
+            from . import captcha_utils
+            if not captcha_utils.verify_captcha(lot_number, captcha_input):
+                messages.error(request, '本地验证码校验失败')
+                return self.render_to_response(self.get_context_data())
         
         # 重置用户密码
         user.set_password(new_password1)
@@ -492,6 +687,7 @@ class ForgotPasswordView(TemplateView):
 
 @csrf_exempt
 @require_http_methods(['POST'])
+@rate_limit.email_code_rate_limit
 def send_forgot_password_email_code(request):
     """Send a one-time code to the supplied email for password reset.
 
@@ -513,7 +709,7 @@ def send_forgot_password_email_code(request):
     # Check system config: if provider is geetest, require v4 params and validate them
     from apps.dashboard.models import SystemConfig
     cfg = SystemConfig.get_config()
-    provider = getattr(cfg, 'captcha_provider', 'none')
+    provider, _, _ = cfg.get_captcha_config(scene='email')  # 获取邮箱场景的配置
 
     if provider == 'geetest':
         if not (lot_number and captcha_output and pass_token and gen_time):
@@ -529,6 +725,18 @@ def send_forgot_password_email_code(request):
         ok, resp = geetest_utils.verify_turnstile(tf_token, remoteip=request.META.get('REMOTE_ADDR'))
         if not ok:
             return JsonResponse({'status': 'error', 'message': 'Turnstile 验证失败'}, status=400)
+    elif provider == 'local':
+        # 本地验证码验证
+        lot_number = request.POST.get('lot_number')  # 这里用作captcha_id
+        captcha_input = request.POST.get('captcha_output')  # 这里用作用户输入
+        
+        if not (lot_number and captcha_input):
+            return JsonResponse({'status': 'error', 'message': '请先完成本地验证码验证'}, status=400)
+        
+        # 验证本地验证码
+        from . import captcha_utils
+        if not captcha_utils.verify_captcha(lot_number, captcha_input):
+            return JsonResponse({'status': 'error', 'message': '本地验证码验证失败'}, status=400)
 
     # Check if user exists
     try:

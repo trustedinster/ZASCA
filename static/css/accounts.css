@@ -462,6 +462,56 @@ body.login-page::before, body.register-page::before {
     color: #721c24;
 }
 
+/* 登录历史 */
+.login-history {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.login-history-item {
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.login-history-info {
+    flex: 1;
+}
+
+.login-history-time {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.login-history-details {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.login-history-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.login-history-status.success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.login-history-status.failed {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
 /* 消息提示样式 */
 .alert {
     border-radius: 8px;

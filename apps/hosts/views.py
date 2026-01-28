@@ -12,6 +12,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from .models import Host, HostGroup
+from apps.accounts import rate_limit
 import json
 
 
@@ -92,6 +93,7 @@ class HostGroupListView(ListView):
 
 @require_http_methods(["POST"])
 @csrf_exempt
+@rate_limit.general_api_rate_limit
 def test_host_connection(request, host_id):
     """测试主机连接的API"""
     try:

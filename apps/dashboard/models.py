@@ -335,6 +335,26 @@ class SystemConfig(models.Model):
         help_text='是否开启用户注册功能，默认为关闭'
     )
     
+    # 邮箱后缀配置
+    EMAIL_SUFFIX_MODE_CHOICES = (
+        ('allow_all', '全部允许'),
+        ('whitelist', '白名单'),
+        ('blacklist', '黑名单'),
+    )
+    email_suffix_mode = models.CharField(
+        max_length=20,
+        choices=EMAIL_SUFFIX_MODE_CHOICES,
+        default='allow_all',
+        verbose_name='邮箱后缀模式',
+        help_text='邮箱后缀验证模式：全部允许、白名单或黑名单'
+    )
+    email_suffix_list = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='邮箱后缀列表',
+        help_text='允许或禁止的邮箱后缀列表，每行一个后缀，例如：\n@example.com\n@gmail.com\n@company.com'
+    )
+    
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name='创建时间'
@@ -378,3 +398,29 @@ class SystemConfig(models.Model):
         """获取当前系统配置"""
         config, created = cls.objects.get_or_create(pk=1)
         return config
+        
+    def get_captcha_config(self, scene=None):
+        """
+        获取指定场景的验证码配置，如果没有为场景单独配置，则使用全局配置
+        :param scene: 场景标识符 ('login', 'register', 'email', None)
+        :return: (provider, captcha_id, captcha_key)
+        """
+        if scene == 'login':
+            provider = self.login_captcha_provider or self.captcha_provider
+            captcha_id = self.login_captcha_id or self.captcha_id
+            captcha_key = self.login_captcha_key or self.captcha_key
+        elif scene == 'register':
+            provider = self.register_captcha_provider or self.captcha_provider
+            captcha_id = self.register_captcha_id or self.captcha_id
+            captcha_key = self.register_captcha_key or self.captcha_key
+        elif scene == 'email':
+            provider = self.email_captcha_provider or self.captcha_provider
+            captcha_id = self.email_captcha_id or self.captcha_id
+            captcha_key = self.email_captcha_key or self.captcha_key
+        else:
+            # 全局配置
+            provider = self.captcha_provider
+            captcha_id = self.captcha_id
+            captcha_key = self.captcha_key
+
+        return provider, captcha_id, captcha_key

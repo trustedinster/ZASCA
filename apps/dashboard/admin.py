@@ -87,6 +87,9 @@ class SystemConfigAdmin(admin.ModelAdmin):
         ('验证码设置', {
             'fields': ('captcha_provider', 'captcha_id', 'captcha_key')
         }),
+        ('邮箱后缀配置', {
+            'fields': ('email_suffix_mode', 'email_suffix_list')
+        }),
         ('时间信息', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)

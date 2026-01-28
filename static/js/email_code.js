@@ -8,6 +8,37 @@
     var btn = qs('#get-email-code');
     if(!btn) return;
 
+    // 倒计时功能
+    var countdownTimers = {};
+    
+    function startCountdown(button, initialText = null) {
+        var buttonId = button.id || 'unknown-button';
+        
+        // 清除之前的倒计时
+        if (countdownTimers[buttonId]) {
+            clearInterval(countdownTimers[buttonId]);
+        }
+        
+        let count = 60;
+        const originalText = initialText || button.textContent || button.innerText;
+        button.disabled = true;
+        
+        // 更新按钮文本显示倒计时
+        button.textContent = `${originalText} (${count}s)`;
+        
+        countdownTimers[buttonId] = setInterval(() => {
+            count--;
+            button.textContent = `${originalText} (${count}s)`;
+            
+            if (count <= 0) {
+                clearInterval(countdownTimers[buttonId]);
+                delete countdownTimers[buttonId];
+                button.disabled = false;
+                button.textContent = originalText;
+            }
+        }, 1000);
+    }
+
     btn.addEventListener('click', function(e){
         e.preventDefault();
         var emailInput = document.querySelector('input[name="email"]') || document.querySelector('input[type="email"]');
@@ -30,7 +61,7 @@
                    '';
         }
 
-        function postCode(payload){
+        function postCode(payload, buttonRef){
             fetch(endpoint, {
                 method: 'POST',
                 credentials: 'same-origin',
@@ -41,10 +72,27 @@
             }).then(function(resp){
                 if(resp.ok) {
                     alert('验证码已发送，请注意查收');
+                    // 开始倒计时
+                    if(buttonRef) {
+                        startCountdown(buttonRef, '获取验证码');
+                    }
                 } else {
+                    // 请求失败时恢复按钮状态
+                    if(buttonRef) {
+                        buttonRef.disabled = false;
+                        buttonRef.textContent = '获取验证码';
+                    }
                     resp.json().then(function(j){ alert('发送失败：' + (j.message || JSON.stringify(j))); }).catch(function(){ alert('发送失败'); });
                 }
-            }).catch(function(err){ console.error(err); alert('网络错误'); });
+            }).catch(function(err){ 
+                console.error(err); 
+                // 请求失败时恢复按钮状态
+                if(buttonRef) {
+                    buttonRef.disabled = false;
+                    buttonRef.textContent = '获取验证码';
+                }
+                alert('网络错误'); 
+            });
         }
 
         if(provider === 'geetest'){
@@ -67,13 +115,17 @@
                             form.append('gen_time', res.gen_time || res.genTime || '');
                             form.append('captcha_id', document.getElementById('captcha_id') ? document.getElementById('captcha_id').value : '');
                         }
-                        postCode(form);
+                        postCode(form, btn); // Pass button reference for countdown
                         try{ container.remove(); } catch(e){ container.style.display='none'; }
                     });
                 } else {
                     alert('当前验证码组件不支持回调，请刷新页面');
                 }
             });
+        } else if(provider === 'local') {
+            // 如果是本地验证码，不应该到达这里，因为local_captcha_adapter.js会处理
+            // 但为了兼容性，我们也可以处理
+            alert('本地验证码需要先完成验证');
         } else {
             if(provider === 'turnstile'){
                 var sitekey = window.TURNSTILE_SITE_KEY || (document.getElementById('turnstile_site_key') && document.getElementById('turnstile_site_key').value);
@@ -83,14 +135,14 @@
                     window.executeTurnstile(sitekey, function(err, token){
                         if(err){ alert('Turnstile 验证失败'); return; }
                         var fd = new FormData(); fd.append('email', email); fd.append('cf-turnstile-response', token);
-                        postCode(fd);
+                        postCode(fd, btn); // Pass button reference for countdown
                     });
                 } else {
                     alert('Turnstile adapter 未加载');
                 }
             } else {
                 var fd = new FormData(); fd.append('email', email);
-                postCode(fd);
+                postCode(fd, btn); // Pass button reference for countdown
             }
         }
     });

@@ -18,4 +18,9 @@ urlpatterns = [
     path('email/send-code/', views.send_register_email_code, name='send_register_email_code'),
     path('forgot-password/', views.ForgotPasswordView.as_view(), name='forgot_password'),
     path('email/send-forgot-password-code/', views.send_forgot_password_email_code, name='send_forgot_password_email_code'),
+    # Local Captcha endpoints
+    path('captcha/generate/', views.local_captcha_generate, name='local_captcha_generate'),
+    path('captcha/image/<str:captcha_id>/', views.local_captcha_image, name='local_captcha_image'),
+    path('captcha/verify/', views.local_captcha_verify, name='local_captcha_verify'),
+    path('api/profile/avatar/', views.upload_avatar, name='upload_avatar'),
 ]

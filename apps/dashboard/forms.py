@@ -96,6 +96,8 @@ class SystemConfigForm(forms.ModelForm):
             'captcha_id',
             'captcha_key',
             'captcha_provider',
+            'email_suffix_mode',
+            'email_suffix_list',
         ]
         widgets = {
             'site_name': forms.TextInput(attrs={
@@ -140,6 +142,14 @@ class SystemConfigForm(forms.ModelForm):
             }),
             'captcha_provider': forms.Select(attrs={
                 'class': 'form-select'
+            }),
+            'email_suffix_mode': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'email_suffix_list': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 5,
+                'placeholder': '每行一个邮箱后缀，例如：\n@example.com\n@gmail.com\n@company.com'
             }),
         }
 

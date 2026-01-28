@@ -75,6 +75,48 @@ class UserRegistrationForm(UserCreationForm):
             # 在非DEMO模式下，保持原有验证逻辑
             return password2
 
+    def clean_email(self):
+        """验证邮箱后缀"""
+        email = self.cleaned_data.get('email')
+        
+        # 获取系统配置
+        from apps.dashboard.models import SystemConfig
+        config = SystemConfig.get_config()
+        
+        # 邮箱后缀验证逻辑
+        email_suffix = '@' + email.split('@')[1] if '@' in email else ''
+        
+        if config.email_suffix_mode == 'whitelist':
+            # 白名单模式：只有在列表中的后缀才允许
+            allowed_suffixes = []
+            if config.email_suffix_list:
+                allowed_suffixes = [suffix.strip() for suffix in config.email_suffix_list.strip().split('\n') if suffix.strip()]
+            if email_suffix not in allowed_suffixes:
+                raise forms.ValidationError(f'邮箱后缀 {email_suffix} 不在允许的列表中')
+        elif config.email_suffix_mode == 'blacklist':
+            # 黑名单模式：在列表中的后缀不允许
+            blocked_suffixes = []
+            if config.email_suffix_list:
+                blocked_suffixes = [suffix.strip() for suffix in config.email_suffix_list.strip().split('\n') if suffix.strip()]
+            if email_suffix in blocked_suffixes:
+                raise forms.ValidationError(f'邮箱后缀 {email_suffix} 已被禁止使用')
+        
+        # 验证邮箱格式
+        from django.core.validators import validate_email
+        from django.core.exceptions import ValidationError
+        try:
+            validate_email(email)
+        except ValidationError:
+            raise forms.ValidationError('请输入有效的邮箱地址')
+        
+        # 检查邮箱是否已存在
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError('该邮箱已被注册')
+        
+        return email
+
     def clean_agree_terms(self):
         """验证用户是否同意条款"""
         agree_terms = self.cleaned_data.get('agree_terms')

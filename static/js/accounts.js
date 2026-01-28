@@ -371,6 +371,70 @@ const Profile = {
         try {
             Utils.showLoading();
 
+            const response = await fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                Utils.showAlert('密码修改成功，请重新登录', 'success');
+                setTimeout(() => {
+                    window.location.href = '/accounts/login/';
+                }, 2000);
+            } else {
+                Utils.showAlert('密码修改失败，请稍后重试', 'danger');
+            }
+        } catch (error) {
+            console.error('Password change error:', error);
+            Utils.showAlert('密码修改失败，请稍后重试', 'danger');
+        } finally {
+            Utils.hideLoading();
+        }
+    },
+
+    /**
+     * 处理通知设置更新
+     */
+    async handleNotificationUpdate(event) {
+        event.preventDefault();
+
+        const form = event.target;
+        const formData = new FormData(form);
+
+        try {
+            Utils.showLoading();
+
+            const response = await fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                Utils.showAlert('通知设置更新成功', 'success');
+            } else {
+                Utils.showAlert('设置更新失败，请稍后重试', 'danger');
+            }
+        } catch (error) {
+            console.error('Notification update error:', error);
+            Utils.showAlert('设置更新失败，请稍后重试', 'danger');
+        } finally {
+            Utils.hideLoading();
+        }
+    }
+};
+
+// 初始化
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        Profile.init();
+    });
+} else {
+    Profile.init();
+}
+
+        try {
+            Utils.showLoading();
+
             const response = await API.post('/accounts/api/password/change/', data);
 
             if (response.status === 'success') {
@@ -398,14 +462,25 @@ const Profile = {
         if (!file) return;
 
         // 验证文件类型
-        if (!file.type.startsWith('image/')) {
-            Utils.showAlert('请选择图片文件', 'danger');
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+        if (!allowedTypes.includes(file.type.toLowerCase())) {
+            Utils.showAlert('请选择JPG、PNG或GIF格式的图片文件', 'danger');
             return;
         }
 
-        // 验证文件大小（限制为2MB）
-        if (file.size > 2 * 1024 * 1024) {
-            Utils.showAlert('图片大小不能超过2MB', 'danger');
+        // 验证文件大小（限制为5MB，与后端保持一致）
+        if (file.size > 5 * 1024 * 1024) {
+            Utils.showAlert('图片大小不能超过5MB', 'danger');
+            return;
+        }
+
+        // 验证文件扩展名
+        const fileName = file.name.toLowerCase();
+        const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif'];
+        const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+        
+        if (!hasValidExtension) {
+            Utils.showAlert('请选择JPG、PNG或GIF格式的图片文件', 'danger');
             return;
         }
 
@@ -429,7 +504,8 @@ const Profile = {
                     // 更新头像显示
                     const avatarImg = document.getElementById('profile-avatar');
                     if (avatarImg) {
-                        avatarImg.src = data.avatar_url;
+                        // 添加时间戳防止缓存
+                        avatarImg.src = data.avatar_url + '?t=' + new Date().getTime();
                     }
                     Utils.showAlert('头像上传成功', 'success');
                 } else {

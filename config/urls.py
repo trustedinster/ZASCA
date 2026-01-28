@@ -2,6 +2,7 @@
 ZASCA URL Configuration
 """
 from django.contrib import admin
+from django.contrib.staticfiles.views import serve
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
@@ -18,6 +19,8 @@ urlpatterns = [
     path('', include('apps.dashboard.urls')),
     # 处理404页面
     path('404/', TemplateView.as_view(template_name='errors/404.html'), name='404'),
+    path('favicon.ico', views.favicon_view),
+    path('favicon.png', views.favicon_png_view),
 ]
 
 # 开发环境下提供媒体文件服务

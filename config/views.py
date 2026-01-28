@@ -4,6 +4,9 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.http import QueryDict
+from django.views.static import serve
+from django.conf import settings
+import os
 
 
 def custom_404(request, exception):
@@ -46,3 +49,25 @@ def extend_admin_login(request):
         target_url += f'?next={next_url}'
     
     return redirect(target_url)
+
+
+def favicon_view(request):
+    """
+    提供 favicon 文件
+    """
+    favicon_path = os.path.join(settings.STATIC_ROOT or settings.STATICFILES_DIRS[0], 'img', 'favicon.ico')
+    if not os.path.exists(favicon_path):
+        favicon_path = os.path.join(settings.STATICFILES_DIRS[0], 'img', 'favicon.ico')
+    
+    return serve(request, os.path.basename(favicon_path), document_root=os.path.dirname(favicon_path))
+
+
+def favicon_png_view(request):
+    """
+    提供 favicon.png 文件
+    """
+    favicon_path = os.path.join(settings.STATIC_ROOT or settings.STATICFILES_DIRS[0], 'img', 'favicon.png')
+    if not os.path.exists(favicon_path):
+        favicon_path = os.path.join(settings.STATICFILES_DIRS[0], 'img', 'favicon.png')
+    
+    return serve(request, os.path.basename(favicon_path), document_root=os.path.dirname(favicon_path))
