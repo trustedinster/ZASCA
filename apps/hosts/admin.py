@@ -49,7 +49,7 @@ class HostAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('基本信息', {
-            'fields': ('name', 'hostname', 'port', 'rdp_port', 'use_ssl')
+            'fields': ('name', 'hostname', 'connection_type', 'port', 'rdp_port', 'use_ssl')
         }),
         ('认证信息', {
             'fields': ('username', 'password'),

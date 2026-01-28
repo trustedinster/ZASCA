@@ -1,10 +1,6 @@
-"""
-主机模型定义
-"""
 from django.db import models
 from django.conf import settings
-from django.core.exceptions import ValidationError
-from django.contrib.auth.hashers import make_password, check_password
+import os
 
 
 class Host(models.Model):
@@ -18,6 +14,12 @@ class Host(models.Model):
         ('desktop', '台式机'),
     ]
     
+    CONNECTION_TYPE_CHOICES = [
+        ('winrm', 'WinRM'),
+        ('ssh', 'SSH'),
+        ('localwinserver', '本地WinServer'),
+    ]
+    
     STATUS_CHOICES = [
         ('online', '在线'),
         ('offline', '离线'),
@@ -26,7 +28,8 @@ class Host(models.Model):
 
     name = models.CharField(max_length=100, verbose_name='主机名称')
     hostname = models.CharField(max_length=255, verbose_name='主机地址')
-    port = models.IntegerField(default=5985, verbose_name='WinRM端口')
+    connection_type = models.CharField(max_length=20, choices=CONNECTION_TYPE_CHOICES, default='winrm', verbose_name='连接类型')
+    port = models.IntegerField(default=5985, verbose_name='连接端口')
     rdp_port = models.IntegerField(default=3389, verbose_name='RDP端口')
     use_ssl = models.BooleanField(default=False, verbose_name='使用SSL')
     username = models.CharField(max_length=100, verbose_name='用户名')
@@ -80,30 +83,52 @@ class Host(models.Model):
         # 测试主机连接状态
         self.test_connection()
     
+    def get_connection_client(self):
+        """
+        根据连接类型获取相应的连接客户端
+        """
+        if self.connection_type == 'winrm':
+            from utils.winrm_client import WinrmClient
+            return WinrmClient(
+                hostname=self.hostname,
+                username=self.username,
+                password=self.password,
+                port=self.port,
+                use_ssl=self.use_ssl
+            )
+        elif self.connection_type == 'localwinserver':
+            # 对于本地WinServer，使用专门的本地客户端
+            from utils.local_winserver_client import LocalWinServerClient
+            return LocalWinServerClient(
+                username=self.username,
+                password=self.password
+            )
+        elif self.connection_type == 'ssh':
+            # SSH连接将在后续实现
+            raise NotImplementedError("SSH连接类型尚未实现")
+        else:
+            raise ValueError(f"不支持的连接类型: {self.connection_type}")
+
     def test_connection(self):
         """
         测试主机连接状态
         """
         # 如果是DEMO模式，所有主机都显示为在线且不执行实际连接测试
-        import os
         if os.environ.get('ZASCA_DEMO', '').lower() == '1':
             self.status = 'online'
             super().save(update_fields=['status', 'updated_at'])
             return
         
-        from utils.winrm_client import WinrmClient
         try:
-            # 创建WinRM客户端测试连接
-            client = WinrmClient(
-                hostname=self.hostname,
-                username=self.username,
-                password=self.password,  # 使用属性访问解密后的密码
-                port=self.port,
-                use_ssl=self.use_ssl
-            )
+            # 根据连接类型获取相应的客户端
+            client = self.get_connection_client()
             
             # 尝试执行一个简单命令来测试连接
-            result = client.execute_command('whoami')
+            if self.connection_type == 'localwinserver':
+                # 本地服务器执行系统信息查询命令
+                result = client.execute_command('echo Connection Test OK')
+            else:
+                result = client.execute_command('whoami')
             
             # 根据执行结果更新主机状态
             if result.success:
@@ -112,30 +137,32 @@ class Host(models.Model):
                 self.status = 'error'
                 
         except Exception as e:
-            # 连接失败，设置状态为离线
-            self.status = 'offline'
+            # 连接失败，设置状态为错误
+            self.status = 'error'
+            # 记录错误日志
             import logging
             logger = logging.getLogger("zasca")
-            logger.error(f"主机连接测试失败 {self.hostname}: {str(e)}")
+            logger.error(f"测试主机连接失败: {self.name}, 错误: {str(e)}")
         
-        # 保存更新后的状态
+        # 更新状态和更新时间
         super().save(update_fields=['status', 'updated_at'])
 
 
 class HostGroup(models.Model):
     """
     主机组模型
+    用于将多个主机分组管理
     """
     name = models.CharField(max_length=100, verbose_name='组名称')
     description = models.TextField(blank=True, verbose_name='描述')
     hosts = models.ManyToManyField(Host, blank=True, verbose_name='主机')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
-    
+
     class Meta:
         verbose_name = '主机组'
         verbose_name_plural = '主机组'
         db_table = 'hosts_hostgroup'
-    
+
     def __str__(self):
         return self.name
