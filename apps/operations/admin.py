@@ -91,7 +91,7 @@ class ProductAdmin(admin.ModelAdmin):
         if list_display_links is None:
             list_display_links = []
         list_filter = self.get_list_filter(request)
-        search_fields = self.get_search_fields()
+        search_fields = self.get_search_fields(request)
         list_select_related = self.get_list_select_related(request)
 
         changelist = ChangeList(
