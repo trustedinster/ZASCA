@@ -81,6 +81,14 @@ class Host(models.Model):
         super().save(*args, **kwargs)
         
         # 测试主机连接状态
+        # 避免在某些操作（如列表页加载）时触发连接测试
+        # 只在特定情况下测试连接
+        import threading
+        # 检查是否在特殊操作中（如列表页加载）
+        # 这里我们使用一个简单的标识来控制是否执行连接测试
+        if getattr(self, '_skip_connection_test', False):
+            return
+        
         self.test_connection()
     
     def get_connection_client(self):
