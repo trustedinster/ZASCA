@@ -65,7 +65,7 @@
                     <td>
                         {% if host.description %}
                             <div class="markdown-content">
-                                {{ host.description|markdown }}
+                                {{ host.description|markdown_filter }}
                             </div>
                         {% else %}
                             <span class="text-muted">-</span>
