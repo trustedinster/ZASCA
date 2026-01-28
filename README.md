@@ -50,7 +50,7 @@ ZASCA（Zero Agent Share Computer Administrator）是一个不需要在共享计
 
 1. 克隆仓库
 ```bash
-git clone https://github.com/yourusername/ZASCA.git
+git clone https://github.com/trustedinster/ZASCA.git
 cd ZASCA
 ```
 
