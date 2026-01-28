@@ -41,6 +41,12 @@ class SystemTaskAdmin(admin.ModelAdmin):
         }),
     )
 
+    def changelist_view(self, request, extra_context=None):
+        """
+        修复模板上下文处理问题
+        """
+        return super().changelist_view(request, extra_context)
+
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
@@ -70,6 +76,46 @@ class ProductAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+    def get_changelist_instance(self, request):
+        """
+        修复Django Admin模板上下文处理问题
+        """
+        from django.contrib.admin.views.main import ChangeList
+        from functools import wraps
+        
+        # 获取ChangeList实例
+        list_display = self.get_list_display(request)
+        list_display_links = self.get_list_display_links(request, list_display)
+        # Check if list_display_links is None and handle accordingly
+        if list_display_links is None:
+            list_display_links = []
+        list_filter = self.get_list_filter(request)
+        search_fields = self.get_search_fields()
+        list_select_related = self.get_list_select_related(request)
+
+        changelist = ChangeList(
+            request,
+            self.model,
+            list_display,
+            list_display_links,
+            list_filter,
+            self.date_hierarchy,
+            search_fields,
+            list_select_related,
+            self.list_per_page,
+            self.list_max_show_all,
+            self.list_editable,
+            self,
+        )
+        
+        return changelist
+
+    def changelist_view(self, request, extra_context=None):
+        """
+        修复模板上下文处理问题
+        """
+        return super().changelist_view(request, extra_context)
 
 
 @admin.register(AccountOpeningRequest)
@@ -116,6 +162,12 @@ class AccountOpeningRequestAdmin(admin.ModelAdmin):
         if db_field.name == "target_product":
             kwargs["queryset"] = Product.objects.filter(is_available=True)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def changelist_view(self, request, extra_context=None):
+        """
+        修复模板上下文处理问题
+        """
+        return super().changelist_view(request, extra_context)
 
     def save_model(self, request, obj, form, change):
         """
@@ -214,3 +266,9 @@ class CloudComputerUserAdmin(admin.ModelAdmin):
         else:
             # 新建或没有is_admin字段变更的情况
             super().save_model(request, obj, form, change)
+
+    def changelist_view(self, request, extra_context=None):
+        """
+        修复模板上下文处理问题
+        """
+        return super().changelist_view(request, extra_context)
