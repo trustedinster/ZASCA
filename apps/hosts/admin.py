@@ -41,8 +41,8 @@ class HostAdmin(admin.ModelAdmin):
     """主机管理后台"""
 
     form = HostAdminForm
-    list_display = ('name', 'hostname', 'port', 'username', 'host_type', 'status', 'created_at')
-    list_filter = ('status', 'host_type', 'created_at', 'use_ssl')
+    list_display = ('name', 'hostname', 'connection_type', 'port', 'username', 'host_type', 'status', 'created_at')
+    list_filter = ('connection_type', 'status', 'host_type', 'created_at', 'use_ssl')
     search_fields = ('name', 'hostname', 'username')
     ordering = ('-created_at',)
     readonly_fields = ('created_at', 'updated_at')
