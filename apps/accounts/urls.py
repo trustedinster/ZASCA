@@ -23,4 +23,6 @@ urlpatterns = [
     path('captcha/image/<str:captcha_id>/', views.local_captcha_image, name='local_captcha_image'),
     path('captcha/verify/', views.local_captcha_verify, name='local_captcha_verify'),
     path('api/profile/avatar/', views.upload_avatar, name='upload_avatar'),
+    # API endpoints
+    path('api/password/change/', views.password_change_api, name='password_change_api'),
 ]

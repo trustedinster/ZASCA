@@ -142,6 +142,16 @@
 
                 <!-- 安全设置选项卡 -->
                 <div class="tab-content" id="security-content">
+                    {% if is_demo_mode %}
+                    <div class="form-section">
+                        <h3 class="form-section-title">安全设置</h3>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>DEMO模式提醒</strong>
+                            <p>当前系统处于DEMO演示模式，为保证演示环境稳定，密码修改功能已被禁用。</p>
+                        </div>
+                    </div>
+                    {% else %}
                     <form method="post" 
                           action="{% url 'accounts:profile' %}" 
                           class="profile-form needs-validation" 
@@ -181,6 +191,7 @@
 
                         <button type="submit" class="btn btn-primary">更新密码</button>
                     </form>
+                    {% endif %}
                 </div>
 
                 <!-- 通知设置选项卡 -->

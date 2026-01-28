@@ -575,18 +575,15 @@ class AccountOpeningRequest(models.Model):
                 logger = logging.getLogger(__name__)
                 logger.info(f'DEMO模式: 模拟创建用户 {self.username} 在产品 {product.display_name}')
                 
-                # 使用用户指定的密码，如果没有指定则生成简单密码
-                if self.requested_password:
-                    password = self.requested_password
-                else:
-                    password = 'DemoPass123!'  # 在DEMO模式下使用简单密码
+                # 生成系统密码（在DEMO模式下使用符合复杂度的密码）
+                password = CloudComputerUser.generate_complex_password()
                 
                 # 模拟成功创建用户
                 self.status = 'completed'
                 self.result_message = f"用户 {self.username} 已在DEMO模式下成功创建（模拟）"
                 self.save(update_fields=['status', 'result_message'])
                 
-                # 创建云电脑用户记录
+                # 创建云电脑用户记录，并存储初始密码
                 cloud_user, created = CloudComputerUser.objects.get_or_create(
                     username=self.username,
                     product=self.target_product,
@@ -594,7 +591,8 @@ class AccountOpeningRequest(models.Model):
                         'fullname': self.user_fullname,
                         'email': self.user_email,
                         'description': self.user_description,
-                        'created_from_request': self
+                        'created_from_request': self,
+                        'initial_password': password  # 存储生成的密码
                     }
                 )
                 
@@ -609,18 +607,16 @@ class AccountOpeningRequest(models.Model):
                 use_ssl=host.use_ssl
             )
             
-            # 使用用户指定的密码，如果没有指定则生成符合密码策略的随机密码
-            if self.requested_password:
-                password = self.requested_password
-            else:
-                # 使用WinRM客户端生成符合密码策略的强密码
-                password = client.generate_strong_password()
+            # 系统生成强密码
+            password = CloudComputerUser.generate_complex_password()
             
             # 创建用户命令 (PowerShell)
             create_user_cmd = f'''
-            $Password = ConvertTo-SecureString "{password}" -AsPlainText -Force
-            New-LocalUser -Name "{self.username}" -Password $Password -FullName "{self.user_fullname}" -Description "{self.user_description}"
-            Add-LocalGroupMember -Group "Users" -Member "{self.username}"
+            $password = ConvertTo-SecureString "{password}" -AsPlainText -Force
+            $user = New-LocalUser -Name "{self.username}" -Password $password -Description "{self.user_description}" -ErrorAction Stop
+            
+            # 设置"下次登录必须修改密码"
+            net user "{self.username}" /logonpasswordchg:YES
             '''
             
             result = client.execute_powershell(create_user_cmd)
@@ -628,19 +624,20 @@ class AccountOpeningRequest(models.Model):
             if result.status_code == 0:
                 # 成功创建用户
                 self.status = 'completed'
-                # 出于安全考虑，不存储用户密码明文
+                # 出于安全考虑，不存储用户密码明文到申请记录
                 self.result_message = f"用户 {self.username} 已成功创建"
                 self.save(update_fields=['status', 'result_message'])
                 
-                # 创建云电脑用户记录
+                # 创建云电脑用户记录，并存储初始密码
                 cloud_user, created = CloudComputerUser.objects.get_or_create(
                     username=self.username,
-                    product=self.target_product,  # 修改为关联产品
+                    product=self.target_product,
                     defaults={
                         'fullname': self.user_fullname,
                         'email': self.user_email,
                         'description': self.user_description,
-                        'created_from_request': self
+                        'created_from_request': self,
+                        'initial_password': password  # 存储生成的密码
                     }
                 )
             else:
@@ -726,6 +723,25 @@ class CloudComputerUser(models.Model):
         blank=True,
         verbose_name=_('来源申请'),
         help_text=_('创建此用户的开户申请')
+    )
+    
+    # 密码信息（临时存储）
+    initial_password = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name=_('初始密码'),
+        help_text=_('用户的初始密码，查看后将被清除')
+    )
+    password_viewed = models.BooleanField(
+        default=False,
+        verbose_name=_('密码已查看'),
+        help_text=_('指示初始密码是否已被查看')
+    )
+    password_viewed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_('密码查看时间'),
+        help_text=_('初始密码被查看的时间')
     )
 
     # 时间信息
@@ -926,3 +942,116 @@ class CloudComputerUser(models.Model):
                 print(f"Failed to delete user {self.username} on host {host.name}: {error_msg}")
         except Exception as e:
             print(f"Error deleting user {self.username} on host {host.name}: {str(e)}")
+
+    def get_and_burn_password(self):
+        """
+        获取并销毁密码 - 实现阅后即焚功能
+        """
+        import secrets
+        import string
+        from django.utils import timezone
+        
+        # 如果密码已经被查看过，生成新密码并重置状态
+        if self.password_viewed:
+            # 生成新的复杂密码
+            new_password = CloudComputerUser.generate_complex_password()
+            
+            # 重置密码状态并设置新密码
+            self.password_viewed = False
+            self.password_viewed_at = None
+            self.initial_password = new_password
+            self.save(update_fields=['password_viewed', 'password_viewed_at', 'initial_password'])
+            
+            # 通过远程命令重置Windows用户密码并设置下次登录必须修改
+            self.reset_windows_password(new_password)
+            
+            return new_password
+        
+        # 如果没有初始密码，生成一个复杂的密码
+        if not self.initial_password:
+            alphabet = string.ascii_letters + string.digits + '!@#$%^&*()_+-=[]{}|;:,.<>?'
+            password = ''.join(secrets.choice(alphabet) for i in range(16))
+            self.initial_password = password
+        
+        # 获取当前密码
+        password = self.initial_password
+        
+        # 标记密码已被查看并清空存储的密码
+        self.password_viewed = True
+        self.password_viewed_at = timezone.now()
+        self.initial_password = ''  # 清空密码
+        self.save(update_fields=['password_viewed', 'password_viewed_at', 'initial_password'])
+        
+        return password
+
+    def reset_windows_password(self, new_password):
+        """
+        重置Windows用户密码并设置下次登录必须修改
+        """
+        import os
+        if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+            # 在DEMO模式下，不执行实际操作
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f'DEMO模式: 模拟重置用户 {self.username} 的密码')
+            return
+        
+        try:
+            from utils.winrm_client import WinrmClient
+            
+            # 连接到产品关联的主机
+            product = self.product
+            host = product.host
+            client = WinrmClient(
+                hostname=host.hostname,
+                port=host.port,
+                username=host.username,
+                password=host.password,
+                use_ssl=host.use_ssl
+            )
+            
+            # 重置密码并设置下次登录必须修改的PowerShell命令
+            reset_password_cmd = f'''
+            $password = ConvertTo-SecureString "{new_password}" -AsPlainText -Force
+            Set-LocalUser -Name "{self.username}" -Password $password
+            # 设置"下次登录必须修改密码"
+            net user "{self.username}" /logonpasswordchg:YES
+            Write-Output "Password for user {self.username} has been reset and set to change on next login"
+            '''
+            
+            result = client.execute_powershell(reset_password_cmd)
+            if result.status_code != 0:
+                error_msg = result.std_err if result.std_err else 'Unknown error'
+                print(f"Failed to reset password for user {self.username} on host {host.name}: {error_msg}")
+        except Exception as e:
+            print(f"Error resetting password for user {self.username} on host {host.name}: {str(e)}")
+
+    @staticmethod
+    def generate_complex_password(length=16):
+        """
+        生成复杂密码
+        
+        Args:
+            length: 密码长度，默认为16位
+        
+        Returns:
+            生成的复杂密码
+        """
+        import secrets
+        import string
+        
+        # 包含大写字母、小写字母、数字和特殊字符
+        alphabet = string.ascii_letters + string.digits + '!@#$%^&*()_+-=[]{}|;:,.<>?'
+        
+        # 确保至少包含每种类型的字符
+        while True:
+            password = ''.join(secrets.choice(alphabet) for i in range(length))
+            
+            # 检查是否包含所需类型的字符
+            has_upper = any(c.isupper() for c in password)
+            has_lower = any(c.islower() for c in password)
+            has_digit = any(c.isdigit() for c in password)
+            has_special = any(c in '!@#$%^&*()_+-=[]{}|;:,.<>?' for c in password)
+            
+            if has_upper and has_lower and has_digit and has_special:
+                return password

@@ -14,6 +14,7 @@ from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.utils.decorators import method_decorator
 from django.conf import settings
 from django.core.cache import cache
+import json
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -278,6 +279,48 @@ class ProfileView(UpdateView):
         )
         return super().form_invalid(form)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['is_demo_mode'] = getattr(self.request, 'is_demo_mode', False)
+        return context
+
+    def post(self, request, *args, **kwargs):
+        """处理POST请求，包括资料更新和密码修改"""
+        # 检查是否是密码修改请求
+        current_password = request.POST.get('current_password')
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+        
+        # 检查是否是密码修改请求
+        if current_password or new_password or confirm_password:
+            # 检查是否在DEMO模式下
+            if hasattr(request, 'is_demo_mode') and request.is_demo_mode:
+                from django.contrib import messages
+                messages.error(request, 'DEMO模式下不允许修改密码')
+                return super().get(request, *args, **kwargs)  # 返回GET请求以显示表单和错误消息
+            
+            # 验证密码字段
+            if not current_password:
+                return JsonResponse({'status': 'error', 'message': '请输入当前密码'})
+            if not new_password:
+                return JsonResponse({'status': 'error', 'message': '请输入新密码'})
+            if new_password != confirm_password:
+                return JsonResponse({'status': 'error', 'message': '两次输入的新密码不一致'})
+            
+            # 验证当前密码是否正确
+            user = request.user
+            if not user.check_password(current_password):
+                return JsonResponse({'status': 'error', 'message': '当前密码错误'})
+            
+            # 设置新密码
+            user.set_password(new_password)
+            user.save()
+            
+            return JsonResponse({'status': 'success', 'message': '密码修改成功，请重新登录'})
+        
+        # 否则是资料更新请求
+        return super().post(request, *args, **kwargs)
+
 
 @login_required
 def logout_view(request):
@@ -315,6 +358,38 @@ def geetest_validate(request):
             return JsonResponse({'result': 'fail', 'detail': resp}, status=400)
 
     return JsonResponse({'result': 'fail', 'detail': '参数不完整'}, status=400)
+
+
+@csrf_exempt
+@login_required
+@require_http_methods(["POST"])
+def password_change_api(request):
+    """密码更改API端点"""
+    if hasattr(request, 'is_demo_mode') and request.is_demo_mode:
+        return JsonResponse({'status': 'error', 'message': 'DEMO模式下不允许修改密码'})
+    
+    current_password = request.POST.get('current_password')
+    new_password = request.POST.get('new_password')
+    confirm_password = request.POST.get('confirm_password')
+    
+    # 验证密码字段
+    if not current_password:
+        return JsonResponse({'status': 'error', 'message': '请输入当前密码'})
+    if not new_password:
+        return JsonResponse({'status': 'error', 'message': '请输入新密码'})
+    if new_password != confirm_password:
+        return JsonResponse({'status': 'error', 'message': '两次输入的新密码不一致'})
+    
+    # 验证当前密码是否正确
+    user = request.user
+    if not user.check_password(current_password):
+        return JsonResponse({'status': 'error', 'message': '当前密码错误'})
+    
+    # 设置新密码
+    user.set_password(new_password)
+    user.save()
+    
+    return JsonResponse({'status': 'success', 'message': '密码修改成功，请重新登录'})
 
 
 def _gen_code(length=6):

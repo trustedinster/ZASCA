@@ -45,6 +45,39 @@ class DemoModeMiddleware:
             if request.method == 'POST':
                 # 这里我们模拟一个成功响应
                 return JsonResponse({'status': 'ok'})
+        
+        # 检查是否是密码修改相关的视图
+        if (hasattr(view_func, '__name__') and 
+            ('password' in view_func.__name__.lower() or 'change' in view_func.__name__.lower()) and
+            any(pwd_keyword in request.path.lower() for pwd_keyword in ['password', 'pwd'])):
+            # 在DEMO模式下，不允许修改密码
+            if request.method == 'POST':
+                from django.contrib import messages
+                messages.error(request, 'DEMO模式下不允许修改密码')
+                # 重定向到profile页面或返回错误
+                from django.shortcuts import redirect
+                referer = request.META.get('HTTP_REFERER', '/')
+                return redirect(referer)
+        
+        # 检查Django Admin密码更改URL
+        if ('/admin/password_change/' in request.path or 
+            ('/admin/auth/user/' in request.path and 'password' in request.path)):
+            if request.method == 'POST':
+                from django.contrib import messages
+                messages.error(request, 'DEMO模式下不允许修改密码')
+                from django.shortcuts import redirect
+                referer = request.META.get('HTTP_REFERER', '/admin/')
+                return redirect(referer)
+        
+        # 检查所有可能的密码更改路径
+        if ('password' in request.path.lower() and 
+            ('change' in request.path.lower() or 'update' in request.path.lower())):
+            if request.method == 'POST':
+                from django.contrib import messages
+                messages.error(request, 'DEMO模式下不允许修改密码')
+                from django.shortcuts import redirect
+                referer = request.META.get('HTTP_REFERER', '/')
+                return redirect(referer)
 
         return None
 

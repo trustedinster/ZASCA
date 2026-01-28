@@ -24,4 +24,9 @@ urlpatterns = [
     # 云电脑用户相关URL
     path('cloud-users/', views.CloudComputerUserListView.as_view(), name='cloud_user_list'),
     path('cloud-users/<int:pk>/toggle-status/', views.toggle_cloud_user_status, name='cloud_user_toggle_status'),
+    
+    # 我的云电脑相关URL
+    path('my-cloud-computers/', views.MyCloudComputersView.as_view(), name='my_cloud_computers'),
+    path('my-cloud-computers/<int:pk>/', views.my_cloud_computer_detail, name='my_cloud_computer_detail'),
+    path('my-cloud-computers/<int:pk>/get-password/', views.get_password_and_burn, name='get_password_and_burn'),
 ]

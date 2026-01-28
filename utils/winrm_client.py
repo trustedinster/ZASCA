@@ -21,6 +21,7 @@ import logging
 from dataclasses import dataclass
 from typing import Optional, Dict, Any
 from winrm import Session
+from winrm.exceptions import InvalidCredentialsError
 from django.conf import settings
 import socket
 import time
@@ -583,3 +584,52 @@ class WinrmClient:
         except Exception as e:
             logger.error(f"撤销用户{username}的管理员权限失败: 错误: {str(e)}")
             return False
+
+    def enable_local_account_token_filter_policy(self) -> WinrmResult:
+        """
+        在远程Windows机器上启用LocalAccountTokenFilterPolicy注册表项
+        这个设置允许本地管理员账户通过网络访问WinRM服务
+        
+        返回:
+            WinrmResult对象，包含执行结果
+        """
+        script = '''
+        # 检查是否已经设置了LocalAccountTokenFilterPolicy
+        $regPath = "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System"
+        $regName = "LocalAccountTokenFilterPolicy"
+        
+        # 尝试获取现有值
+        $currentValue = $null
+        try {
+            $currentValue = Get-ItemProperty -Path $regPath -Name $regName -ErrorAction SilentlyContinue
+        } catch {
+            # 如果不存在，则继续创建
+        }
+        
+        if ($currentValue -eq $null) {
+            # 设置注册表项以允许本地账户进行远程管理
+            Set-ItemProperty -Path $regPath -Name $regName -Value 1 -Type DWORD -Force
+            Write-Output "LocalAccountTokenFilterPolicy已设置为1，允许本地账户远程访问。"
+        } else {
+            if ($currentValue.$regName -eq 1) {
+                Write-Output "LocalAccountTokenFilterPolicy已经设置为1，无需更改。"
+            } else {
+                Set-ItemProperty -Path $regPath -Name $regName -Value 1 -Type DWORD -Force
+                Write-Output "LocalAccountTokenFilterPolicy已更新为1，允许本地账户远程访问。"
+            }
+        }
+        
+        # 确认值已经被设置
+        $finalValue = Get-ItemProperty -Path $regPath -Name $regName -ErrorAction Stop
+        Write-Output "当前LocalAccountTokenFilterPolicy值: $($finalValue.$regName)"
+        '''
+
+        logger.info("尝试启用LocalAccountTokenFilterPolicy以允许本地账户WinRM访问")
+        result = self.execute_powershell(script)
+
+        if result.success:
+            logger.info("LocalAccountTokenFilterPolicy设置成功")
+        else:
+            logger.error(f"设置LocalAccountTokenFilterPolicy失败: 错误: {result.std_err}")
+
+        return result

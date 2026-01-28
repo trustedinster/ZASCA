@@ -18,8 +18,18 @@ DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 # 在DEBUG模式下，允许所有主机
 if DEBUG:
     ALLOWED_HOSTS = ['*']
+    # CSRF Trusted Origins - 添加内网穿透域名
+    CSRF_TRUSTED_ORIGINS = [
+        'http://localhost',
+        'http://127.0.0.1',
+        'https://localhost',
+        'https://127.0.0.1',
+        'https://demo.supercmd.dpdns.org',  # 内网穿透域名
+        'https://zasca.supercmd.dpdns.org', 
+    ]
 else:
     ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+    CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://localhost,https://127.0.0.1').split(',')
 
 # Application definition
 

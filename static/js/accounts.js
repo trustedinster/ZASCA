@@ -138,7 +138,7 @@ const Auth = {
         const data = Object.fromEntries(formData.entries());
 
         // 验证密码
-        if (data.password !== data.confirm_password) {
+        if (data.password1 !== data.password2) {
             Utils.showAlert('两次输入的密码不一致', 'danger');
             return;
         }
@@ -371,22 +371,20 @@ const Profile = {
         try {
             Utils.showLoading();
 
-            const response = await fetch(window.location.href, {
-                method: 'POST',
-                body: formData
-            });
+            const response = await API.post('/accounts/api/password/change/', data);
 
-            if (response.ok) {
+            if (response.status === 'success') {
                 Utils.showAlert('密码修改成功，请重新登录', 'success');
+                form.reset();
                 setTimeout(() => {
                     window.location.href = '/accounts/login/';
-                }, 2000);
+                }, 1500);
             } else {
-                Utils.showAlert('密码修改失败，请稍后重试', 'danger');
+                Utils.showAlert(response.message || '修改失败，请稍后重试', 'danger');
             }
         } catch (error) {
             console.error('Password change error:', error);
-            Utils.showAlert('密码修改失败，请稍后重试', 'danger');
+            Utils.showAlert('修改失败，请稍后重试', 'danger');
         } finally {
             Utils.hideLoading();
         }
@@ -417,38 +415,6 @@ const Profile = {
         } catch (error) {
             console.error('Notification update error:', error);
             Utils.showAlert('设置更新失败，请稍后重试', 'danger');
-        } finally {
-            Utils.hideLoading();
-        }
-    }
-};
-
-// 初始化
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        Profile.init();
-    });
-} else {
-    Profile.init();
-}
-
-        try {
-            Utils.showLoading();
-
-            const response = await API.post('/accounts/api/password/change/', data);
-
-            if (response.status === 'success') {
-                Utils.showAlert('密码修改成功，请重新登录', 'success');
-                form.reset();
-                setTimeout(() => {
-                    window.location.href = '/accounts/logout/';
-                }, 1500);
-            } else {
-                Utils.showAlert(response.message || '修改失败，请稍后重试', 'danger');
-            }
-        } catch (error) {
-            console.error('Password change error:', error);
-            Utils.showAlert('修改失败，请稍后重试', 'danger');
         } finally {
             Utils.hideLoading();
         }

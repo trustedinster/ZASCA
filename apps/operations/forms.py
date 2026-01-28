@@ -81,16 +81,16 @@ class AccountOpeningRequestForm(forms.ModelForm):
         help_text=_('用于在系统中显示的用户名')
     )
     
-    # 重写requested_password字段
-    requested_password = forms.CharField(
-        required=False,
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
-            'placeholder': '留空则系统生成'
-        }),
-        label=_('指定密码'),
-        help_text=_('可选，如不填写则系统将自动生成安全密码')
-    )
+    # 移除密码字段，由系统自动生成
+    # requested_password = forms.CharField(
+    #     required=False,
+    #     widget=forms.PasswordInput(attrs={
+    #         'class': 'form-control',
+    #         'placeholder': '留空则系统生成'
+    #     }),
+    #     label=_('指定密码'),
+    #     help_text=_('可选，如不填写则系统将自动生成安全密码')
+    # )
     
     # 重写user_description字段以符合新需求
     user_description = forms.CharField(
@@ -115,7 +115,7 @@ class AccountOpeningRequestForm(forms.ModelForm):
         fields = [
             'contact_phone',
             'username', 'user_fullname', 'user_description',
-            'requested_password', 'target_product'
+            'target_product'
         ]
 
     def __init__(self, *args, **kwargs):

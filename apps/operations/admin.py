@@ -107,6 +107,8 @@ class ProductAdmin(admin.ModelAdmin):
             self.list_max_show_all,
             self.list_editable,
             self,
+            sortable_by=[],
+            search_help_text='',
         )
         
         return changelist

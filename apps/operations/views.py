@@ -15,8 +15,9 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 from datetime import timedelta
 from .models import AccountOpeningRequest, SystemTask, CloudComputerUser, Product
-from .forms import AccountOpeningRequestForm, AccountOpeningRequestFilterForm
+from .forms import AccountOpeningRequestForm, AccountOpeningRequestFilterForm, CloudComputerUserFilterForm
 from apps.hosts.models import Host
+from django.http import JsonResponse
 
 
 @method_decorator(login_required, name='dispatch')
@@ -154,7 +155,6 @@ class AccountOpeningRequestCreateView(CreateView):
             'username': form.cleaned_data['username'],
             'user_fullname': form.cleaned_data['user_fullname'],
             'user_description': form.cleaned_data['user_description'],
-            'requested_password': form.cleaned_data['requested_password'],
             'target_product_id': form.cleaned_data['target_product'].id,
             'target_product_name': form.cleaned_data['target_product'].display_name,
         }
@@ -202,7 +202,7 @@ def account_opening_submit(request):
     account_request.user_fullname = confirm_data['user_fullname']
     account_request.user_email = request.user.email  # 使用当前用户的邮箱
     account_request.user_description = confirm_data['user_description']
-    account_request.requested_password = confirm_data['requested_password']
+    # 移除了requested_password字段，由系统自动生成
     
     # 设置目标产品
     try:
@@ -370,13 +370,8 @@ def process_account_request(request, pk):
         import secrets
         import string
         
-        # 使用用户指定的密码，如果没有指定则生成随机密码
-        if account_request.requested_password:
-            password = account_request.requested_password
-        else:
-            # 生成随机密码
-            alphabet = string.ascii_letters + string.digits
-            password = ''.join(secrets.choice(alphabet) for i in range(12))
+        # 系统生成强密码
+        password = CloudComputerUser.generate_complex_password()
         
         # 连接到目标主机 - 使用target_product关联的主机
         host = account_request.target_product.host
@@ -390,16 +385,31 @@ def process_account_request(request, pk):
         
         # 创建用户命令 (PowerShell)
         create_user_cmd = f'''
-        $Password = ConvertTo-SecureString "{password}" -AsPlainText -Force
-        New-LocalUser -Name "{account_request.username}" -Password $Password -FullName "{account_request.user_fullname}" -Description "{account_request.user_description}"
-        Add-LocalGroupMember -Group "Users" -Member "{account_request.username}"
+        $password = ConvertTo-SecureString "{password}" -AsPlainText -Force
+        $user = New-LocalUser -Name "{account_request.username}" -Password $password -Description "{account_request.user_description}" -ErrorAction Stop
+        
+        # 设置"下次登录必须修改密码"
+        net user "{account_request.username}" /logonpasswordchg:YES
         '''
         
         result = client.execute_powershell(create_user_cmd)
         
         if result.status_code == 0:
             # 成功创建用户
-            account_request.complete(account_request.username, password, f"用户 {account_request.username} 已成功创建")
+            # 创建云电脑用户记录，并存储初始密码
+            cloud_user, created = CloudComputerUser.objects.get_or_create(
+                username=account_request.username,
+                product=account_request.target_product,
+                defaults={
+                    'fullname': account_request.user_fullname,
+                    'email': account_request.user_email,
+                    'description': account_request.user_description,
+                    'created_from_request': account_request,
+                    'initial_password': password  # 存储生成的密码
+                }
+            )
+            
+            account_request.complete(account_request.username, '', f"用户 {account_request.username} 已成功创建")
             messages.success(request, f"用户 {account_request.username} 已成功创建")
         else:
             # 创建用户失败
@@ -491,3 +501,95 @@ def toggle_cloud_user_status(request, pk):
         'cloud_user': cloud_user
     }
     return render(request, 'operations/cloud_user_toggle_status.html', context)
+
+
+@method_decorator(login_required, name='dispatch')
+class MyCloudComputersView(ListView):
+    """我的云电脑用户列表视图
+    
+    显示当前用户拥有的云电脑用户
+    """
+    
+    model = CloudComputerUser
+    template_name = 'operations/my_cloud_computers.html'
+    context_object_name = 'cloud_users'
+    paginate_by = 20
+
+    def get_queryset(self):
+        """获取查询集 - 只显示当前用户通过开户申请创建的云电脑用户"""
+        queryset = CloudComputerUser.objects.filter(
+            created_from_request__applicant=self.request.user
+        )
+
+        # 应用过滤条件
+        form = CloudComputerUserFilterForm(self.request.GET)
+        if form.is_valid():
+            status = form.cleaned_data.get('status')
+            if status:
+                queryset = queryset.filter(status=status)
+
+            search = form.cleaned_data.get('search')
+            if search:
+                queryset = queryset.filter(
+                    Q(username__icontains=search) |
+                    Q(fullname__icontains=search) |
+                    Q(email__icontains=search) |
+                    Q(product__display_name__icontains=search)
+                )
+
+        # 按产品筛选
+        product_filter = self.request.GET.get('product')
+        if product_filter:
+            queryset = queryset.filter(product__display_name=product_filter)
+
+        return queryset.select_related('product', 'created_from_request').order_by('-created_at')
+
+    def get_context_data(self, **kwargs):
+        """获取模板上下文数据"""
+        context = super().get_context_data(**kwargs)
+        context['filter_form'] = CloudComputerUserFilterForm(self.request.GET)
+        context['statuses'] = CloudComputerUser._meta.get_field('status').choices
+        
+        # 按产品分组云电脑用户
+        from collections import defaultdict
+        cloud_users_by_product = defaultdict(list)
+        for user in context['cloud_users']:
+            cloud_users_by_product[user.product.display_name].append(user)
+        context['cloud_users_by_product'] = dict(cloud_users_by_product)
+        
+        return context
+
+
+@login_required
+def my_cloud_computer_detail(request, pk):
+    """我的云电脑用户详情页面"""
+    cloud_user = get_object_or_404(CloudComputerUser, 
+                                  pk=pk, 
+                                  created_from_request__applicant=request.user)
+    
+    context = {
+        'cloud_user': cloud_user
+    }
+    return render(request, 'operations/my_cloud_computer_detail.html', context)
+
+
+@login_required
+@require_POST
+def get_password_and_burn(request, pk):
+    """获取密码并销毁 - 阅后即焚功能"""
+    try:
+        cloud_user = get_object_or_404(CloudComputerUser, 
+                                      pk=pk, 
+                                      created_from_request__applicant=request.user)
+        
+        password = cloud_user.get_and_burn_password()
+        
+        return JsonResponse({
+            'success': True,
+            'password': password
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })

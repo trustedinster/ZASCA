@@ -2,10 +2,11 @@
 用户管理表单
 """
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from .models import UserProfile
+from config.demo_middleware import is_demo_mode
 
 User = get_user_model()
 
@@ -148,10 +149,33 @@ class UserUpdateForm(forms.ModelForm):
                 'readonly': 'readonly'
             }),
             'email': forms.EmailInput(attrs={
-                'class': 'form-control'
+                'class': 'form-control',
+                'readonly': 'readonly'  # 邮箱不允许修改
             }),
         }
 
+
+class DemoPasswordChangeForm(PasswordChangeForm):
+    """DEMO模式下的密码更改表单 - 禁止更改密码"""
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        if is_demo_mode():
+            # 在DEMO模式下，禁用所有字段
+            for field_name in self.fields:
+                self.fields[field_name].widget.attrs['disabled'] = True
+            # 添加错误信息
+            self.fields['old_password'].help_text = "DEMO模式下不允许修改密码"
+    
+    def clean(self):
+        """验证表单"""
+        cleaned_data = super().clean()
+        
+        if is_demo_mode():
+            raise forms.ValidationError("DEMO模式下不允许修改密码")
+        
+        return cleaned_data
 
 class UserLoginForm(forms.Form):
     """用户登录表单"""
