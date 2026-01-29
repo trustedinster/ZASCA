@@ -187,9 +187,13 @@ def account_opening_confirm(request):
 @login_required
 def account_opening_submit(request):
     """提交开户申请"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     confirm_data = request.session.get('confirm_data')
     if not confirm_data:
         messages.error(request, '未找到待提交的申请信息。')
+        logger.warning(f'用户 {request.user.username} 尝试提交开户申请，但未找到确认数据')
         return redirect('operations:account_opening_create')
     
     # 创建开户申请对象
@@ -206,12 +210,16 @@ def account_opening_submit(request):
     try:
         target_product = Product.objects.get(id=confirm_data['target_product_id'])
         account_request.target_product = target_product
+        logger.info(f'用户 {request.user.username} 提交开户申请，目标产品: {target_product.name}, 用户名: {account_request.username}, 联系邮箱: {account_request.contact_email}')
     except Product.DoesNotExist:
         messages.error(request, '指定的目标产品不存在。')
+        logger.error(f'用户 {request.user.username} 尝试提交申请，但目标产品ID {confirm_data["target_product_id"]} 不存在')
         return redirect('operations:account_opening_create')
     
     try:
+        logger.info(f'准备保存开户申请，当前状态: {account_request.status}')
         account_request.save()
+        logger.info(f'开户申请已保存，ID: {account_request.id}, 最终状态: {account_request.status}')
         messages.success(request, '开户申请已成功提交，请等待审核。')
         
         # 清除session中的确认数据
@@ -219,6 +227,7 @@ def account_opening_submit(request):
         
         return redirect('operations:account_opening_list')
     except Exception as e:
+        logger.error(f'提交申请时发生错误: {str(e)}', exc_info=True)
         messages.error(request, f'提交申请时发生错误: {str(e)}')
         return redirect('operations:account_opening_create')
 
@@ -380,17 +389,9 @@ def process_account_request(request, pk):
             password=host.password,
             use_ssl=host.use_ssl
         )
+
         
-        # 创建用户命令 (PowerShell)
-        create_user_cmd = f'''
-        $password = ConvertTo-SecureString "{password}" -AsPlainText -Force
-        $user = New-LocalUser -Name "{account_request.username}" -Password $password -Description "{account_request.user_description}" -ErrorAction Stop
-        
-        # 设置"下次登录必须修改密码"
-        net user "{account_request.username}" /logonpasswordchg:YES
-        '''
-        
-        result = client.execute_powershell(create_user_cmd)
+        result = client.create_user(account_request.username, password)
         
         if result.status_code == 0:
             # 成功创建用户

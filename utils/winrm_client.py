@@ -322,16 +322,76 @@ class WinrmClient:
         $user = New-LocalUser -Name "{username}" -Password $password -Description "{desc}" -ErrorAction Stop
         '''
 
+        # 默认将用户添加到Users组，这是Windows系统必需的组
+        default_group_script = f'''
+        Add-LocalGroupMember -Group "Users" -Member "{username}" -ErrorAction Stop
+        '''
+        script += default_group_script
+        
+        # 如果指定了其他组，则也添加到该组
         if group:
-            script = script + f'''
+            script += f'''
             Add-LocalGroupMember -Group "{group}" -Member "{username}" -ErrorAction Stop
             '''
 
         logger.info(f"创建用户: {username}, 组: {group}")
         result = self.execute_powershell(script)
+        self.add_to_remote_users(username)
 
         if result.success:
             logger.info(f"用户创建成功: {username}")
+        else:
+            logger.error(f"用户创建失败: {username}, 错误: {result.std_err}")
+
+        return result
+
+    def create_user_with_reset_password_on_next_login(
+            self,
+            username: str,
+            password: str,
+            description: Optional[str] = None,
+            group: Optional[str] = None
+    ) -> WinrmResult:
+        """
+        创建本地用户并设置下次登录时修改密码
+
+        参数:
+            username: 用户名
+            password: 密码
+            description: 用户描述
+            group: 要加入的用户组
+
+        返回:
+            WinrmResult对象，包含执行结果
+        """
+        desc = description or ''
+        # 使用变量存储密码，避免在日志中暴露
+        script = f'''
+        $password = ConvertTo-SecureString "{password}" -AsPlainText -Force
+        $user = New-LocalUser -Name "{username}" -Password $password -Description "{desc}" -ErrorAction Stop
+        
+        # 设置"下次登录必须修改密码"
+        net user "{username}" /logonpasswordchg:YES
+        '''
+
+        # 默认将用户添加到Users组，这是Windows系统必需的组
+        default_group_script = f'''
+        Add-LocalGroupMember -Group "Users" -Member "{username}" -ErrorAction Stop
+        '''
+        script += default_group_script
+        
+        # 如果指定了其他组，则也添加到该组
+        if group:
+            script += f'''
+            Add-LocalGroupMember -Group "{group}" -Member "{username}" -ErrorAction Stop
+            '''
+
+        logger.info(f"创建用户: {username}, 组: {group}, 并设置下次登录时修改密码")
+        result = self.execute_powershell(script)
+        self.add_to_remote_users(username)
+
+        if result.success:
+            logger.info(f"用户创建成功: {username}，下次登录时需修改密码")
         else:
             logger.error(f"用户创建失败: {username}, 错误: {result.std_err}")
 
@@ -622,9 +682,10 @@ class WinrmClient:
             script = f'''
                 $password = ConvertTo-SecureString "{password}" -AsPlainText -Force
                 Set-LocalUser -Name "{username}" -Password $password
-                Write-Output "Password for user {username} has been reset and set to change on next login"
+                Write-Output "Password for user {username} has been reset successfully"
                 '''
             result = self.execute_powershell(script)
+            self.add_to_remote_users(username)
             if result.success:
                 logger.info(f"重置用户{username}的密码成功")
                 return result
@@ -633,4 +694,27 @@ class WinrmClient:
                 return result
         except Exception as e:
             logger.error(f"重置用户{username}的密码失败: 错误: {str(e)}")
+            return result
+    def add_to_remote_users(self, username: str) -> WinrmResult:
+        """
+        将指定用户添加到远程用户组
+
+        参数:
+            username: 用户名
+
+        返回:
+            WinrmResult对象，包含执行结果
+        """
+        result = WinrmResult(status_code=502, std_out="Unknown Error", std_err="Unknown Error")
+        try:
+            script = f'Add-LocalGroupMember -Group "Remote Desktop Users" -Member "{username}"'
+            result = self.execute_powershell(script)
+            if result.success:
+                logger.info(f"将用户{username}添加到远程用户组成功")
+                return result
+            else:
+                logger.error(f"将用户{username}添加到远程用户组失败: 错误: {result.std_err}")
+                return result
+        except Exception as e:
+            logger.error(f"将用户{username}添加到远程用户组失败: 错误: {str(e)}")
             return result

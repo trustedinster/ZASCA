@@ -5,8 +5,18 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.dispatch import Signal
+import logging
+
+# 添加日志
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
+
+# 定义开户申请提交前的信号
+account_opening_request_pre_submit = Signal()
+# 定义开户申请提交后的信号
+account_opening_request_post_submit = Signal()
 
 
 class PublicHostInfo(models.Model):
@@ -538,9 +548,19 @@ class AccountOpeningRequest(models.Model):
         """
         重写save方法，当状态变为'approved'时自动处理用户创建
         """
+        # 检查是否是新实例（创建新记录）
+        is_new_instance = not self.pk
+        
+        # 如果是新实例，在保存前发送预提交信号
+        if is_new_instance:
+            # 发送提交前信号，允许插件进行验证
+            logger.info(f"AccountOpeningRequest.save(): 发送 pre-submit 信号，实例ID: {self.pk}, 目标产品: {getattr(self.target_product, 'id', 'None')}, 联系邮箱: {self.contact_email}")
+            from .models import account_opening_request_pre_submit
+            account_opening_request_pre_submit.send(sender=self.__class__, instance=self)
+            logger.info(f"AccountOpeningRequest.save(): pre-submit 信号发送完成，实例状态: {self.status}")
+
         # 检查是否是状态从'pending'变更为'approved'
         old_instance = None
-        is_new_instance = not self.pk  # 检查是否为新实例
         if self.pk:  # 如果是更新操作
             try:
                 old_instance = AccountOpeningRequest.objects.get(pk=self.pk)
@@ -564,6 +584,12 @@ class AccountOpeningRequest(models.Model):
 
         # 调用父类的save方法保存数据
         super().save(*args, **kwargs)
+
+        # 如果是新实例，在保存后发送后提交信号
+        if is_new_instance:
+            logger.info(f"AccountOpeningRequest.save(): 发送 post-submit 信号，实例ID: {self.pk}, 最终状态: {self.status}")
+            from .models import account_opening_request_post_submit
+            account_opening_request_post_submit.send(sender=self.__class__, instance=self)
 
         # 如果状态从'pending'变更为'approved'，则自动处理用户创建
         # 包括：1) 旧实例状态变化 或 2) 新实例自动批准
@@ -630,16 +656,12 @@ class AccountOpeningRequest(models.Model):
             # 系统生成强密码
             password = CloudComputerUser.generate_complex_password()
             
-            # 创建用户命令 (PowerShell)
-            create_user_cmd = f'''
-            $password = ConvertTo-SecureString "{password}" -AsPlainText -Force
-            $user = New-LocalUser -Name "{self.username}" -Password $password -Description "{self.user_description}" -ErrorAction Stop
-            
-            # 设置"下次登录必须修改密码"
-            net user "{self.username}" /logonpasswordchg:YES
-            '''
-            
-            result = client.execute_powershell(create_user_cmd)
+            # 使用WinrmClient创建用户
+            result = client.create_user(
+                username=self.username,
+                password=password,
+                description=self.user_description
+            )
             
             if result.status_code == 0:
                 # 成功创建用户
