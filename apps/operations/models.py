@@ -1020,16 +1020,7 @@ class CloudComputerUser(models.Model):
                 use_ssl=host.use_ssl
             )
             
-            # 重置密码并设置下次登录必须修改的PowerShell命令
-            reset_password_cmd = f'''
-            $password = ConvertTo-SecureString "{new_password}" -AsPlainText -Force
-            Set-LocalUser -Name "{self.username}" -Password $password
-            # 设置"下次登录必须修改密码"
-            net user "{self.username}" /logonpasswordchg:YES
-            Write-Output "Password for user {self.username} has been reset and set to change on next login"
-            '''
-            
-            result = client.execute_powershell(reset_password_cmd)
+            result = client.reset_password(self.username, new_password)
             if result.status_code != 0:
                 error_msg = result.std_err if result.std_err else 'Unknown error'
                 print(f"Failed to reset password for user {self.username} on host {host.name}: {error_msg}")

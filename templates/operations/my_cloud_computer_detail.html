@@ -351,15 +351,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (actionsDiv) {
                         actionsDiv.appendChild(copyBtn);
                     }
-                    
-                    // 更新页面显示状态：刷新页面以确保UI状态与后端一致
-                    setTimeout(() => {
-                        if (confirm('密码已重置，是否刷新页面以更新状态？')) {
-                            location.reload();
-                        } else {
-                            alert('密码已重置，请及时复制密码！');
-                        }
-                    }, 100);
+
                 } else {
                     alert('重置密码失败: ' + data.error);
                 }
