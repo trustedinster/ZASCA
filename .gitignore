@@ -55,6 +55,7 @@ media/
 htmlcov/
 .coversnap/
 .tox/
+test_*.py
 
 # OS
 .DS_Store

@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'apps.hosts',
     'apps.operations',
     'apps.dashboard',
+    'plugins',
 ]
 
 MIDDLEWARE = [

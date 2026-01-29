@@ -171,6 +171,96 @@ class AccountOpeningRequestAdmin(admin.ModelAdmin):
         """
         return super().changelist_view(request, extra_context)
 
+    def approve_selected(self, request, queryset):
+        """
+        批量通过选中的开户申请
+        """
+        # 检查queryset是否是QuerySet对象，如果不是（如字节串），则抛出错误或返回提示
+        if isinstance(queryset, bytes) or isinstance(queryset, str):
+            self.message_user(
+                request,
+                '错误：无法处理所选项目，请刷新页面后重试。',
+                level='error'
+            )
+            return
+        
+        updated_count = 0
+        for obj in queryset:
+            if obj.status == 'pending':  # 只能批准待审核的申请
+                obj.status = 'approved'
+                obj.approved_by = request.user
+                obj.approval_date = timezone.now()
+                obj.save()
+                updated_count += 1
+        
+        if updated_count > 0:
+            self.message_user(
+                request,
+                f'成功批准了 {updated_count} 个开户申请。'
+            )
+        else:
+            self.message_user(
+                request,
+                '没有符合条件的开户申请需要批准（只对待审核状态的申请进行批准）。',
+                level='warning'
+            )
+    
+    approve_selected.short_description = "批准选中的开户申请"
+    
+    def reject_selected(self, request, queryset):
+        """
+        批量驳回选中的开户申请
+        """
+        # 检查queryset是否是QuerySet对象，如果不是（如字节串），则抛出错误或返回提示
+        if isinstance(queryset, bytes) or isinstance(queryset, str):
+            self.message_user(
+                request,
+                '错误：无法处理所选项目，请刷新页面后重试。',
+                level='error'
+            )
+            return
+        
+        updated_count = 0
+        for obj in queryset:
+            if obj.status == 'pending':  # 只能驳回待审核的申请
+                obj.status = 'rejected'
+                obj.approved_by = request.user
+                obj.approval_date = timezone.now()
+                obj.save()
+                updated_count += 1
+        
+        if updated_count > 0:
+            self.message_user(
+                request,
+                f'成功驳回了 {updated_count} 个开户申请。'
+            )
+        else:
+            self.message_user(
+                request,
+                '没有符合条件的开户申请需要驳回（只对待审核状态的申请进行驳回）。',
+                level='warning'
+            )
+    
+    reject_selected.short_description = "驳回选中的开户申请"
+    
+    def get_actions(self, request):
+        """
+        注册自定义操作
+        """
+        actions = super().get_actions(request)
+        # 添加批量通过和批量驳回操作
+        actions['approve_selected'] = (
+            self.approve_selected,
+            'approve_selected',
+            '批准选中的开户申请'
+        )
+        actions['reject_selected'] = (
+            self.reject_selected,
+            'reject_selected',
+            '驳回选中的开户申请'
+        )
+        return actions
+    
     def save_model(self, request, obj, form, change):
         """
         重写save_model方法，在保存时自动填入当前用户作为审核人，当前时间作为审核时间
