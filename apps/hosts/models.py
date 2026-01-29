@@ -77,11 +77,16 @@ class Host(models.Model):
         """
         重写save方法，在保存主机时自动测试连接状态
         """
+        # 获取是否是更新操作的标志
+        is_new = self.pk is None
+        
         # 先调用父类的save方法保存数据
         super().save(*args, **kwargs)
         
-        # 测试主机连接状态
-        self.test_connection()
+        # 只有在新建主机或显式需要测试连接时才测试连接状态
+        # 避免在连接测试过程中再次触发save导致循环调用
+        if is_new:
+            self.test_connection()
     
     def get_connection_client(self):
         """
@@ -115,8 +120,8 @@ class Host(models.Model):
         """
         # 如果是DEMO模式，所有主机都显示为在线且不执行实际连接测试
         if os.environ.get('ZASCA_DEMO', '').lower() == '1':
-            self.status = 'online'
-            super().save(update_fields=['status', 'updated_at'])
+            # 使用QuerySet的update方法避免触发save信号
+            Host.objects.filter(pk=self.pk).update(status='online')
             return
         
         try:
@@ -132,20 +137,20 @@ class Host(models.Model):
             
             # 根据执行结果更新主机状态
             if result.success:
-                self.status = 'online'
+                new_status = 'online'
             else:
-                self.status = 'error'
+                new_status = 'error'
                 
         except Exception as e:
             # 连接失败，设置状态为错误
-            self.status = 'error'
+            new_status = 'error'
             # 记录错误日志
             import logging
             logger = logging.getLogger("zasca")
             logger.error(f"测试主机连接失败: {self.name}, 错误: {str(e)}")
         
-        # 更新状态和更新时间
-        super().save(update_fields=['status', 'updated_at'])
+        # 使用QuerySet的update方法避免触发save信号和潜在的数据库锁定问题
+        Host.objects.filter(pk=self.pk).update(status=new_status)
 
 
 class HostGroup(models.Model):

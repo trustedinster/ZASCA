@@ -68,14 +68,27 @@ class HostAdmin(admin.ModelAdmin):
         """
         重写save_model方法，确保每次保存时都会测试连接
         """
+        # 如果提供了新密码，则使用setter更新加密存储
+        # 注意：这里再次处理密码是为了确保即使在Admin中也能正确加密存储
+        if form.cleaned_data.get('password'):
+            obj.password = form.cleaned_data['password']
+        
         # 调用父类方法保存模型
         super().save_model(request, obj, form, change)
+        
         # 测试连接
-        try:
-            obj.test_connection()
-            messages.success(request, f"主机 {obj.name} 保存成功，状态已更新为 {dict(obj.STATUS_CHOICES)[obj.status]}")
-        except Exception as e:
-            messages.warning(request, f"主机 {obj.name} 保存成功，但连接测试失败: {str(e)}")
+        # 对于新主机，执行连接测试
+        # 对于现有主机，如果密码被更新了，也执行连接测试以验证密码是否有效
+        should_test_connection = not change  # 新增主机
+        if change and 'password' in form.changed_data:  # 更新主机且密码被修改
+            should_test_connection = True
+        
+        if should_test_connection:
+            try:
+                obj.test_connection()
+                messages.success(request, f"主机 {obj.name} 保存成功，状态已更新为 {dict(obj.STATUS_CHOICES)[obj.status]}")
+            except Exception as e:
+                messages.warning(request, f"主机 {obj.name} 保存成功，但连接测试失败: {str(e)}")
 
     def delete_model(self, request, obj):
         """

@@ -91,10 +91,31 @@ class WinrmClient:
             timeout: 操作超时时间（秒），默认使用配置文件中的值
             max_retries: 最大重试次数，默认使用配置文件中的值
         """
-        self.hostname = hostname
+        # 检查主机名是否包含端口（例如 "hostname:port" 或 "ip:port" 格式）
+        if ':' in hostname and not hostname.startswith('http'):
+            # 分离主机名和端口
+            parts = hostname.split(':', 1)
+            if len(parts) == 2 and parts[1].isdigit():
+                # 提取主机名和端口
+                actual_hostname = parts[0]
+                actual_port = int(parts[1])
+                # 更新实例变量
+                self.hostname = actual_hostname
+                # 如果没有显式指定端口，则使用从主机名中提取的端口
+                if port == 5985:  # 5985是默认WinRM端口
+                    self.port = actual_port
+                else:
+                    # 如果已显式指定端口，则使用指定的端口
+                    self.port = port
+            else:
+                self.hostname = hostname
+                self.port = port
+        else:
+            self.hostname = hostname
+            self.port = port
+        
         self.username = username
         self.password = password
-        self.port = port
         self.use_ssl = use_ssl
         self.timeout = timeout or settings.WINRM_TIMEOUT
         self.max_retries = max_retries or settings.WINRM_MAX_RETRIES
@@ -103,13 +124,13 @@ class WinrmClient:
 
         # 验证主机可达性
         if not self._validate_hostname():
-            raise ValueError(f"主机名无法解析: {hostname}")
+            raise ValueError(f"主机名无法解析: {self.hostname}")
 
         # 初始化会话对象
         self.session = Session(
             self.endpoint,
             auth=(self.username, self.password),
-            transport='ntlm',
+            transport='basic',
             server_cert_validation='ignore',
             # 设置连接超时
             operation_timeout_sec=self.timeout,
@@ -117,7 +138,7 @@ class WinrmClient:
         )
 
         logger.info(
-            f"初始化WinRM客户端: 主机={hostname}, 端口={port}, "
+            f"初始化WinRM客户端: 主机={self.hostname}, 端口={self.port}, "
             f"SSL={use_ssl}, 超时={self.timeout}秒, 最大重试={self.max_retries}次"
         )
 
@@ -133,7 +154,7 @@ class WinrmClient:
             socket.gethostbyname(self.hostname)
             return True
         except socket.gaierror:
-            logger.error(f"无法解析主机名: {self.hostname}")
+            logger.error(f"无法解析主机名: {self.hostname}:{self.port}")
             return False
         except Exception as e:
             logger.error(f"验证主机名时发生未知错误: {str(e)}")
