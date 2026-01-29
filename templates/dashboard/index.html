@@ -167,6 +167,13 @@
                                     <span class="text-secondary">未知</span>
                                 {% endif %}
                             </li>
+                            <li><strong>自动审核:</strong> 
+                                {% if product.auto_approval %}
+                                    <span class="text-success">已启用</span>
+                                {% else %}
+                                    <span class="text-warning">未启用</span>
+                                {% endif %}
+                            </li>
                         </ul>
                         {% if product.display_description %}
                         <div class="markdown-content">

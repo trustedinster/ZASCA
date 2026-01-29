@@ -66,7 +66,7 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': ('name', 'display_name', 'description', 'display_description')
         }),
         ('主机关联', {
-            'fields': ('host', 'is_available')
+            'fields': ('host', 'is_available', 'auto_approval')
         }),
         ('显示配置', {
             'fields': ('display_hostname', 'rdp_port',)
@@ -135,10 +135,10 @@ class AccountOpeningRequestAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('申请人信息', {
-            'fields': ('applicant', 'contact_email', 'contact_phone')
+            'fields': ('applicant', 'contact_email')
         }),
         ('开户信息', {
-            'fields': ('username', 'user_fullname', 'user_email', 'user_description', 'requested_password')
+            'fields': ('username', 'user_fullname', 'user_email', 'user_description')
         }),
         ('目标产品', {
             'fields': ('target_product',)

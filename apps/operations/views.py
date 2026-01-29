@@ -151,7 +151,6 @@ class AccountOpeningRequestCreateView(CreateView):
         # 将表单数据存储到session中以供确认页面使用
         confirm_data = {
             'contact_email': self.request.user.email,  # 使用当前用户的邮箱，而不是从表单获取
-            'contact_phone': form.cleaned_data['contact_phone'],
             'username': form.cleaned_data['username'],
             'user_fullname': form.cleaned_data['user_fullname'],
             'user_description': form.cleaned_data['user_description'],
@@ -197,7 +196,6 @@ def account_opening_submit(request):
     account_request = AccountOpeningRequest()
     account_request.applicant = request.user
     account_request.contact_email = request.user.email  # 使用当前用户的邮箱，而不是表单中的数据
-    account_request.contact_phone = confirm_data['contact_phone']
     account_request.username = confirm_data['username']
     account_request.user_fullname = confirm_data['user_fullname']
     account_request.user_email = request.user.email  # 使用当前用户的邮箱

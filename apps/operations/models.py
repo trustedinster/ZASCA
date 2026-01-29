@@ -283,6 +283,11 @@ class Product(models.Model):
         verbose_name=_('是否可用'),
         help_text=_('是否在前端展示此产品')
     )
+    auto_approval = models.BooleanField(
+        default=False,
+        verbose_name=_('自动审核'),
+        help_text=_('是否自动批准针对此产品的开户申请')
+    )
     
     # 时间信息
     created_at = models.DateTimeField(
@@ -366,15 +371,6 @@ class AccountOpeningRequest(models.Model):
         blank=True,
         verbose_name=_('用户描述'),
         help_text=_('关于该用户的附加信息')
-    )
-
-    # 用户指定的密码（可选）
-    requested_password = models.CharField(
-        max_length=128,
-        blank=True,
-        null=True,
-        verbose_name=_('用户指定密码'),
-        help_text=_('用户希望设置的初始密码，留空则系统生成')
     )
 
     # 目标产品（替代原来的target_host）
@@ -476,12 +472,19 @@ class AccountOpeningRequest(models.Model):
             approver: 批准申请的管理员
             notes: 审核备注
         """
+        # 获取当前状态以判断是否从pending变更为approved
+        old_status = self.status
+        
         self.status = 'approved'
         self.approved_by = approver
         self.approval_date = timezone.now()
         self.approval_notes = notes
         # 不直接调用save，而是通过super().save()让重写的save方法处理后续操作
         super().save()
+        
+        # 如果之前的状态是pending，现在变更为approved，则触发自动创建
+        if old_status == 'pending' and self.status == 'approved':
+            self.auto_process_creation()
 
     def reject(self, approver, notes=''):
         """
@@ -537,20 +540,37 @@ class AccountOpeningRequest(models.Model):
         """
         # 检查是否是状态从'pending'变更为'approved'
         old_instance = None
+        is_new_instance = not self.pk  # 检查是否为新实例
         if self.pk:  # 如果是更新操作
             try:
                 old_instance = AccountOpeningRequest.objects.get(pk=self.pk)
             except AccountOpeningRequest.DoesNotExist:
                 pass
 
+        # 如果是新建记录且目标产品启用了自动审核，则自动批准
+        auto_approved = False  # 标记是否自动批准
+        if (is_new_instance and self.target_product and 
+            self.target_product.auto_approval and self.status == 'pending'):
+            # 自动批准申请
+            self.status = 'approved'
+            # 使用系统作为审批人，而不是None
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            system_user = User.objects.filter(is_superuser=True).first()  # 使用第一个超级用户作为系统用户
+            self.approved_by = system_user
+            self.approval_date = timezone.now()
+            self.approval_notes = '自动审核通过'
+            auto_approved = True  # 标记为自动批准
+
         # 调用父类的save方法保存数据
         super().save(*args, **kwargs)
 
         # 如果状态从'pending'变更为'approved'，则自动处理用户创建
-        # 仅当 old_instance 存在且状态发生变化时才执行
-        if (old_instance and 
+        # 包括：1) 旧实例状态变化 或 2) 新实例自动批准
+        if ((old_instance and 
             old_instance.status == 'pending' and 
-            self.status == 'approved'):
+            self.status == 'approved') or 
+            (is_new_instance and auto_approved and self.status == 'approved')):
             self.auto_process_creation()
 
     def auto_process_creation(self):
@@ -951,38 +971,28 @@ class CloudComputerUser(models.Model):
         import string
         from django.utils import timezone
         
-        # 如果密码已经被查看过，生成新密码并重置状态
-        if self.password_viewed:
-            # 生成新的复杂密码
-            new_password = CloudComputerUser.generate_complex_password()
+        # 如果密码从未被查看过（首次访问），返回初始密码并标记为已查看
+        if not self.password_viewed and self.initial_password:
+            # 获取当前密码
+            password = self.initial_password
             
-            # 重置密码状态并设置新密码
-            self.password_viewed = False
-            self.password_viewed_at = None
-            self.initial_password = new_password
+            # 标记密码已被查看并清空存储的密码
+            self.password_viewed = True
+            self.password_viewed_at = timezone.now()
+            self.initial_password = ''  # 清空密码
             self.save(update_fields=['password_viewed', 'password_viewed_at', 'initial_password'])
+            
+            return password
+        else:
+            # 如果已经查看过密码（即后续访问），生成新密码但不存储，直接返回
+            # 这样用户可以获取临时密码，但不会改变password_viewed状态
+            new_password = CloudComputerUser.generate_complex_password()
             
             # 通过远程命令重置Windows用户密码并设置下次登录必须修改
             self.reset_windows_password(new_password)
             
+            # 注意：这里不修改数据库中的任何状态，保持password_viewed=True
             return new_password
-        
-        # 如果没有初始密码，生成一个复杂的密码
-        if not self.initial_password:
-            alphabet = string.ascii_letters + string.digits + '!@#$%^&*()_+-=[]{}|;:,.<>?'
-            password = ''.join(secrets.choice(alphabet) for i in range(16))
-            self.initial_password = password
-        
-        # 获取当前密码
-        password = self.initial_password
-        
-        # 标记密码已被查看并清空存储的密码
-        self.password_viewed = True
-        self.password_viewed_at = timezone.now()
-        self.initial_password = ''  # 清空密码
-        self.save(update_fields=['password_viewed', 'password_viewed_at', 'initial_password'])
-        
-        return password
 
     def reset_windows_password(self, new_password):
         """

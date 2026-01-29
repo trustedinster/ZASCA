@@ -51,16 +51,6 @@ class AccountOpeningRequestForm(forms.ModelForm):
     """
     用户开户申请表单
     """
-    contact_phone = forms.CharField(
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '请输入联系电话'
-        }),
-        label=_('联系电话'),
-        help_text=_('可选，提供联系电话便于紧急联系')
-    )
-    
     # 重写username字段以符合新需求
     username = forms.CharField(
         widget=forms.TextInput(attrs={
@@ -80,17 +70,6 @@ class AccountOpeningRequestForm(forms.ModelForm):
         label=_('主机显示用户名'),
         help_text=_('用于在系统中显示的用户名')
     )
-    
-    # 移除密码字段，由系统自动生成
-    # requested_password = forms.CharField(
-    #     required=False,
-    #     widget=forms.PasswordInput(attrs={
-    #         'class': 'form-control',
-    #         'placeholder': '留空则系统生成'
-    #     }),
-    #     label=_('指定密码'),
-    #     help_text=_('可选，如不填写则系统将自动生成安全密码')
-    # )
     
     # 重写user_description字段以符合新需求
     user_description = forms.CharField(
@@ -113,7 +92,6 @@ class AccountOpeningRequestForm(forms.ModelForm):
     class Meta:
         model = AccountOpeningRequest
         fields = [
-            'contact_phone',
             'username', 'user_fullname', 'user_description',
             'target_product'
         ]

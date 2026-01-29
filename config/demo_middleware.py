@@ -49,7 +49,8 @@ class DemoModeMiddleware:
         # 检查是否是密码修改相关的视图
         if (hasattr(view_func, '__name__') and 
             ('password' in view_func.__name__.lower() or 'change' in view_func.__name__.lower()) and
-            any(pwd_keyword in request.path.lower() for pwd_keyword in ['password', 'pwd'])):
+            any(pwd_keyword in request.path.lower() for pwd_keyword in ['password', 'pwd']) and
+            'get-password' not in request.path.lower()):  # 排除获取密码的阅后即焚功能
             # 在DEMO模式下，不允许修改密码
             if request.method == 'POST':
                 from django.contrib import messages
@@ -71,7 +72,8 @@ class DemoModeMiddleware:
         
         # 检查所有可能的密码更改路径
         if ('password' in request.path.lower() and 
-            ('change' in request.path.lower() or 'update' in request.path.lower())):
+            ('change' in request.path.lower() or 'update' in request.path.lower()) and
+            'get-password' not in request.path.lower()):  # 排除获取密码的阅后即焚功能
             if request.method == 'POST':
                 from django.contrib import messages
                 messages.error(request, 'DEMO模式下不允许修改密码')

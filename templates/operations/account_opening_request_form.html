@@ -39,17 +39,6 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="{{ form.contact_phone.id_for_label }}" class="form-label">联系电话</label>
-                            {{ form.contact_phone }}
-                            {% if form.contact_phone.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.contact_phone.errors %}{{ error }}{% endfor %}
-                            </div>
-                            {% endif %}
-                            <div class="form-text">可选，提供联系电话便于紧急联系</div>
-                        </div>
-
-                        <div class="mb-3">
                             <label for="{{ form.username.id_for_label }}" class="form-label">主机连接用户名 *</label>
                             {{ form.username }}
                             {% if form.username.errors %}
@@ -73,29 +62,6 @@
                     </div>
 
                     <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="{{ form.requested_password.id_for_label }}" class="form-label">指定密码</label>
-                            {{ form.requested_password }}
-                            {% if form.requested_password.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.requested_password.errors %}{{ error }}{% endfor %}
-                            </div>
-                            {% endif %}
-                            <div class="form-text">可选，如不填写则系统将自动生成安全密码</div>
-                            
-                            <!-- 密码复杂度要求提示 -->
-                            <div id="password-requirements" class="password-requirements mt-2" style="display: none;">
-                                <small class="text-muted">密码复杂度要求：</small>
-                                <ul class="small mb-0" style="margin-top: -5px;">
-                                    <li id="req-length"><span class="text-danger">• 至少8个字符</span></li>
-                                    <li id="req-uppercase"><span class="text-danger">• 至少一个大写字母</span></li>
-                                    <li id="req-lowercase"><span class="text-danger">• 至少一个小写字母</span></li>
-                                    <li id="req-number"><span class="text-danger">• 至少一个数字</span></li>
-                                    <li id="req-special"><span class="text-danger">• 至少一个特殊字符</span></li>
-                                </ul>
-                            </div>
-                        </div>
-
                         <div class="mb-3">
                             <label for="{{ form.user_description.id_for_label }}" class="form-label">申请理由 *</label>
                             {{ form.user_description }}
@@ -131,84 +97,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const passwordInput = document.getElementById('{{ form.requested_password.id_for_label }}');
-    const passwordRequirements = document.getElementById('password-requirements');
-    
-    if(passwordInput) {
-        // 显示密码复杂度要求
-        passwordRequirements.style.display = 'block';
-        
-        // 实时检查密码强度
-        passwordInput.addEventListener('input', function() {
-            const password = passwordInput.value;
-            checkPasswordStrength(password);
-        });
-        
-        // 页面加载时也检查一次
-        if(passwordInput.value) {
-            checkPasswordStrength(passwordInput.value);
-        }
-    }
-    
-    function checkPasswordStrength(password) {
-        // 检查长度（至少8个字符）
-        const lengthOk = password.length >= 8;
-        document.getElementById('req-length').innerHTML = 
-            `<span class="${lengthOk ? 'text-success' : 'text-danger'}">• 至少8个字符</span>`;
-        
-        // 检查大写字母
-        const uppercaseOk = /[A-Z]/.test(password);
-        document.getElementById('req-uppercase').innerHTML = 
-            `<span class="${uppercaseOk ? 'text-success' : 'text-danger'}">• 至少一个大写字母</span>`;
-        
-        // 检查小写字母
-        const lowercaseOk = /[a-z]/.test(password);
-        document.getElementById('req-lowercase').innerHTML = 
-            `<span class="${lowercaseOk ? 'text-success' : 'text-danger'}">• 至少一个小写字母</span>`;
-        
-        // 检查数字
-        const numberOk = /\d/.test(password);
-        document.getElementById('req-number').innerHTML = 
-            `<span class="${numberOk ? 'text-success' : 'text-danger'}">• 至少一个数字</span>`;
-        
-        // 检查特殊字符
-        const specialCharOk = /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password);
-        document.getElementById('req-special').innerHTML = 
-            `<span class="${specialCharOk ? 'text-success' : 'text-danger'}">• 至少一个特殊字符</span>`;
-    }
-    
-    // 表单提交前验证密码
-    const form = document.getElementById('account-opening-form');
-    if(form) {
-        form.addEventListener('submit', function(e) {
-            const password = passwordInput ? passwordInput.value : '';
-            
-            // 如果用户输入了密码，检查其复杂度
-            if(password && password.length > 0) {
-                const lengthOk = password.length >= 8;
-                const uppercaseOk = /[A-Z]/.test(password);
-                const lowercaseOk = /[a-z]/.test(password);
-                const numberOk = /\d/.test(password);
-                const specialCharOk = /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password);
-                
-                if(!(lengthOk && uppercaseOk && lowercaseOk && numberOk && specialCharOk)) {
-                    e.preventDefault();
-                    
-                    let errorMsg = '密码不符合复杂度要求：\n';
-                    if(!lengthOk) errorMsg += '- 至少8个字符\n';
-                    if(!uppercaseOk) errorMsg += '- 至少一个大写字母\n';
-                    if(!lowercaseOk) errorMsg += '- 至少一个小写字母\n';
-                    if(!numberOk) errorMsg += '- 至少一个数字\n';
-                    if(!specialCharOk) errorMsg += '- 至少一个特殊字符\n';
-                    
-                    alert(errorMsg);
-                    return false;
-                }
-            }
-        });
-    }
-});
-</script>
+
 {% endblock %}

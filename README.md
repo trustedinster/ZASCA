@@ -148,7 +148,7 @@ ZASCA 用户开户系统是一个为云电脑用户创建账户并在目标主�
 
 #### 核心模型
 - **AccountOpeningRequest (开户申请模型)**: 记录用户提交的开户申请信息
-  - 申请人信息 (applicant, contact_email, contact_phone)
+  - 申请人信息 (applicant, contact_email)
   - 开户信息 (username, user_fullname, user_email, user_description)
   - 目标主机 (target_host)
   - 审核信息 (status, approved_by, approval_date, approval_notes)
