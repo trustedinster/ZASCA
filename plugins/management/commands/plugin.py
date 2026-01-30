@@ -6,12 +6,13 @@ import os
 import sys
 import subprocess
 import json
+import re
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from plugins.core.plugin_manager import get_plugin_manager
 from plugins.models import PluginRecord
 import importlib.util
-from plugins.available_plugins import ALL_AVAILABLE_PLUGINS
+from plugins.available_plugins import ALL_AVAILABLE_PLUGINS, BUILTIN_PLUGINS, THIRD_PARTY_PLUGINS
 import shutil
 
 
@@ -220,6 +221,16 @@ class Command(BaseCommand):
                 
                 if created:
                     self.stdout.write(f'已创建插件数据库记录')
+                
+                # 将插件添加到 available_plugins.py 配置中
+                self.add_plugin_to_config(plugin_instance.plugin_id, {
+                    'name': plugin_instance.name,
+                    'module': f'plugins.{plugin_dir_name}.{plugin_file[:-3]}',  # 移除.py扩展名
+                    'class': plugin_class.__name__,
+                    'description': plugin_instance.description,
+                    'version': plugin_instance.version,
+                    'enabled': True
+                })
             else:
                 raise CommandError(f'在 {plugin_path} 中未找到有效的插件类')
                 
@@ -264,6 +275,10 @@ class Command(BaseCommand):
         
         if created:
             self.stdout.write(f'已创建插件数据库记录')
+        
+        # 如果插件不在可用插件配置中，则添加它
+        if plugin_id not in ALL_AVAILABLE_PLUGINS:
+            self.add_plugin_to_config(plugin_id, plugin_info)
 
     def uninstall_plugin(self, plugin_name, force=False):
         """卸载插件"""
@@ -312,6 +327,99 @@ class Command(BaseCommand):
             if force:
                 # 强制从数据库删除记录
                 PluginRecord.objects.filter(plugin_id=plugin.plugin_id).delete()
+                # 同时从 available_plugins.py 中移除配置
+                self.remove_plugin_from_config(plugin.plugin_id)
                 self.stdout.write(self.style.WARNING(f'强制卸载插件: {plugin.name}'))
             else:
                 raise CommandError(f'卸载插件失败: {str(e)}')
+    
+    def add_plugin_to_config(self, plugin_id, plugin_info):
+        """将插件信息添加到 available_plugins.py 配置文件中"""
+        config_file_path = os.path.join(settings.BASE_DIR, 'plugins', 'available_plugins.py')
+        
+        # 读取当前配置文件内容
+        with open(config_file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # 检查插件是否已经存在于配置中
+        if f"'{plugin_id}'" in content or f'"{plugin_id}"' in content:
+            self.stdout.write(f'插件 {plugin_id} 已存在于配置中')
+            return
+        
+        # 构建新的插件配置
+        plugin_config_str = f"        '{plugin_id}': {{\n"
+        plugin_config_str += f"            'name': '{plugin_info['name']}',\n"
+        plugin_config_str += f"            'module': '{plugin_info['module']}',\n"
+        plugin_config_str += f"            'class': '{plugin_info['class']}',\n"
+        plugin_config_str += f"            'description': '{plugin_info['description']}',\n"
+        plugin_config_str += f"            'version': '{plugin_info['version']}',\n"
+        plugin_config_str += f"            'enabled': {plugin_info['enabled']}\n"
+        plugin_config_str += f"        }}"
+        
+        # 查找 THIRD_PARTY_PLUGINS 字典的位置并插入新插件配置
+        # 在 THIRD_PARTY_PLUGINS 开始的大括号后插入（在注释之后）
+        third_party_start = content.find("THIRD_PARTY_PLUGINS = {")
+        if third_party_start != -1:
+            # 找到这个大括号后面的第一个换行符
+            brace_pos = content.find('{', third_party_start)
+            if brace_pos != -1:
+                # 找到该行的结束
+                next_newline = content.find('\n', brace_pos + 1)
+                if next_newline != -1:
+                    insert_pos = next_newline + 1
+                    # 插入新插件配置，保持缩进
+                    new_content = content[:insert_pos] + plugin_config_str + ',\n' + content[insert_pos:]
+                    
+                    # 写回文件
+                    with open(config_file_path, 'w', encoding='utf-8') as f:
+                        f.write(new_content)
+                    
+                    self.stdout.write(f'已将插件 {plugin_id} 添加到配置文件')
+                    return
+        
+        # 如果没有找到 THIRD_PARTY_PLUGINS，就添加到 BUILTIN_PLUGINS
+        builtin_start = content.find("BUILTIN_PLUGINS = {")
+        if builtin_start != -1:
+            # 找到这个大括号后面的第一个换行符
+            brace_pos = content.find('{', builtin_start)
+            if brace_pos != -1:
+                # 找到该行的结束
+                next_newline = content.find('\n', brace_pos + 1)
+                if next_newline != -1:
+                    insert_pos = next_newline + 1
+                    # 插入新插件配置，保持缩进
+                    new_content = content[:insert_pos] + plugin_config_str + ',\n' + content[insert_pos:]
+                    
+                    # 写回文件
+                    with open(config_file_path, 'w', encoding='utf-8') as f:
+                        f.write(new_content)
+                    
+                    self.stdout.write(f'已将插件 {plugin_id} 添加到配置文件')
+                    return
+        
+        self.stdout.write(f'未能将插件 {plugin_id} 添加到配置文件')
+    
+    def remove_plugin_from_config(self, plugin_id):
+        """从 available_plugins.py 配置文件中移除插件信息"""
+        config_file_path = os.path.join(settings.BASE_DIR, 'plugins', 'available_plugins.py')
+        
+        # 读取当前配置文件内容
+        with open(config_file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # 查找并移除包含插件ID的整个配置块
+        # 使用正则表达式匹配完整的插件配置块
+        pattern = rf"\s*['\"]{plugin_id}['\"]: \{{(?:[^{{}}]*\n?)*?\}},?"
+        matches = re.findall(pattern, content)
+        
+        if matches:
+            for match in matches:
+                content = content.replace(match, '')
+            
+            # 写回文件
+            with open(config_file_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            
+            self.stdout.write(f'已从配置文件中移除插件 {plugin_id}')
+        else:
+            self.stdout.write(f'插件 {plugin_id} 在配置文件中未找到')
