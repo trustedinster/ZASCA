@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('operations', '0007_product_auto_approval'),
+        ('operations', '0002_publichostinfo'),
         ('plugins', '0002_qqverifyconfig_and_more'),
     ]
 
