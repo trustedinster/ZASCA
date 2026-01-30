@@ -223,12 +223,20 @@ class Command(BaseCommand):
                     if pf == '__init__.py':  # 跳过已经检查过的 __init__.py
                         continue
                     file_path = os.path.join(plugin_path, pf)
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        content = f.read()
-                        # 检查文件是否包含PluginInterface相关的类定义
-                        if 'PluginInterface' in content and ('class' in content and '(PluginInterface)' in content or '(PluginInterface,' in content or 'class' in content and '(BasePlugin)' in content):
-                            plugin_file = pf
-                            break
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                            # 检查文件是否包含PluginInterface相关的类定义
+                            if 'PluginInterface' in content and 'class' in content and (
+                                '(PluginInterface)' in content or 
+                                '(PluginInterface,' in content or 
+                                '(BasePlugin)' in content or
+                                'PluginInterface):' in content):  # 添加这个条件来匹配类定义
+                                plugin_file = pf
+                                break
+                    except UnicodeDecodeError:
+                        # 如果无法解码文件，跳过
+                        continue
             
             # 如果还是没找到，就用第一个Python文件
             if not plugin_file:
@@ -287,8 +295,33 @@ class Command(BaseCommand):
             if created:
                 self.stdout.write(f'已创建插件数据库记录')
             
-            # 使用 __init__.py 中的信息或者从类中提取的信息
-            module_name = f'plugins.{os.path.basename(plugin_path)}.{plugin_file[:-3] if plugin_file != "__init__.py" else os.path.basename(plugin_path)}'
+            # 确定模块名称，优先使用 __init__.py 中的信息，否则从文件名推断
+            plugin_dir_name = os.path.basename(plugin_path)
+            if plugin_file == '__init__.py':
+                module_name = f'plugins.{plugin_dir_name}'
+            else:
+                # 遍历目录中的所有 .py 文件，查找包含插件类的文件
+                plugin_files = [f for f in os.listdir(plugin_path) if f.endswith('.py')]
+                actual_plugin_file = None
+                
+                for pf in plugin_files:
+                    if pf == '__init__.py':
+                        continue
+                    file_path = os.path.join(plugin_path, pf)
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                            # 检查文件是否包含插件类定义
+                            if plugin_class.__name__ in content and 'class' in content and plugin_class.__name__ + '(' in content:
+                                actual_plugin_file = pf
+                                break
+                    except UnicodeDecodeError:
+                        continue
+                
+                if actual_plugin_file:
+                    module_name = f'plugins.{plugin_dir_name}.{actual_plugin_file[:-3]}'
+                else:
+                    module_name = f'plugins.{plugin_dir_name}.{plugin_file[:-3]}'
             
             self.add_plugin_to_toml_config(plugin_instance.plugin_id, {
                 'name': plugin_instance.name,
