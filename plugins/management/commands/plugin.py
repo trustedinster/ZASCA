@@ -7,6 +7,7 @@ import sys
 import subprocess
 import json
 import re
+import toml
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from plugins.core.plugin_manager import get_plugin_manager
@@ -222,8 +223,8 @@ class Command(BaseCommand):
                 if created:
                     self.stdout.write(f'已创建插件数据库记录')
                 
-                # 将插件添加到 available_plugins.py 配置中
-                self.add_plugin_to_config(plugin_instance.plugin_id, {
+                # 将插件添加到 plugins.toml 配置中
+                self.add_plugin_to_toml_config(plugin_instance.plugin_id, {
                     'name': plugin_instance.name,
                     'module': f'plugins.{plugin_dir_name}.{plugin_file[:-3]}',  # 移除.py扩展名
                     'class': plugin_class.__name__,
@@ -278,7 +279,7 @@ class Command(BaseCommand):
         
         # 如果插件不在可用插件配置中，则添加它
         if plugin_id not in ALL_AVAILABLE_PLUGINS:
-            self.add_plugin_to_config(plugin_id, plugin_info)
+            self.add_plugin_to_toml_config(plugin_id, plugin_info)
 
     def uninstall_plugin(self, plugin_name, force=False):
         """卸载插件"""
@@ -301,6 +302,8 @@ class Command(BaseCommand):
                 # 询问是否删除数据库记录
                 if force or input(f'插件 {plugin_name} 未加载但数据库中有记录。是否删除数据库记录？(y/N): ').lower() == 'y':
                     PluginRecord.objects.filter(plugin_id=plugin_name).delete()
+                    # 同时从 TOML 配置文件中移除配置
+                    self.remove_plugin_from_toml_config(plugin_name)
                     self.stdout.write(self.style.SUCCESS(f'已从数据库中删除插件记录: {plugin_name}'))
                     return
                 else:
@@ -320,6 +323,8 @@ class Command(BaseCommand):
             if success:
                 # 更新数据库记录
                 PluginRecord.objects.filter(plugin_id=plugin.plugin_id).update(is_active=False)
+                # 同时从 TOML 配置文件中移除配置
+                self.remove_plugin_from_toml_config(plugin.plugin_id)
                 self.stdout.write(self.style.SUCCESS(f'成功卸载插件: {plugin.name}'))
             else:
                 raise CommandError(f'卸载插件 {plugin.name} 失败')
@@ -327,99 +332,77 @@ class Command(BaseCommand):
             if force:
                 # 强制从数据库删除记录
                 PluginRecord.objects.filter(plugin_id=plugin.plugin_id).delete()
-                # 同时从 available_plugins.py 中移除配置
-                self.remove_plugin_from_config(plugin.plugin_id)
+                # 同时从 TOML 配置文件中移除配置
+                self.remove_plugin_from_toml_config(plugin.plugin_id)
                 self.stdout.write(self.style.WARNING(f'强制卸载插件: {plugin.name}'))
             else:
                 raise CommandError(f'卸载插件失败: {str(e)}')
     
-    def add_plugin_to_config(self, plugin_id, plugin_info):
-        """将插件信息添加到 available_plugins.py 配置文件中"""
-        config_file_path = os.path.join(settings.BASE_DIR, 'plugins', 'available_plugins.py')
+    def add_plugin_to_toml_config(self, plugin_id, plugin_info):
+        """将插件信息添加到 plugins.toml 配置文件中"""
+        config_file_path = os.path.join(settings.BASE_DIR, 'plugins', 'plugins.toml')
         
         # 读取当前配置文件内容
-        with open(config_file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
+        if os.path.exists(config_file_path):
+            with open(config_file_path, 'r', encoding='utf-8') as f:
+                toml_data = toml.load(f)
+        else:
+            # 如果文件不存在，创建基本结构
+            toml_data = {
+                'builtin': {},
+                'third_party': {}
+            }
         
         # 检查插件是否已经存在于配置中
-        if f"'{plugin_id}'" in content or f'"{plugin_id}"' in content:
+        if plugin_id in toml_data.get('builtin', {}) or plugin_id in toml_data.get('third_party', {}):
             self.stdout.write(f'插件 {plugin_id} 已存在于配置中')
             return
         
-        # 构建新的插件配置
-        plugin_config_str = f"        '{plugin_id}': {{\n"
-        plugin_config_str += f"            'name': '{plugin_info['name']}',\n"
-        plugin_config_str += f"            'module': '{plugin_info['module']}',\n"
-        plugin_config_str += f"            'class': '{plugin_info['class']}',\n"
-        plugin_config_str += f"            'description': '{plugin_info['description']}',\n"
-        plugin_config_str += f"            'version': '{plugin_info['version']}',\n"
-        plugin_config_str += f"            'enabled': {plugin_info['enabled']}\n"
-        plugin_config_str += f"        }}"
+        # 将插件添加到第三方插件部分
+        toml_data.setdefault('third_party', {})[plugin_id] = {
+            'name': plugin_info['name'],
+            'module': plugin_info['module'],
+            'class': plugin_info['class'],
+            'description': plugin_info['description'],
+            'version': plugin_info['version'],
+            'enabled': plugin_info['enabled']
+        }
         
-        # 查找 THIRD_PARTY_PLUGINS 字典的位置并插入新插件配置
-        # 在 THIRD_PARTY_PLUGINS 开始的大括号后插入（在注释之后）
-        third_party_start = content.find("THIRD_PARTY_PLUGINS = {")
-        if third_party_start != -1:
-            # 找到这个大括号后面的第一个换行符
-            brace_pos = content.find('{', third_party_start)
-            if brace_pos != -1:
-                # 找到该行的结束
-                next_newline = content.find('\n', brace_pos + 1)
-                if next_newline != -1:
-                    insert_pos = next_newline + 1
-                    # 插入新插件配置，保持缩进
-                    new_content = content[:insert_pos] + plugin_config_str + ',\n' + content[insert_pos:]
-                    
-                    # 写回文件
-                    with open(config_file_path, 'w', encoding='utf-8') as f:
-                        f.write(new_content)
-                    
-                    self.stdout.write(f'已将插件 {plugin_id} 添加到配置文件')
-                    return
+        # 写回文件
+        with open(config_file_path, 'w', encoding='utf-8') as f:
+            toml.dump(toml_data, f)
         
-        # 如果没有找到 THIRD_PARTY_PLUGINS，就添加到 BUILTIN_PLUGINS
-        builtin_start = content.find("BUILTIN_PLUGINS = {")
-        if builtin_start != -1:
-            # 找到这个大括号后面的第一个换行符
-            brace_pos = content.find('{', builtin_start)
-            if brace_pos != -1:
-                # 找到该行的结束
-                next_newline = content.find('\n', brace_pos + 1)
-                if next_newline != -1:
-                    insert_pos = next_newline + 1
-                    # 插入新插件配置，保持缩进
-                    new_content = content[:insert_pos] + plugin_config_str + ',\n' + content[insert_pos:]
-                    
-                    # 写回文件
-                    with open(config_file_path, 'w', encoding='utf-8') as f:
-                        f.write(new_content)
-                    
-                    self.stdout.write(f'已将插件 {plugin_id} 添加到配置文件')
-                    return
-        
-        self.stdout.write(f'未能将插件 {plugin_id} 添加到配置文件')
+        self.stdout.write(f'已将插件 {plugin_id} 添加到 TOML 配置文件')
     
-    def remove_plugin_from_config(self, plugin_id):
-        """从 available_plugins.py 配置文件中移除插件信息"""
-        config_file_path = os.path.join(settings.BASE_DIR, 'plugins', 'available_plugins.py')
+    def remove_plugin_from_toml_config(self, plugin_id):
+        """从 plugins.toml 配置文件中移除插件信息"""
+        config_file_path = os.path.join(settings.BASE_DIR, 'plugins', 'plugins.toml')
         
         # 读取当前配置文件内容
+        if not os.path.exists(config_file_path):
+            self.stdout.write(f'TOML 配置文件不存在: {config_file_path}')
+            return
+        
         with open(config_file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
+            toml_data = toml.load(f)
         
-        # 查找并移除包含插件ID的整个配置块
-        # 使用正则表达式匹配完整的插件配置块
-        pattern = rf"\s*['\"]{plugin_id}['\"]: \{{(?:[^{{}}]*\n?)*?\}},?"
-        matches = re.findall(pattern, content)
+        # 从 builtin 和 third_party 部分查找并删除插件
+        plugin_removed = False
+        if 'builtin' in toml_data and plugin_id in toml_data['builtin']:
+            del toml_data['builtin'][plugin_id]
+            plugin_removed = True
+            self.stdout.write(f'已从 builtin 部分移除插件 {plugin_id}')
         
-        if matches:
-            for match in matches:
-                content = content.replace(match, '')
-            
+        if 'third_party' in toml_data and plugin_id in toml_data['third_party']:
+            del toml_data['third_party'][plugin_id]
+            plugin_removed = True
+            self.stdout.write(f'已从 third_party 部分移除插件 {plugin_id}')
+        
+        if plugin_removed:
             # 写回文件
             with open(config_file_path, 'w', encoding='utf-8') as f:
-                f.write(content)
+                toml.dump(toml_data, f)
             
-            self.stdout.write(f'已从配置文件中移除插件 {plugin_id}')
+            self.stdout.write(f'已从 TOML 配置文件中移除插件 {plugin_id}')
         else:
-            self.stdout.write(f'插件 {plugin_id} 在配置文件中未找到')
+            self.stdout.write(f'插件 {plugin_id} 在 TOML 配置文件中未找到')
