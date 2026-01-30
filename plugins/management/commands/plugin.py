@@ -8,6 +8,7 @@ import subprocess
 import json
 import re
 import toml
+import inspect
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from plugins.core.plugin_manager import get_plugin_manager
@@ -161,80 +162,135 @@ class Command(BaseCommand):
         if not os.path.exists(plugin_path):
             raise CommandError(f'插件路径不存在: {plugin_path}')
         
-        # 尝试直接加载插件模块
-        plugin_files = [f for f in os.listdir(plugin_path) if f.endswith('.py')]
-        if not plugin_files:
-            raise CommandError(f'插件路径中没有Python文件: {plugin_path}')
+        # 检查是否存在 __init__.py 并包含 PLUGIN_INFO
+        init_file_path = os.path.join(plugin_path, '__init__.py')
+        plugin_info_from_init = None
         
-        # 假设主插件文件是目录名同名的文件或第一个Python文件
+        if os.path.exists(init_file_path):
+            # 读取 __init__.py 文件并尝试获取插件信息
+            try:
+                spec = importlib.util.spec_from_file_location(
+                    f"plugin_init_{os.path.basename(plugin_path)}", 
+                    init_file_path
+                )
+                init_module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(init_module)
+                
+                # 检查是否有 PLUGIN_INFO
+                if hasattr(init_module, 'PLUGIN_INFO'):
+                    plugin_info_from_init = getattr(init_module, 'PLUGIN_INFO')
+            except Exception:
+                # 如果无法加载 __init__.py 或获取 PLUGIN_INFO，忽略错误
+                pass
+        
+        # 如果 __init__.py 中有插件信息，尝试直接导入主插件类
+        plugin_class = None
         plugin_file = None
-        plugin_dir_name = os.path.basename(plugin_path)
-        for pf in plugin_files:
-            if pf == f"{plugin_dir_name}.py":
-                plugin_file = pf
-                break
-        if not plugin_file:
-            plugin_file = plugin_files[0]
+        if plugin_info_from_init and 'main_class' in plugin_info_from_init:
+            main_class_name = plugin_info_from_init['main_class']
+            # 尝试从 __init__.py 模块导入主类
+            if hasattr(init_module, main_class_name):
+                plugin_class = getattr(init_module, main_class_name)
+                plugin_file = '__init__.py'
         
-        plugin_module_path = os.path.join(plugin_path, plugin_file)
-        
-        try:
-            # 动态导入插件模块
-            spec = importlib.util.spec_from_file_location(
-                f"external_plugin_{plugin_dir_name}", 
-                plugin_module_path
-            )
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
+        # 如果没有从 __init__.py 获取到插件类，则搜索插件文件
+        if not plugin_class:
+            # 尝试直接加载插件模块
+            plugin_files = [f for f in os.listdir(plugin_path) if f.endswith('.py')]
+            if not plugin_files:
+                raise CommandError(f'插件路径中没有Python文件: {plugin_path}')
             
-            # 查找插件类（继承自PluginInterface的类）
-            plugin_class = None
-            for attr_name in dir(module):
-                attr = getattr(module, attr_name)
-                if (hasattr(attr, '__bases__') and 
-                    len(attr.__bases__) > 0 and 
-                    any(base.__name__ == 'PluginInterface' for base in attr.__bases__ if hasattr(base, '__name__'))):
-                    plugin_class = attr
+            # 假设主插件文件是目录名同名的文件或第一个包含PluginInterface的Python文件
+            plugin_file = None
+            plugin_dir_name = os.path.basename(plugin_path)
+            
+            # 首先尝试找目录名同名的文件
+            for pf in plugin_files:
+                if pf == f"{plugin_dir_name}.py":
+                    plugin_file = pf
                     break
             
-            if plugin_class:
-                plugin_instance = plugin_class()
-                plugin_manager = get_plugin_manager()
-                
-                # 将插件添加到管理器中
-                plugin_manager.plugins[plugin_instance.plugin_id] = plugin_instance
-                
-                if plugin_instance.initialize():
-                    self.stdout.write(self.style.SUCCESS(f'成功从路径安装插件: {plugin_instance.name}'))
-                else:
-                    self.stdout.write(self.style.WARNING(f'插件 {plugin_instance.name} 安装成功但初始化失败'))
-                
-                # 在数据库中创建记录
-                plugin_record, created = PluginRecord.objects.update_or_create(
-                    plugin_id=plugin_instance.plugin_id,
-                    defaults={
-                        'name': plugin_instance.name,
-                        'version': plugin_instance.version,
-                        'description': plugin_instance.description,
-                        'is_active': True,
-                    }
+            # 如果没找到同名文件，遍历所有Python文件，寻找包含PluginInterface的文件
+            if not plugin_file:
+                for pf in plugin_files:
+                    if pf == '__init__.py':  # 跳过已经检查过的 __init__.py
+                        continue
+                    file_path = os.path.join(plugin_path, pf)
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                        # 检查文件是否包含PluginInterface相关的类定义
+                        if 'PluginInterface' in content and ('class' in content and '(PluginInterface)' in content or '(PluginInterface,' in content or 'class' in content and '(BasePlugin)' in content):
+                            plugin_file = pf
+                            break
+            
+            # 如果还是没找到，就用第一个Python文件
+            if not plugin_file:
+                plugin_file = plugin_files[0]
+            
+            plugin_module_path = os.path.join(plugin_path, plugin_file)
+            
+            try:
+                # 动态导入插件模块
+                spec = importlib.util.spec_from_file_location(
+                    f"external_plugin_{plugin_dir_name}", 
+                    plugin_module_path
                 )
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
                 
-                if created:
-                    self.stdout.write(f'已创建插件数据库记录')
-                
-                # 将插件添加到 plugins.toml 配置中
-                self.add_plugin_to_toml_config(plugin_instance.plugin_id, {
-                    'name': plugin_instance.name,
-                    'module': f'plugins.{plugin_dir_name}.{plugin_file[:-3]}',  # 移除.py扩展名
-                    'class': plugin_class.__name__,
-                    'description': plugin_instance.description,
-                    'version': plugin_instance.version,
-                    'enabled': True
-                })
+                # 查找插件类（继承自PluginInterface的类）
+                for attr_name in dir(module):
+                    attr = getattr(module, attr_name)
+                    # 检查是否是类且继承自PluginInterface
+                    if (hasattr(attr, '__bases__') and 
+                        inspect.isclass(attr) and
+                        any(hasattr(base, '__name__') and base.__name__ == 'PluginInterface' for base in attr.__bases__)):
+                        plugin_class = attr
+                        break
+                        
+            except Exception as e:
+                raise CommandError(f'从文件 {plugin_file} 加载插件模块失败: {str(e)}')
+        
+        if not plugin_class:
+            raise CommandError(f'在 {plugin_path} 中未找到有效的插件类')
+        
+        try:
+            plugin_instance = plugin_class()
+            plugin_manager = get_plugin_manager()
+            
+            # 将插件添加到管理器中
+            plugin_manager.plugins[plugin_instance.plugin_id] = plugin_instance
+            
+            if plugin_instance.initialize():
+                self.stdout.write(self.style.SUCCESS(f'成功从路径安装插件: {plugin_instance.name}'))
             else:
-                raise CommandError(f'在 {plugin_path} 中未找到有效的插件类')
-                
+                self.stdout.write(self.style.WARNING(f'插件 {plugin_instance.name} 安装成功但初始化失败'))
+            
+            # 在数据库中创建记录
+            plugin_record, created = PluginRecord.objects.update_or_create(
+                plugin_id=plugin_instance.plugin_id,
+                defaults={
+                    'name': plugin_instance.name,
+                    'version': plugin_instance.version,
+                    'description': plugin_instance.description,
+                    'is_active': True,
+                }
+            )
+            
+            if created:
+                self.stdout.write(f'已创建插件数据库记录')
+            
+            # 使用 __init__.py 中的信息或者从类中提取的信息
+            module_name = f'plugins.{os.path.basename(plugin_path)}.{plugin_file[:-3] if plugin_file != "__init__.py" else os.path.basename(plugin_path)}'
+            
+            self.add_plugin_to_toml_config(plugin_instance.plugin_id, {
+                'name': plugin_instance.name,
+                'module': module_name,
+                'class': plugin_class.__name__,
+                'description': plugin_instance.description,
+                'version': plugin_instance.version,
+                'enabled': True
+            })
         except Exception as e:
             raise CommandError(f'从路径安装插件失败: {str(e)}')
     
