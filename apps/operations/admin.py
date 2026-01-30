@@ -63,7 +63,7 @@ class ProductAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('基本信息', {
-            'fields': ('name', 'display_name', 'description', 'display_description')
+            'fields': ('display_name', 'display_description')
         }),
         ('主机关联', {
             'fields': ('host', 'is_available', 'auto_approval')

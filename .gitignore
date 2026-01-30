@@ -82,3 +82,6 @@ public.pem
 rcssmin.*
 rjsmin.*
 *.zip
+
+# Plugins
+plugins/qq_verification/
