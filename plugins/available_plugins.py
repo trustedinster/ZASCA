@@ -5,14 +5,7 @@
 
 # 系统内置插件
 BUILTIN_PLUGINS = {
-    'qq_verification': {
-        'name': 'QQ Verification Plugin',
-        'module': 'plugins.qq_verification.qq_verification',
-        'class': 'QQVerificationPlugin',
-        'description': 'QQ验证插件，提供QQ登录和验证功能',
-        'version': '1.0.0',
-        'enabled': True
-    },
+
     # 包含一些示例插件供参考
     'example_plugin': {
         'name': 'Example Plugin',
