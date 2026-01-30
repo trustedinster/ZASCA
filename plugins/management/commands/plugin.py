@@ -137,6 +137,13 @@ class Command(BaseCommand):
             self.install_from_path(plugin_name)
             return
         
+        # 检查是否是插件目录名（在 plugins 目录下）
+        plugin_path = os.path.join(settings.BASE_DIR, 'plugins', plugin_name)
+        if os.path.exists(plugin_path) and os.path.isdir(plugin_path):
+            # 从 plugins 目录下的路径安装
+            self.install_from_path(plugin_path)
+            return
+        
         # 检查是否是可用的内置插件
         if plugin_name in ALL_AVAILABLE_PLUGINS:
             plugin_info = ALL_AVAILABLE_PLUGINS[plugin_name]
