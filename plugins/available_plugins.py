@@ -38,14 +38,7 @@ BUILTIN_PLUGINS = {
         'version': '1.0.0',
         'enabled': True
     },
-    'webhook_plugin': {
-        'name': 'Webhook Plugin',
-        'module': 'plugins.sample_plugins.webhook_plugin',
-        'class': 'WebhookPlugin',
-        'description': '提供Webhook功能的插件',
-        'version': '1.0.0',
-        'enabled': True
-    },
+
 }
 
 # 第三方插件（如果有的话）
