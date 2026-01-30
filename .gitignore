@@ -85,3 +85,9 @@ rjsmin.*
 
 # Plugins
 plugins/qq_verification/
+
+# Private test files
+test_qq_plugin.py
+test_qq_verification_complete.py
+create_default_qq_config.py
+create_default_qq_configs.py

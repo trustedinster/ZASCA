@@ -18,39 +18,52 @@ def handle_account_opening_request(sender, instance, created, **kwargs):
     """
     logger.info(f"[Post Save Signal] 处理开户申请: {instance.id}, 创建: {created}, 状态: {instance.status}")
     
-    # 通过插件管理器获取QQ验证插件并执行验证
-    plugin_manager = get_plugin_manager()
-    qq_plugin = plugin_manager.get_plugin("qq_verification_plugin")
+    # 检查是否已处理过，避免无限循环
+    if getattr(instance, '_plugin_processed', False):
+        return
     
-    if qq_plugin and hasattr(qq_plugin, 'validate'):
-        if instance.target_product and instance.status == 'pending':
-            logger.info(f"[Post Save Signal] 开始验证产品ID {instance.target_product.id} 的QQ验证")
-            # 检查是否通过QQ验证
-            is_valid = qq_plugin.validate(
-                product_id=instance.target_product.id,
-                applicant_email=instance.contact_email
-            )
-            
-            if not is_valid:
-                from django.contrib.auth import get_user_model
-                from django.utils import timezone
-                User = get_user_model()
+    # 通过插件管理器获取所有可用的验证插件并执行验证
+    plugin_manager = get_plugin_manager()
+    all_plugins = plugin_manager.get_all_plugins()
+    
+    validation_performed = False
+    validation_results = []
+    
+    for plugin_id, plugin in all_plugins.items():
+        if hasattr(plugin, 'validate_for_account_opening'):
+            try:
+                logger.info(f"[Post Save Signal] 使用插件 {plugin.name} 验证开户申请")
+                is_valid, reason = plugin.validate_for_account_opening(
+                    account_request=instance
+                )
                 
-                # 验证失败，自动拒绝申请
-                instance.status = 'rejected'
-                instance.approval_notes = 'QQ验证失败：您的QQ号未在指定群中'
-                instance.approved_by = User.objects.filter(is_superuser=True).first()
-                instance.approval_date = timezone.now()
+                validation_performed = True
+                validation_results.append((plugin.name, is_valid, reason))
                 
-                # 标记已处理，避免无限循环
-                instance._qq_verification_processed = True
-                instance.save()
-                
-                logger.warning(f"[Post Save Signal] 申请 {instance.id} QQ验证失败，已拒绝")
-            else:
-                logger.info(f"[Post Save Signal] 申请 {instance.id} QQ验证通过")
+                if not is_valid:
+                    from django.contrib.auth import get_user_model
+                    from django.utils import timezone
+                    User = get_user_model()
+                    
+                    # 验证失败，自动拒绝申请
+                    instance.status = 'rejected'
+                    instance.approval_notes = f'{plugin.name}验证失败：{reason}'
+                    instance.approved_by = User.objects.filter(is_superuser=True).first()
+                    instance.approval_date = timezone.now()
+                    
+                    # 标记已处理，避免无限循环
+                    instance._plugin_processed = True
+                    instance.save(update_fields=['status', 'approval_notes', 'approved_by', 'approval_date'])
+                    
+                    logger.warning(f"[Post Save Signal] 申请 {instance.id} {plugin.name}验证失败，已拒绝：{reason}")
+                    return  # 一旦有任何验证失败就拒绝申请
+            except Exception as e:
+                logger.error(f"[Post Save Signal] 插件 {plugin.name} 验证过程中出错: {str(e)}")
+    
+    if validation_performed:
+        logger.info(f"[Post Save Signal] 验证完成，结果: {validation_results}")
     else:
-        logger.info(f"[Post Save Signal] 未找到QQ验证插件或插件没有validate方法")
+        logger.info(f"[Post Save Signal] 没有找到可执行验证的插件")
 
 
 @receiver(post_save, sender=CloudComputerUser)
@@ -61,33 +74,26 @@ def handle_cloud_computer_user_update(sender, instance, **kwargs):
     """
     logger.info(f"[Post Save Signal] 云电脑用户更新: {instance.username}, 状态: {instance.status}")
     
-    # 通过插件管理器获取QQ验证插件并执行验证
+    # 通过插件管理器获取所有可用的验证插件并执行验证
     plugin_manager = get_plugin_manager()
-    qq_plugin = plugin_manager.get_plugin("qq_verification_plugin")
+    all_plugins = plugin_manager.get_all_plugins()
     
-    if qq_plugin and hasattr(qq_plugin, 'validate') and instance.status == 'active':
-        try:
-            from .models import QQVerificationConfig
-            
-            # 获取与用户关联的产品的QQ验证配置
-            config = QQVerificationConfig.objects.get(product=instance.product)
-            
-            if config.is_old_six_mode_enabled:
-                logger.info(f"[Post Save Signal] 老六模式验证用户: {instance.username}")
-                # 检查用户是否通过QQ验证
-                is_valid = qq_plugin.validate(
-                    product_id=instance.product.id,
+    for plugin_id, plugin in all_plugins.items():
+        if hasattr(plugin, 'validate_cloud_user'):
+            try:
+                logger.info(f"[Post Save Signal] 使用插件 {plugin.name} 验证云电脑用户")
+                is_valid, reason = plugin.validate_cloud_user(
                     cloud_user=instance
                 )
                 
-                if not is_valid and instance.status != 'disabled':
-                    # 验证失败，且用户尚未被禁用
-                    # 在老六模式下，验证失败会禁用账户
-                    instance.status = 'disabled'
-                    instance.save()
-                    logger.warning(f"[Post Save Signal] 老六模式验证失败，禁用用户: {instance.username}")
-                    
-        except QQVerificationConfig.DoesNotExist:
-            # 如果没有配置，则跳过验证
-            logger.info(f"[Post Save Signal] 用户 {instance.username} 关联的产品没有QQ验证配置")
-            pass
+                if not is_valid:
+                    # 验证失败，根据插件策略处理用户
+                    if hasattr(plugin, 'should_disable_user_on_failure') and plugin.should_disable_user_on_failure():
+                        if instance.status != 'disabled':
+                            instance.status = 'disabled'
+                            instance.save(update_fields=['status'])
+                            logger.warning(f"[Post Save Signal] {plugin.name}验证失败，禁用用户: {instance.username} - {reason}")
+                    else:
+                        logger.info(f"[Post Save Signal] {plugin.name}验证失败，但不执行禁用操作: {instance.username} - {reason}")
+            except Exception as e:
+                logger.error(f"[Post Save Signal] 插件 {plugin.name} 验证云用户时出错: {str(e)}")

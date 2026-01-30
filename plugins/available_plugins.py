@@ -6,13 +6,46 @@
 # 系统内置插件
 BUILTIN_PLUGINS = {
     'qq_verification': {
-        'name': 'QQ验证插件',
-        'module': 'plugins.qq_verification.qq_verification_plugin',
+        'name': 'QQ Verification Plugin',
+        'module': 'plugins.qq_verification.qq_verification',
         'class': 'QQVerificationPlugin',
-        'description': '用于检测QQ号是否在指定群中的验证插件',
+        'description': 'QQ验证插件，提供QQ登录和验证功能',
         'version': '1.0.0',
         'enabled': True
-    }
+    },
+    # 包含一些示例插件供参考
+    'example_plugin': {
+        'name': 'Example Plugin',
+        'module': 'plugins.sample_plugins.example_plugin',
+        'class': 'ExamplePlugin',
+        'description': '示例插件，展示插件开发的基本结构',
+        'version': '1.0.0',
+        'enabled': True
+    },
+    'email_notification_plugin': {
+        'name': 'Email Notification Plugin',
+        'module': 'plugins.sample_plugins.email_notification_plugin',
+        'class': 'EmailNotificationPlugin',
+        'description': '提供邮件通知功能的插件',
+        'version': '1.0.0',
+        'enabled': True
+    },
+    'demo_auth_plugin': {
+        'name': 'Demo Authentication Plugin',
+        'module': 'plugins.sample_plugins.demo_auth_plugin',
+        'class': 'DemoAuthPlugin',
+        'description': '演示认证功能的插件',
+        'version': '1.0.0',
+        'enabled': True
+    },
+    'webhook_plugin': {
+        'name': 'Webhook Plugin',
+        'module': 'plugins.sample_plugins.webhook_plugin',
+        'class': 'WebhookPlugin',
+        'description': '提供Webhook功能的插件',
+        'version': '1.0.0',
+        'enabled': True
+    },
 }
 
 # 第三方插件（如果有的话）
