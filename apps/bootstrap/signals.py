@@ -3,7 +3,7 @@
 """
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
-from .models import BootstrapToken
+from .models import InitialToken, ActiveSession
 
 
 # 可以在这里添加具体的信号处理器

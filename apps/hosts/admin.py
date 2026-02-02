@@ -11,7 +11,6 @@ from django.utils.safestring import mark_safe
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_protect
 from .models import Host, HostGroup
-from apps.bootstrap.models import BootstrapToken
 import uuid
 from datetime import timedelta
 from django.utils import timezone
@@ -93,22 +92,22 @@ class HostAdmin(admin.ModelAdmin):
         try:
             host = Host.objects.get(pk=object_id)
             
-            # 检查或创建引导令牌
-            bootstrap_token, created = BootstrapToken.objects.get_or_create(
-                host=host,
+            # 检查或创建初始令牌
+            from apps.bootstrap.models import InitialToken
+            import secrets
+            
+            # 生成新的初始令牌
+            token = secrets.token_urlsafe(32)  # 生成安全的随机令牌
+            expires_at = timezone.now() + timedelta(hours=24)
+            
+            initial_token, created = InitialToken.objects.get_or_create(
+                token=token,
                 defaults={
-                    'created_by': request.user if request.user.is_authenticated else None,
-                    'expires_at': timezone.now() + timedelta(hours=24),
-                    'notes': f'H端初始化令牌 - {timezone.now().strftime("%Y-%m-%d %H:%M:%S")}'
+                    'host': host,
+                    'expires_at': expires_at,
+                    'status': 'ISSUED'
                 }
             )
-            
-            # 如果令牌已过期，更新过期时间
-            if bootstrap_token.is_expired():
-                bootstrap_token.expires_at = timezone.now() + timedelta(hours=1)
-                bootstrap_token.created_by = request.user if request.user.is_authenticated else None
-                bootstrap_token.notes = f'H端初始化令牌 - {timezone.now().strftime("%Y-%m-%d %H:%M:%S")}'
-                bootstrap_token.save()
             
             # 构建secret数据
             from django.conf import settings
@@ -120,11 +119,11 @@ class HostAdmin(admin.ModelAdmin):
             
             secret_data = {
                 "c_side_url": current_site.rstrip('/'),
-                "token": bootstrap_token.token,
-                "host_id": host.id,
+                "token": initial_token.token,
+                "host_id": str(host.id),
                 "hostname": host.hostname,
                 "generated_at": timezone.now().isoformat(),
-                "expires_at": bootstrap_token.expires_at.isoformat()
+                "expires_at": initial_token.expires_at.isoformat()
             }
             
             # 转换为JSON并进行base64编码
@@ -138,7 +137,7 @@ class HostAdmin(admin.ModelAdmin):
                 'success': True,
                 'deploy_command': deploy_command,
                 'secret': encoded_str,
-                'expires_at': bootstrap_token.expires_at.isoformat(),
+                'expires_at': initial_token.expires_at.isoformat(),
                 'message': f'{"新" if created else "现有"}引导令牌已生成，将在24小时后过期'
             })
             

@@ -67,6 +67,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'apps.bootstrap.middleware.SessionValidationMiddleware',  # 会话验证中间件
     'config.demo_middleware.DemoModeMiddleware',  # DEMO模式中间件
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -261,3 +262,6 @@ if os.environ.get('ZASCA_DEMO', '').lower() == '1':
 
 # Create logs directory if it doesn't exist
 os.makedirs(BASE_DIR / 'logs', exist_ok=True)
+
+# Bootstrap认证配置
+BOOTSTRAP_SHARED_SALT = os.environ.get('BOOTSTRAP_SHARED_SALT', 'MY_SECRET_2024')
