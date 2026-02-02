@@ -51,6 +51,10 @@ INSTALLED_APPS = [
     'apps.hosts',
     'apps.operations',
     'apps.dashboard',
+    'apps.certificates',
+    'apps.bootstrap',
+    'apps.audit',
+    'apps.tasks',
     'plugins',
 ]
 

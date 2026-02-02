@@ -7,7 +7,14 @@ from django.utils.html import format_html
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.contrib import messages
+from django.utils.safestring import mark_safe
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_protect
 from .models import Host, HostGroup
+from apps.bootstrap.models import BootstrapToken
+import uuid
+from datetime import timedelta
+from django.utils import timezone
 
 
 class HostAdminForm(forms.ModelForm):
@@ -63,6 +70,107 @@ class HostAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+    class Media:
+        js = ('/static/admin/js/bootstrap-deploy-button.js',)
+        css = {
+            'all': ('/static/admin/css/bootstrap-deploy-button.css',)
+        }
+
+    def get_urls(self):
+        from django.urls import path
+        urls = super().get_urls()
+        custom_urls = [
+            path('<int:object_id>/generate-deploy-command/', 
+                 self.admin_site.admin_view(self.generate_deploy_command), 
+                 name='hosts_host_generate_deploy_command'),
+        ]
+        return custom_urls + urls
+
+    def generate_deploy_command(self, request, object_id):
+        """生成部署命令"""
+        from django.contrib.auth.models import User
+        try:
+            host = Host.objects.get(pk=object_id)
+            
+            # 检查或创建引导令牌
+            bootstrap_token, created = BootstrapToken.objects.get_or_create(
+                host=host,
+                defaults={
+                    'created_by': request.user if request.user.is_authenticated else None,
+                    'expires_at': timezone.now() + timedelta(hours=24),
+                    'notes': f'H端初始化令牌 - {timezone.now().strftime("%Y-%m-%d %H:%M:%S")}'
+                }
+            )
+            
+            # 如果令牌已过期，更新过期时间
+            if bootstrap_token.is_expired():
+                bootstrap_token.expires_at = timezone.now() + timedelta(hours=24)
+                bootstrap_token.created_by = request.user if request.user.is_authenticated else None
+                bootstrap_token.notes = f'H端初始化令牌 - {timezone.now().strftime("%Y-%m-%d %H:%M:%S")}'
+                bootstrap_token.save()
+            
+            # 构建secret数据
+            from django.conf import settings
+            import json
+            import base64
+            
+            # 获取当前站点的基础URL
+            current_site = request.build_absolute_uri('/')
+            
+            secret_data = {
+                "c_side_url": current_site.rstrip('/'),
+                "token": bootstrap_token.token,
+                "host_id": host.id,
+                "hostname": host.hostname,
+                "generated_at": timezone.now().isoformat(),
+                "expires_at": bootstrap_token.expires_at.isoformat()
+            }
+            
+            # 转换为JSON并进行base64编码
+            json_str = json.dumps(secret_data)
+            encoded_bytes = base64.b64encode(json_str.encode('utf-8'))
+            encoded_str = encoded_bytes.decode('utf-8')
+            
+            deploy_command = f"python h_side_init.py \"{encoded_str}\""
+            
+            return JsonResponse({
+                'success': True,
+                'deploy_command': deploy_command,
+                'secret': encoded_str,
+                'expires_at': bootstrap_token.expires_at.isoformat(),
+                'message': f'{"新" if created else "现有"}引导令牌已生成，将在24小时后过期'
+            })
+            
+        except Host.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': '主机不存在'
+            }, status=404)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        """重写change_view以添加额外上下文"""
+        extra_context = extra_context or {}
+        extra_context['show_deploy_button'] = True
+        return super().change_view(request, object_id, form_url, extra_context)
+
+    def deploy_command_button(self, obj):
+        """部署命令按钮"""
+        if obj:
+            button_html = format_html(
+                '<button type="button" class="btn btn-outline-primary" id="get-deploy-command-btn" '
+                'data-host-id="{}" onclick="showDeployCommand({}, \'{}\')">获取部署命令</button>',
+                obj.pk, obj.pk, obj.name
+            )
+            return button_html
+        return ""
+    
+    deploy_command_button.short_description = "部署操作"
 
     def save_model(self, request, obj, form, change):
         """
