@@ -83,6 +83,9 @@ class HostAdmin(admin.ModelAdmin):
             path('<int:object_id>/generate-deploy-command/', 
                  self.admin_site.admin_view(self.generate_deploy_command), 
                  name='hosts_host_generate_deploy_command'),
+            path('<int:object_id>/verify-totp/', 
+                 self.admin_site.admin_view(self.verify_totp), 
+                 name='hosts_host_verify_totp'),
         ]
         return custom_urls + urls
 
@@ -138,7 +141,8 @@ class HostAdmin(admin.ModelAdmin):
                 'deploy_command': deploy_command,
                 'secret': encoded_str,
                 'expires_at': initial_token.expires_at.isoformat(),
-                'message': f'{"新" if created else "现有"}引导令牌已生成，将在24小时后过期'
+                'message': f'{"新" if created else "现有"}引导令牌已生成，将在24小时后过期',
+                'token_id': initial_token.token  # 返回令牌ID，用于TOTP验证
             })
             
         except Host.DoesNotExist:
@@ -152,6 +156,83 @@ class HostAdmin(admin.ModelAdmin):
                 'error': str(e)
             }, status=500)
 
+    def verify_totp(self, request, object_id):
+        """验证TOTP码"""
+        if request.method != 'POST':
+            return JsonResponse({'success': False, 'error': 'Only POST method allowed'}, status=405)
+        
+        try:
+            import json
+            data = json.loads(request.body.decode('utf-8'))
+            host_id = data.get('host_id')
+            totp_code = data.get('totp_code')
+            
+            if not host_id or not totp_code:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Host ID and TOTP code are required'
+                }, status=400)
+            
+            # 查找对应的初始令牌
+            from apps.bootstrap.models import InitialToken
+            initial_tokens = InitialToken.objects.filter(
+                host_id=host_id,
+                status='ISSUED',  # 只处理已签发但未验证的令牌
+                expires_at__gt=timezone.now()
+            )
+            
+            if not initial_tokens.exists():
+                return JsonResponse({
+                    'success': False,
+                    'error': 'No valid initial token found for this host'
+                }, status=404)
+            
+            import pyotp
+            import datetime
+            from django.utils import timezone
+            
+            # 尝试验证TOTP码
+            verified = False
+            for token_obj in initial_tokens:
+                totp_secret = token_obj.generate_totp_secret()
+                
+                # 使用pyotp验证TOTP码
+                totp = pyotp.TOTP(totp_secret)
+                
+                # 验证当前码和允许1个时间窗口的偏移
+                current_time = int(datetime.datetime.now().timestamp())
+                for offset in [-30, 0, 30]:  # 允许前后30秒的偏移
+                    expected_time = current_time + offset
+                    expected_code = totp.at(expected_time)
+                    
+                    if expected_code == totp_code:
+                        # 验证成功，更新令牌状态
+                        token_obj.status = 'TOTP_VERIFIED'
+                        token_obj.save()
+                        
+                        verified = True
+                        break
+                
+                if verified:
+                    break
+            
+            if verified:
+                return JsonResponse({
+                    'success': True,
+                    'message': 'TOTP verification successful'
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Invalid TOTP code'
+                }, status=400)
+                
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+
     def change_view(self, request, object_id, form_url='', extra_context=None):
         """重写change_view以添加额外上下文"""
         extra_context = extra_context or {}
@@ -159,12 +240,12 @@ class HostAdmin(admin.ModelAdmin):
         return super().change_view(request, object_id, form_url, extra_context)
 
     def deploy_command_button(self, obj):
-        """部署命令按钮"""
+        """部署命令按钮 - 现在主要通过JS在工具栏中添加"""
+        # 此方法保留用于向后兼容，但按钮主要通过JS添加
         if obj:
             button_html = format_html(
-                '<button type="button" class="btn btn-outline-primary" id="get-deploy-command-btn" '
-                'data-host-id="{}" onclick="showDeployCommand({}, \'{}\')">获取部署命令</button>',
-                obj.pk, obj.pk, obj.name
+                '<div id="deploy-command-section" style="margin-top: 10px;">'
+                '<!-- 部署命令按钮通过JS动态添加 --></div>'
             )
             return button_html
         return ""
