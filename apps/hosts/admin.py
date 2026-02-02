@@ -105,7 +105,7 @@ class HostAdmin(admin.ModelAdmin):
             
             # 如果令牌已过期，更新过期时间
             if bootstrap_token.is_expired():
-                bootstrap_token.expires_at = timezone.now() + timedelta(hours=24)
+                bootstrap_token.expires_at = timezone.now() + timedelta(hours=1)
                 bootstrap_token.created_by = request.user if request.user.is_authenticated else None
                 bootstrap_token.notes = f'H端初始化令牌 - {timezone.now().strftime("%Y-%m-%d %H:%M:%S")}'
                 bootstrap_token.save()
@@ -132,7 +132,7 @@ class HostAdmin(admin.ModelAdmin):
             encoded_bytes = base64.b64encode(json_str.encode('utf-8'))
             encoded_str = encoded_bytes.decode('utf-8')
             
-            deploy_command = f"python h_side_init.py \"{encoded_str}\""
+            deploy_command = f".\h_side_init.exe \"{encoded_str}\""
             
             return JsonResponse({
                 'success': True,
