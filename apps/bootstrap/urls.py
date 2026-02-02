@@ -8,6 +8,8 @@ urlpatterns = [
     path('config/', views.get_bootstrap_config, name='get_bootstrap_config'),
     path('trigger/', views.trigger_host_bootstrap, name='trigger_host_bootstrap'),
     path('create-token/', views.create_bootstrap_token, name='create_bootstrap_token'),
+    path('get-pairing-code/', views.get_pairing_code, name='get_pairing_code'),
+    path('verify-pairing-code/', views.verify_pairing_code, name='verify_pairing_code'),  # 新增验证配对码端点
     path('status/', views.check_bootstrap_status, name='check_bootstrap_status'),
     path('validate-token/', views.validate_bootstrap_token, name='validate_bootstrap_token'),
     
