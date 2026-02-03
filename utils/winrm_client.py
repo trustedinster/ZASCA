@@ -1,23 +1,6 @@
 # Winrm客户端工具
-"""
-Winrm客户端封装模块
-
-该模块提供了与Windows远程管理（WinRM）服务交互的客户端实现，
-用于执行远程命令和PowerShell脚本。
-
-主要功能：
-- 建立和管理WinRM会话
-- 执行远程命令和PowerShell脚本
-- 管理远程用户账户
-- 提供连接重试和超时处理
-
-使用示例：
-    client = WinrmClient("hostname", "username", "password")
-    result = client.execute_command("ipconfig")
-    if result.success:
-        print(result.std_out)
-"""
 import logging
+import re
 from dataclasses import dataclass
 from typing import Optional, Dict, Any
 from winrm import Session
@@ -31,43 +14,25 @@ logger = logging.getLogger("zasca")
 
 @dataclass
 class WinrmResult:
-    """
-    WinRM执行结果的数据类
-
-    属性:
-        status_code: 命令执行的状态码，0表示成功
-        std_out: 标准输出内容
-        std_err: 标准错误内容
-        success: 命令是否执行成功的布尔值
-    """
     status_code: int
     std_out: str
     std_err: str
 
     @property
     def success(self) -> bool:
-        """判断命令是否执行成功"""
         return self.status_code == 0
 
 
+def _escape_ps_string(s: str) -> str:
+    """转义PowerShell字符串中的特殊字符，防止命令注入"""
+    if not s:
+        return s
+    # 双引号内: 反引号` 双引号" 美元符$ 需要转义
+    return s.replace('`', '``').replace('"', '`"').replace('$', '`$')
+
+
 class WinrmClient:
-    """
-    WinRM客户端封装类
-
-    该类封装了与WinRM服务交互的核心功能，包括会话管理、命令执行、
-    PowerShell脚本执行和用户管理等操作。
-
-    属性:
-        hostname: 主机名或IP地址
-        username: 登录用户名
-        password: 登录密码
-        port: WinRM服务端口，默认为5985
-        use_ssl: 是否使用SSL连接，默认为False
-        timeout: 操作超时时间（秒）
-        max_retries: 最大重试次数
-        endpoint: WinRM服务端点URL
-        session: WinRM会话对象
-    """
+    """WinRM客户端 - 远程管理Windows主机"""
 
     def __init__(
             self,
@@ -126,11 +91,11 @@ class WinrmClient:
         if not self._validate_hostname():
             raise ValueError(f"主机名无法解析: {self.hostname}")
 
-        # 初始化会话对象
+        # 初始化会话对象 - 使用certificate认证方式
         self.session = Session(
             self.endpoint,
             auth=(self.username, self.password),
-            transport='basic',
+            transport='ntlm',  # 使用NTLM认证作为certificate的替代
             server_cert_validation='ignore',
             # 设置连接超时
             operation_timeout_sec=self.timeout,
@@ -303,46 +268,27 @@ class WinrmClient:
             description: Optional[str] = None,
             group: Optional[str] = None
     ) -> WinrmResult:
-        """
-        创建本地用户
+        """创建本地用户"""
+        # 校验用户名格式，只允许字母数字下划线
+        if not re.match(r'^[a-zA-Z0-9_]+$', username):
+            return WinrmResult(1, '', 'Invalid username format')
 
-        参数:
-            username: 用户名
-            password: 密码
-            description: 用户描述
-            group: 要加入的用户组
+        safe_user = _escape_ps_string(username)
+        safe_pass = _escape_ps_string(password)
+        safe_desc = _escape_ps_string(description or '')
 
-        返回:
-            WinrmResult对象，包含执行结果
-        """
-        desc = description or ''
-        # 使用变量存储密码，避免在日志中暴露
         script = f'''
-        $password = ConvertTo-SecureString "{password}" -AsPlainText -Force
-        $user = New-LocalUser -Name "{username}" -Password $password -Description "{desc}" -ErrorAction Stop
-        '''
-
-        # 默认将用户添加到Users组，这是Windows系统必需的组
-        default_group_script = f'''
-        Add-LocalGroupMember -Group "Users" -Member "{username}" -ErrorAction Stop
-        '''
-        script += default_group_script
-        
-        # 如果指定了其他组，则也添加到该组
+$pw = ConvertTo-SecureString "{safe_pass}" -AsPlainText -Force
+New-LocalUser -Name "{safe_user}" -Password $pw -Description "{safe_desc}" -ErrorAction Stop
+Add-LocalGroupMember -Group "Users" -Member "{safe_user}" -ErrorAction Stop
+'''
         if group:
-            script += f'''
-            Add-LocalGroupMember -Group "{group}" -Member "{username}" -ErrorAction Stop
-            '''
+            safe_group = _escape_ps_string(group)
+            script += f'Add-LocalGroupMember -Group "{safe_group}" -Member "{safe_user}" -ErrorAction Stop\n'
 
-        logger.info(f"创建用户: {username}, 组: {group}")
+        logger.info(f"创建用户: {username}")
         result = self.execute_powershell(script)
         self.add_to_remote_users(username)
-
-        if result.success:
-            logger.info(f"用户创建成功: {username}")
-        else:
-            logger.error(f"用户创建失败: {username}, 错误: {result.std_err}")
-
         return result
 
     def create_user_with_reset_password_on_next_login(
@@ -352,166 +298,78 @@ class WinrmClient:
             description: Optional[str] = None,
             group: Optional[str] = None
     ) -> WinrmResult:
-        """
-        创建本地用户并设置下次登录时修改密码
+        """创建用户并要求下次登录改密"""
+        if not re.match(r'^[a-zA-Z0-9_]+$', username):
+            return WinrmResult(1, '', 'Invalid username format')
 
-        参数:
-            username: 用户名
-            password: 密码
-            description: 用户描述
-            group: 要加入的用户组
+        safe_user = _escape_ps_string(username)
+        safe_pass = _escape_ps_string(password)
+        safe_desc = _escape_ps_string(description or '')
 
-        返回:
-            WinrmResult对象，包含执行结果
-        """
-        desc = description or ''
-        # 使用变量存储密码，避免在日志中暴露
         script = f'''
-        $password = ConvertTo-SecureString "{password}" -AsPlainText -Force
-        $user = New-LocalUser -Name "{username}" -Password $password -Description "{desc}" -ErrorAction Stop
-        
-        # 设置"下次登录必须修改密码"
-        net user "{username}" /logonpasswordchg:YES
-        '''
-
-        # 默认将用户添加到Users组，这是Windows系统必需的组
-        default_group_script = f'''
-        Add-LocalGroupMember -Group "Users" -Member "{username}" -ErrorAction Stop
-        '''
-        script += default_group_script
-        
-        # 如果指定了其他组，则也添加到该组
+$pw = ConvertTo-SecureString "{safe_pass}" -AsPlainText -Force
+New-LocalUser -Name "{safe_user}" -Password $pw -Description "{safe_desc}" -ErrorAction Stop
+net user "{safe_user}" /logonpasswordchg:YES
+Add-LocalGroupMember -Group "Users" -Member "{safe_user}" -ErrorAction Stop
+'''
         if group:
-            script += f'''
-            Add-LocalGroupMember -Group "{group}" -Member "{username}" -ErrorAction Stop
-            '''
+            safe_group = _escape_ps_string(group)
+            script += f'Add-LocalGroupMember -Group "{safe_group}" -Member "{safe_user}" -ErrorAction Stop\n'
 
-        logger.info(f"创建用户: {username}, 组: {group}, 并设置下次登录时修改密码")
+        logger.info(f"创建用户(首登改密): {username}")
         result = self.execute_powershell(script)
         self.add_to_remote_users(username)
-
-        if result.success:
-            logger.info(f"用户创建成功: {username}，下次登录时需修改密码")
-        else:
-            logger.error(f"用户创建失败: {username}, 错误: {result.std_err}")
-
         return result
 
     def delete_user(self, username: str) -> WinrmResult:
-        """
-        删除本地用户
-
-        参数:
-            username: 要删除的用户名
-
-        返回:
-            WinrmResult对象，包含执行结果
-        """
-        script = f'''
-        Remove-LocalUser -Name "{username}" -ErrorAction Stop
-        '''
-
+        """删除本地用户"""
+        if not re.match(r'^[a-zA-Z0-9_]+$', username):
+            return WinrmResult(1, '', 'Invalid username format')
+        safe_user = _escape_ps_string(username)
+        script = f'Remove-LocalUser -Name "{safe_user}" -ErrorAction Stop'
         logger.info(f"删除用户: {username}")
-        result = self.execute_powershell(script)
+        return self.execute_powershell(script)
 
-        if result.success:
-            logger.info(f"用户删除成功: {username}")
-        else:
-            logger.error(f"用户删除失败: {username}, 错误: {result.std_err}")
-
-        return result
     def enable_user(self, username: str) -> WinrmResult:
-        """
-        启用用户
-
-        参数:
-            username: 用户名
-
-        返回:
-            WinrmResult对象，包含执行结果
-        """
-        script = f'''
-        Enable-LocalUser -Name "{username}" -ErrorAction Stop
-        '''
-
+        """启用用户"""
+        if not re.match(r'^[a-zA-Z0-9_]+$', username):
+            return WinrmResult(1, '', 'Invalid username format')
+        safe_user = _escape_ps_string(username)
+        script = f'Enable-LocalUser -Name "{safe_user}" -ErrorAction Stop'
         logger.info(f"启用用户: {username}")
-        result = self.execute_powershell(script)
-
-        if result.success:
-            logger.info(f"用户启用成功: {username}")
+        return self.execute_powershell(script)
 
     def disabled_user(self, username: str) -> WinrmResult:
-        """
-        禁用用户
-
-        参数:
-            username: 用户名
-
-        返回:
-            WinrmResult对象，包含执行结果
-        """
-        script = f'''
-        Disable-LocalUser -Name "{username}" -ErrorAction Stop
-        '''
-
+        """禁用用户"""
+        if not re.match(r'^[a-zA-Z0-9_]+$', username):
+            return WinrmResult(1, '', 'Invalid username format')
+        safe_user = _escape_ps_string(username)
+        script = f'Disable-LocalUser -Name "{safe_user}" -ErrorAction Stop'
         logger.info(f"禁用用户: {username}")
-        result = self.execute_powershell(script)
-
-        if result.success:
-            logger.info(f"用户禁用成功: {username}")
+        return self.execute_powershell(script)
 
     def get_user_info(self, username: str) -> WinrmResult:
-        """
-        获取本地用户信息
-
-        参数:
-            username: 用户名
-
-        返回:
-            WinrmResult对象，包含用户信息的JSON格式数据
-        """
-        script = f'''
-        Get-LocalUser -Name "{username}" | ConvertTo-Json
-        '''
-
-        logger.info(f"获取用户信息: {username}")
+        """获取用户信息"""
+        if not re.match(r'^[a-zA-Z0-9_]+$', username):
+            return WinrmResult(1, '', 'Invalid username format')
+        safe_user = _escape_ps_string(username)
+        script = f'Get-LocalUser -Name "{safe_user}" | ConvertTo-Json'
         return self.execute_powershell(script)
 
     def list_users(self) -> WinrmResult:
-        """
-        列出所有本地用户
-
-        返回:
-            WinrmResult对象，包含用户列表的JSON格式数据
-        """
-        script = '''
-        Get-LocalUser | ConvertTo-Json
-        '''
-
-        logger.info("列出所有本地用户")
-        return self.execute_powershell(script)
+        """列出所有本地用户"""
+        return self.execute_powershell('Get-LocalUser | ConvertTo-Json')
 
     def check_user_exists(self, username: str) -> bool:
-        """
-        检查用户是否存在
-
-        参数:
-            username: 要检查的用户名
-
-        返回:
-            bool: 用户存在返回True，否则返回False
-        """
+        """检查用户是否存在"""
+        if not re.match(r'^[a-zA-Z0-9_]+$', username):
+            return False
+        safe_user = _escape_ps_string(username)
         try:
-            script = f'''
-            $user = Get-LocalUser -Name "{username}" -ErrorAction Stop
-            $true
-            '''
+            script = f'$u = Get-LocalUser -Name "{safe_user}" -ErrorAction Stop; $true'
             result = self.execute_powershell(script)
-            exists = result.success and 'True' in result.std_out
-            logger.info(f"检查用户是否存在: {username}, 结果: {exists}")
-            return exists
-        except Exception as e:
-            logger.error(f"检查用户存在性时出错: {username}, 错误: {str(e)}")
+            return result.success and 'True' in result.std_out
+        except:
             return False
 
     def get_password_policy(self) -> Dict[str, Any]:
@@ -622,99 +480,46 @@ class WinrmClient:
         logger.info(f"生成强密码完成，长度: {len(password)}")
         return password
     def op_user(self, username: str) -> bool:
-        """
-        为指定用户授予管理员权限
-
-        参数:
-            username: 用户名
-
-        返回:
-            bool: 是否成功授予权限
-        """
-        try:
-            script = f'net localgroup Administrators {username} /add'
-            result = self.execute_powershell(script)
-            if result.success:
-                logger.info(f"为用户{username}授予管理员权限成功")
-                return True
-            else:
-                logger.error(f"为用户{username}授予管理员权限失败: 错误: {result.std_err}")
-                return False
-        except Exception as e:
-            logger.error(f"为用户{username}授予管理员权限失败: 错误: {str(e)}")
+        """授予管理员权限"""
+        if not re.match(r'^[a-zA-Z0-9_]+$', username):
             return False
-    def deop_user(self, username: str):
-        """
-        撤销指定用户的管理员权限
-
-        参数:
-            username: 用户名
-
-        返回:
-            bool: 是否成功撤销权限
-        """
+        safe_user = _escape_ps_string(username)
         try:
-            script = f'net localgroup Administrators {username} /delete'
-            result = self.execute_powershell(script)
-            if result.success:
-                logger.info(f"撤销用户{username}的管理员权限成功")
-                return True
-            else:
-                logger.error(f"撤销用户{username}的管理员权限失败: 错误: {result.std_err}")
-                return False
-        except Exception as e:
-            logger.error(f"撤销用户{username}的管理员权限失败: 错误: {str(e)}")
+            result = self.execute_powershell(f'net localgroup Administrators "{safe_user}" /add')
+            return result.success
+        except:
+            return False
+
+    def deop_user(self, username: str) -> bool:
+        """撤销管理员权限"""
+        if not re.match(r'^[a-zA-Z0-9_]+$', username):
+            return False
+        safe_user = _escape_ps_string(username)
+        try:
+            result = self.execute_powershell(f'net localgroup Administrators "{safe_user}" /delete')
+            return result.success
+        except:
             return False
 
     def reset_password(self, username: str, password: str) -> WinrmResult:
-        """
-        重置指定用户的密码
-
-        参数:
-            username: 用户名
-            password: 新密码
-
-        返回:
-            WinrmResult对象，包含执行结果
-        """
-        result = WinrmResult(status_code=502, std_out="Unknown Error", std_err="Unknown Error")
-        try:
-            script = f'''
-                $password = ConvertTo-SecureString "{password}" -AsPlainText -Force
-                Set-LocalUser -Name "{username}" -Password $password
-                Write-Output "Password for user {username} has been reset successfully"
-                '''
-            result = self.execute_powershell(script)
+        """重置用户密码"""
+        if not re.match(r'^[a-zA-Z0-9_]+$', username):
+            return WinrmResult(1, '', 'Invalid username format')
+        safe_user = _escape_ps_string(username)
+        safe_pass = _escape_ps_string(password)
+        script = f'''
+$pw = ConvertTo-SecureString "{safe_pass}" -AsPlainText -Force
+Set-LocalUser -Name "{safe_user}" -Password $pw
+'''
+        result = self.execute_powershell(script)
+        if result.success:
             self.add_to_remote_users(username)
-            if result.success:
-                logger.info(f"重置用户{username}的密码成功")
-                return result
-            else:
-                logger.error(f"重置用户{username}的密码失败: 错误: {result.std_err}")
-                return result
-        except Exception as e:
-            logger.error(f"重置用户{username}的密码失败: 错误: {str(e)}")
-            return result
+        return result
+
     def add_to_remote_users(self, username: str) -> WinrmResult:
-        """
-        将指定用户添加到远程用户组
-
-        参数:
-            username: 用户名
-
-        返回:
-            WinrmResult对象，包含执行结果
-        """
-        result = WinrmResult(status_code=502, std_out="Unknown Error", std_err="Unknown Error")
-        try:
-            script = f'Add-LocalGroupMember -Group "Remote Desktop Users" -Member "{username}"'
-            result = self.execute_powershell(script)
-            if result.success:
-                logger.info(f"将用户{username}添加到远程用户组成功")
-                return result
-            else:
-                logger.error(f"将用户{username}添加到远程用户组失败: 错误: {result.std_err}")
-                return result
-        except Exception as e:
-            logger.error(f"将用户{username}添加到远程用户组失败: 错误: {str(e)}")
-            return result
+        """添加到远程桌面用户组"""
+        if not re.match(r'^[a-zA-Z0-9_]+$', username):
+            return WinrmResult(1, '', 'Invalid username format')
+        safe_user = _escape_ps_string(username)
+        script = f'Add-LocalGroupMember -Group "Remote Desktop Users" -Member "{safe_user}" -ErrorAction SilentlyContinue'
+        return self.execute_powershell(script)

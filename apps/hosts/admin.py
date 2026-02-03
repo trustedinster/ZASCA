@@ -11,6 +11,8 @@ from django.utils.safestring import mark_safe
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_protect
 from .models import Host, HostGroup
+from apps.operations.models import Product, CloudComputerUser
+from utils.winrm_client import WinrmClient
 import uuid
 from datetime import timedelta
 from django.utils import timezone
@@ -83,155 +85,131 @@ class HostAdmin(admin.ModelAdmin):
             path('<int:object_id>/generate-deploy-command/', 
                  self.admin_site.admin_view(self.generate_deploy_command), 
                  name='hosts_host_generate_deploy_command'),
-            path('<int:object_id>/verify-totp/', 
-                 self.admin_site.admin_view(self.verify_totp), 
-                 name='hosts_host_verify_totp'),
+            path('<int:object_id>/manage-permissions/', 
+                 self.admin_site.admin_view(self.manage_permissions), 
+                 name='hosts_host_manage_permissions'),
+            path('<int:object_id>/grant-admin/<int:user_id>/', 
+                 self.admin_site.admin_view(self.grant_admin), 
+                 name='hosts_host_grant_admin'),
+            path('<int:object_id>/revoke-admin/<int:user_id>/', 
+                 self.admin_site.admin_view(self.revoke_admin), 
+                 name='hosts_host_revoke_admin'),
         ]
         return custom_urls + urls
 
     def generate_deploy_command(self, request, object_id):
-        """生成部署命令"""
+        """生成部署命令并返回完整部署流程信息"""
+        import logging
+        import secrets
+        import json
+        import base64
+        from django.conf import settings
         from django.contrib.auth.models import User
+        from apps.bootstrap.models import InitialToken
+        
+        logger = logging.getLogger(__name__)
+        
         try:
             host = Host.objects.get(pk=object_id)
+            user = request.user
             
-            # 检查或创建初始令牌
-            from apps.bootstrap.models import InitialToken
-            import secrets
+            logger.info(f"用户 {user.username} 请求为主机 {host.name}(ID: {host.id}) 生成部署命令")
             
-            # 生成新的初始令牌
-            token = secrets.token_urlsafe(32)  # 生成安全的随机令牌
-            expires_at = timezone.now() + timedelta(hours=24)
+            # 检查是否存在有效的AccessToken
+            current_time = timezone.now()
+            valid_tokens = InitialToken.objects.filter(
+                host=host,
+                status__in=['ISSUED', 'PAIRED'],  # 有效的状态
+                expires_at__gt=current_time  # 未过期
+            ).order_by('-created_at')
             
-            initial_token, created = InitialToken.objects.get_or_create(
-                token=token,
-                defaults={
-                    'host': host,
-                    'expires_at': expires_at,
-                    'status': 'ISSUED'
-                }
-            )
+            if valid_tokens.exists():
+                # 复用现有的有效令牌
+                existing_token = valid_tokens.first()
+                logger.info(f"发现主机 {host.name} 存在有效的AccessToken (状态: {existing_token.status}, 过期时间: {existing_token.expires_at}), 复用现有令牌")
+                initial_token = existing_token
+                created = False
+                token_message = "复用现有引导令牌"
+                # 重新生成配对码
+                pairing_code = initial_token.generate_pairing_code()
+            else:
+                # 生成新的初始令牌
+                logger.info(f"主机 {host.name} 不存在有效的AccessToken，生成新的令牌")
+                token = secrets.token_urlsafe(32)  # 生成安全的随机令牌
+                expires_at = current_time + timedelta(hours=24)
+                
+                initial_token, created = InitialToken.objects.get_or_create(
+                    token=token,
+                    defaults={
+                        'host': host,
+                        'expires_at': expires_at,
+                        'status': 'ISSUED'
+                    }
+                )
+                token_message = "新引导令牌已生成"
+                logger.info(f"为主机 {host.name} 成功生成新的AccessToken，过期时间: {expires_at}")
+                # 生成配对码
+                pairing_code = initial_token.generate_pairing_code()
             
             # 构建secret数据
-            from django.conf import settings
-            import json
-            import base64
-            
-            # 获取当前站点的基础URL
-            current_site = request.build_absolute_uri('/')
-            
-            secret_data = {
-                "c_side_url": current_site.rstrip('/'),
-                "token": initial_token.token,
-                "host_id": str(host.id),
-                "hostname": host.hostname,
-                "generated_at": timezone.now().isoformat(),
-                "expires_at": initial_token.expires_at.isoformat()
-            }
-            
-            # 转换为JSON并进行base64编码
-            json_str = json.dumps(secret_data)
-            encoded_bytes = base64.b64encode(json_str.encode('utf-8'))
-            encoded_str = encoded_bytes.decode('utf-8')
-            
-            deploy_command = f".\h_side_init.exe \"{encoded_str}\""
-            
-            return JsonResponse({
-                'success': True,
-                'deploy_command': deploy_command,
-                'secret': encoded_str,
-                'expires_at': initial_token.expires_at.isoformat(),
-                'message': f'{"新" if created else "现有"}引导令牌已生成，将在24小时后过期',
-                'token_id': initial_token.token  # 返回令牌ID，用于TOTP验证
-            })
+            try:
+                # 获取当前站点的基础URL
+                current_site = request.build_absolute_uri('/')
+                logger.debug(f"当前站点URL: {current_site}")
+                
+                secret_data = {
+                    "c_side_url": current_site.rstrip('/'),
+                    "token": initial_token.token,
+                    "host_id": str(host.id),
+                    "hostname": host.hostname,
+                    "generated_at": current_time.isoformat(),
+                    "expires_at": initial_token.expires_at.isoformat()
+                }
+                
+                # 转换为JSON并进行base64编码
+                json_str = json.dumps(secret_data, ensure_ascii=False)
+                encoded_bytes = base64.b64encode(json_str.encode('utf-8'))
+                encoded_str = encoded_bytes.decode('utf-8')
+                
+                deploy_command = f".\h_side_init.exe \"{encoded_str}\""
+                
+                logger.info(f"成功为主机 {host.name} 生成部署命令，命令长度: {len(deploy_command)} 字符")
+                
+                return JsonResponse({
+                    'success': True,
+                    'deploy_command': deploy_command,
+                    'secret': encoded_str,
+                    'pairing_code': pairing_code,
+                    'pairing_code_expiry': initial_token.pairing_code_expires_at.isoformat(),
+                    'expires_at': initial_token.expires_at.isoformat(),
+                    'message': f'{token_message}，将在24小时后过期',
+                    'token_id': initial_token.token,
+                    'token_status': initial_token.status,
+                    'created_new': created
+                })
+                
+            except Exception as encode_error:
+                logger.error(f"编码部署命令时发生错误: {str(encode_error)}", exc_info=True)
+                return JsonResponse({
+                    'success': False,
+                    'error': f'编码部署命令失败: {str(encode_error)}'
+                }, status=500)
             
         except Host.DoesNotExist:
+            logger.warning(f"用户 {request.user.username} 尝试为主机ID {object_id} 生成部署命令，但主机不存在")
             return JsonResponse({
                 'success': False,
                 'error': '主机不存在'
             }, status=404)
         except Exception as e:
+            logger.error(f"生成部署命令时发生未预期错误: {str(e)}", exc_info=True)
             return JsonResponse({
                 'success': False,
-                'error': str(e)
+                'error': f'生成部署命令失败: {str(e)}'
             }, status=500)
 
-    def verify_totp(self, request, object_id):
-        """验证TOTP码"""
-        if request.method != 'POST':
-            return JsonResponse({'success': False, 'error': 'Only POST method allowed'}, status=405)
-        
-        try:
-            import json
-            data = json.loads(request.body.decode('utf-8'))
-            host_id = data.get('host_id')
-            totp_code = data.get('totp_code')
-            
-            if not host_id or not totp_code:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Host ID and TOTP code are required'
-                }, status=400)
-            
-            # 查找对应的初始令牌
-            from apps.bootstrap.models import InitialToken
-            initial_tokens = InitialToken.objects.filter(
-                host_id=host_id,
-                status='ISSUED',  # 只处理已签发但未验证的令牌
-                expires_at__gt=timezone.now()
-            )
-            
-            if not initial_tokens.exists():
-                return JsonResponse({
-                    'success': False,
-                    'error': 'No valid initial token found for this host'
-                }, status=404)
-            
-            import pyotp
-            import datetime
-            from django.utils import timezone
-            
-            # 尝试验证TOTP码
-            verified = False
-            for token_obj in initial_tokens:
-                totp_secret = token_obj.generate_totp_secret()
-                
-                # 使用pyotp验证TOTP码
-                totp = pyotp.TOTP(totp_secret)
-                
-                # 验证当前码和允许1个时间窗口的偏移
-                current_time = int(datetime.datetime.now().timestamp())
-                for offset in [-30, 0, 30]:  # 允许前后30秒的偏移
-                    expected_time = current_time + offset
-                    expected_code = totp.at(expected_time)
-                    
-                    if expected_code == totp_code:
-                        # 验证成功，更新令牌状态
-                        token_obj.status = 'TOTP_VERIFIED'
-                        token_obj.save()
-                        
-                        verified = True
-                        break
-                
-                if verified:
-                    break
-            
-            if verified:
-                return JsonResponse({
-                    'success': True,
-                    'message': 'TOTP verification successful'
-                })
-            else:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Invalid TOTP code'
-                }, status=400)
-                
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': str(e)
-            }, status=500)
+        # 移除TOTP验证相关代码
+        pass
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         """重写change_view以添加额外上下文"""
@@ -310,6 +288,91 @@ class HostAdmin(admin.ModelAdmin):
         
         # 执行批量删除
         super().delete_queryset(request, queryset)
+
+    def manage_permissions(self, request, object_id):
+        """管理主机权限"""
+        from django.shortcuts import render
+        try:
+            host = Host.objects.get(pk=object_id)
+            
+            # 获取关联的产品和用户
+            products = Product.objects.filter(host=host)
+            users = CloudComputerUser.objects.filter(product__in=products).select_related('product')
+            
+            context = {
+                'host': host,
+                'products': products,
+                'users': users,
+                'title': f'{host.name} - 权限管理',
+            }
+            
+            return render(request, 'admin/hosts/host/manage_permissions.html', context)
+            
+        except Host.DoesNotExist:
+            messages.error(request, '主机不存在')
+            return HttpResponseRedirect(reverse('admin:hosts_host_changelist'))
+
+    def grant_admin(self, request, object_id, user_id):
+        """授予管理员权限"""
+        try:
+            host = Host.objects.get(pk=object_id)
+            user = CloudComputerUser.objects.get(pk=user_id, product__host=host)
+            
+            # 连接主机并授予权限
+            client = WinrmClient(
+                hostname=host.hostname,
+                port=host.port,
+                username=host.username,
+                password=host.password,
+                use_ssl=host.use_ssl
+            )
+            
+            success = client.op_user(user.username)
+            if success:
+                # 更新数据库记录
+                user.is_admin = True
+                user.save(update_fields=['is_admin'])
+                messages.success(request, f'成功为用户 {user.username} 授予管理员权限')
+            else:
+                messages.error(request, f'为用户 {user.username} 授予管理员权限失败')
+            
+        except (Host.DoesNotExist, CloudComputerUser.DoesNotExist):
+            messages.error(request, '主机或用户不存在')
+        except Exception as e:
+            messages.error(request, f'授予权限时发生错误: {str(e)}')
+        
+        return HttpResponseRedirect(reverse('admin:hosts_host_manage_permissions', args=[object_id]))
+
+    def revoke_admin(self, request, object_id, user_id):
+        """撤销管理员权限"""
+        try:
+            host = Host.objects.get(pk=object_id)
+            user = CloudComputerUser.objects.get(pk=user_id, product__host=host)
+            
+            # 连接主机并撤销权限
+            client = WinrmClient(
+                hostname=host.hostname,
+                port=host.port,
+                username=host.username,
+                password=host.password,
+                use_ssl=host.use_ssl
+            )
+            
+            success = client.deop_user(user.username)
+            if success:
+                # 更新数据库记录
+                user.is_admin = False
+                user.save(update_fields=['is_admin'])
+                messages.success(request, f'成功撤销用户 {user.username} 的管理员权限')
+            else:
+                messages.error(request, f'撤销用户 {user.username} 的管理员权限失败')
+            
+        except (Host.DoesNotExist, CloudComputerUser.DoesNotExist):
+            messages.error(request, '主机或用户不存在')
+        except Exception as e:
+            messages.error(request, f'撤销权限时发生错误: {str(e)}')
+        
+        return HttpResponseRedirect(reverse('admin:hosts_host_manage_permissions', args=[object_id]))
 
 
 @admin.register(HostGroup)

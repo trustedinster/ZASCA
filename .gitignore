@@ -56,6 +56,13 @@ htmlcov/
 .coversnap/
 .tox/
 test_*.py
+check_*.py
+debug_*.py
+manual_*.py
+final_*.py
+*_test.py
+*_tests.py
+check_env.py
 
 # OS
 .DS_Store

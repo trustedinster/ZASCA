@@ -16,14 +16,12 @@ urlpatterns = [
     path('account-openings/create/', views.AccountOpeningRequestCreateView.as_view(), name='account_opening_create'),
     path('account-openings/confirm/', views.account_opening_confirm, name='account_opening_confirm'),
     path('account-openings/submit/', views.account_opening_submit, name='account_opening_submit'),
-    path('account-openings/approve/<int:pk>/', views.approve_account_request, name='account_opening_approve'),
-    path('account-openings/reject/<int:pk>/', views.reject_account_request, name='account_opening_reject'),
-    path('account-openings/process/<int:pk>/', views.process_account_request, name='account_opening_process'),
+    # 已删除：approve/reject/process 路由 - 功能已迁移至 Django Admin
     path('account-openings/<int:pk>/', views.account_opening_detail, name='account_opening_detail'),
     
     # 云电脑用户相关URL
     path('cloud-users/', views.CloudComputerUserListView.as_view(), name='cloud_user_list'),
-    path('cloud-users/<int:pk>/toggle-status/', views.toggle_cloud_user_status, name='cloud_user_toggle_status'),
+    # 已删除：toggle-status 路由 - 功能已迁移至 Django Admin
     
     # 我的云电脑相关URL
     path('my-cloud-computers/', views.MyCloudComputersView.as_view(), name='my_cloud_computers'),

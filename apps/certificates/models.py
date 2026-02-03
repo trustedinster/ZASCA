@@ -1,28 +1,56 @@
 from django.db import models
+from django.conf import settings
+from django.core.signing import Signer
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
+from cryptography.fernet import Fernet
 from django.core.exceptions import ValidationError
 import datetime
 import base64
-import os
+import hashlib
+
+
+def _get_fernet():
+    """用SECRET_KEY派生Fernet密钥"""
+    key = hashlib.sha256(settings.SECRET_KEY.encode()).digest()
+    return Fernet(base64.urlsafe_b64encode(key))
 
 
 class CertificateAuthority(models.Model):
-    """证书颁发机构模型"""
+    """证书颁发机构"""
     name = models.CharField(max_length=255, unique=True, verbose_name="CA名称")
-    private_key = models.TextField(verbose_name="私钥(加密存储)")  # 加密存储
-    certificate = models.TextField(verbose_name="CA证书(PEM格式)")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
-    expires_at = models.DateTimeField(verbose_name="过期时间", null=True, blank=True)  # 允许为空
-    is_active = models.BooleanField(default=True, verbose_name="是否激活")
-    description = models.TextField(blank=True, null=True, verbose_name="描述")
+    _private_key = models.TextField(db_column='private_key', verbose_name="私钥(加密)")
+    certificate = models.TextField(verbose_name="CA证书(PEM)")
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    description = models.TextField(blank=True, null=True)
 
     class Meta:
         verbose_name = "证书颁发机构"
         verbose_name_plural = "证书颁发机构"
         db_table = "certificate_authority"
+
+    @property
+    def private_key(self):
+        """解密私钥"""
+        if not self._private_key:
+            return None
+        try:
+            return _get_fernet().decrypt(self._private_key.encode()).decode()
+        except:
+            # 兼容旧数据（未加密的）
+            return self._private_key
+
+    @private_key.setter
+    def private_key(self, value):
+        """加密存储私钥"""
+        if value:
+            self._private_key = _get_fernet().encrypt(value.encode()).decode()
+        else:
+            self._private_key = ''
 
     def generate_self_signed_cert(self):
         """生成自签名CA证书"""
@@ -84,23 +112,39 @@ class CertificateAuthority(models.Model):
 
 
 class ServerCertificate(models.Model):
-    """服务器证书模型"""
+    """服务器证书"""
     hostname = models.CharField(max_length=255, unique=True, verbose_name="主机名")
-    ca = models.ForeignKey(CertificateAuthority, on_delete=models.CASCADE, verbose_name="所属CA")
-    private_key = models.TextField(verbose_name="私钥(加密存储)")  # 加密存储
-    certificate = models.TextField(verbose_name="服务器证书(PEM格式)")
-    pfx_data = models.TextField(verbose_name="PFX数据(Base64编码)")  # Base64编码的PFX数据
-    thumbprint = models.CharField(max_length=255, unique=True, verbose_name="证书指纹(SHA1)")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
-    expires_at = models.DateTimeField(verbose_name="过期时间", null=True, blank=True)  # 允许为空
-    is_revoked = models.BooleanField(default=False, verbose_name="是否已吊销")
-    revocation_reason = models.CharField(max_length=255, blank=True, null=True, verbose_name="吊销原因")
-    revocation_date = models.DateTimeField(blank=True, null=True, verbose_name="吊销时间")
+    ca = models.ForeignKey(CertificateAuthority, on_delete=models.CASCADE)
+    _private_key = models.TextField(db_column='private_key', verbose_name="私钥(加密)")
+    certificate = models.TextField(verbose_name="证书(PEM)")
+    pfx_data = models.TextField(verbose_name="PFX(Base64)")
+    thumbprint = models.CharField(max_length=255, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    is_revoked = models.BooleanField(default=False)
+    revocation_reason = models.CharField(max_length=255, blank=True, null=True)
+    revocation_date = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         verbose_name = "服务器证书"
         verbose_name_plural = "服务器证书"
         db_table = "server_certificate"
+
+    @property
+    def private_key(self):
+        if not self._private_key:
+            return None
+        try:
+            return _get_fernet().decrypt(self._private_key.encode()).decode()
+        except:
+            return self._private_key
+
+    @private_key.setter
+    def private_key(self, value):
+        if value:
+            self._private_key = _get_fernet().encrypt(value.encode()).decode()
+        else:
+            self._private_key = ''
 
     def generate_server_cert(self, hostname, san_names=None):
         """为指定主机生成服务器证书"""
@@ -204,28 +248,40 @@ class ServerCertificate(models.Model):
 
 
 class ClientCertificate(models.Model):
-    """客户端证书模型，用于C端连接H端时的身份认证"""
-    name = models.CharField(max_length=255, verbose_name="证书名称")
-    ca = models.ForeignKey(CertificateAuthority, on_delete=models.CASCADE, verbose_name="所属CA")
-    private_key = models.TextField(verbose_name="私钥(加密存储)")  # 加密存储
-    certificate = models.TextField(verbose_name="客户端证书(PEM格式)")
-    thumbprint = models.CharField(max_length=255, unique=True, verbose_name="证书指纹(SHA1)")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
-    expires_at = models.DateTimeField(verbose_name="过期时间", null=True, blank=True)  # 允许为空
+    """客户端证书"""
+    name = models.CharField(max_length=255)
+    ca = models.ForeignKey(CertificateAuthority, on_delete=models.CASCADE)
+    _private_key = models.TextField(db_column='private_key', verbose_name="私钥(加密)")
+    certificate = models.TextField(verbose_name="证书(PEM)")
+    thumbprint = models.CharField(max_length=255, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
     assigned_to_user = models.ForeignKey(
-        'accounts.User',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name="分配给用户"
+        'accounts.User', on_delete=models.SET_NULL, null=True, blank=True
     )
-    is_active = models.BooleanField(default=True, verbose_name="是否激活")
-    description = models.TextField(blank=True, null=True, verbose_name="描述")
+    is_active = models.BooleanField(default=True)
+    description = models.TextField(blank=True, null=True)
 
     class Meta:
         verbose_name = "客户端证书"
         verbose_name_plural = "客户端证书"
         db_table = "client_certificate"
+
+    @property
+    def private_key(self):
+        if not self._private_key:
+            return None
+        try:
+            return _get_fernet().decrypt(self._private_key.encode()).decode()
+        except:
+            return self._private_key
+
+    @private_key.setter
+    def private_key(self, value):
+        if value:
+            self._private_key = _get_fernet().encrypt(value.encode()).decode()
+        else:
+            self._private_key = ''
 
     def generate_client_cert(self, name, user=None, description=""):
         """生成客户端证书"""

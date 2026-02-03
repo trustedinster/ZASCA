@@ -307,121 +307,8 @@ def account_opening_detail(request, pk):
     return render(request, 'operations/account_opening_request_detail.html', context)
 
 
-@login_required
-def approve_account_request(request, pk):
-    """批准开户申请"""
-    account_request = get_object_or_404(AccountOpeningRequest, pk=pk)
-
-    # 检查权限
-    if not (request.user.is_staff or request.user.is_superuser):
-        messages.error(request, '您没有权限执行此操作。')
-        return redirect('operations:account_opening_list')
-
-    if request.method == 'POST':
-        notes = request.POST.get('approval_notes', '')
-        account_request.approve(request.user, notes)
-        messages.success(request, f'开户申请已批准：{account_request.username}')
-        return redirect('operations:account_opening_list')
-
-    context = {
-        'request_obj': account_request,
-        'action': 'approve'
-    }
-    return render(request, 'operations/account_opening_confirm.html', context)
-
-
-@login_required
-def reject_account_request(request, pk):
-    """拒绝开户申请"""
-    account_request = get_object_or_404(AccountOpeningRequest, pk=pk)
-
-    # 检查权限
-    if not (request.user.is_staff or request.user.is_superuser):
-        messages.error(request, '您没有权限执行此操作。')
-        return redirect('operations:account_opening_list')
-
-    if request.method == 'POST':
-        notes = request.POST.get('approval_notes', '')
-        account_request.reject(request.user, notes)
-        messages.success(request, f'开户申请已拒绝：{account_request.username}')
-        return redirect('operations:account_opening_list')
-
-    context = {
-        'request_obj': account_request,
-        'action': 'reject'
-    }
-    return render(request, 'operations/account_opening_confirm.html', context)
-
-
-@login_required
-def process_account_request(request, pk):
-    """处理开户申请（执行实际的开户操作）"""
-    account_request = get_object_or_404(AccountOpeningRequest, pk=pk)
-
-    # 检查权限
-    if not (request.user.is_staff or request.user.is_superuser):
-        messages.error(request, '您没有权限执行此操作。')
-        return redirect('operations:account_opening_list')
-
-    # 确保申请已批准
-    if account_request.status not in ['approved', 'pending']:
-        messages.error(request, '只有待处理或已批准的申请才能执行开户操作。')
-        return redirect('operations:account_opening_list')
-
-    try:
-        # 开始处理
-        account_request.start_processing()
-        
-        # 导入WinRM客户端
-        from utils.winrm_client import WinrmClient
-        import secrets
-        import string
-        
-        # 系统生成强密码
-        password = CloudComputerUser.generate_complex_password()
-        
-        # 连接到目标主机 - 使用target_product关联的主机
-        host = account_request.target_product.host
-        client = WinrmClient(
-            hostname=host.hostname,
-            port=host.port,
-            username=host.username,
-            password=host.password,
-            use_ssl=host.use_ssl
-        )
-
-        
-        result = client.create_user(account_request.username, password)
-        
-        if result.status_code == 0:
-            # 成功创建用户
-            # 创建云电脑用户记录，并存储初始密码
-            cloud_user, created = CloudComputerUser.objects.get_or_create(
-                username=account_request.username,
-                product=account_request.target_product,
-                defaults={
-                    'fullname': account_request.user_fullname,
-                    'email': account_request.user_email,
-                    'description': account_request.user_description,
-                    'created_from_request': account_request,
-                    'initial_password': password  # 存储生成的密码
-                }
-            )
-            
-            account_request.complete(account_request.username, '', f"用户 {account_request.username} 已成功创建")
-            messages.success(request, f"用户 {account_request.username} 已成功创建")
-        else:
-            # 创建用户失败
-            error_msg = result.std_err if result.std_err else '未知错误'
-            account_request.fail(f"创建用户失败: {error_msg}")
-            messages.error(request, f"创建用户失败: {error_msg}")
-            
-    except Exception as e:
-        error_msg = str(e)
-        account_request.fail(error_msg)
-        messages.error(request, f"处理过程中出现异常: {error_msg}")
-    
-    return redirect('operations:account_opening_list')
+# 已删除：approve_account_request, reject_account_request, process_account_request
+# 这些功能已迁移至 Django Admin 的 Action 和自定义按钮实现
 
 
 @method_decorator(login_required, name='dispatch')
@@ -467,39 +354,8 @@ class CloudComputerUserListView(ListView):
         return context
 
 
-@login_required
-def toggle_cloud_user_status(request, pk):
-    """切换云电脑用户状态"""
-    cloud_user = get_object_or_404(CloudComputerUser, pk=pk)
-
-    # 检查权限
-    if not (request.user.is_staff or request.user.is_superuser):
-        messages.error(request, '您没有权限执行此操作。')
-        return redirect('operations:cloud_user_list')
-
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        if action == 'activate':
-            cloud_user.activate()
-            messages.success(request, f'用户 {cloud_user.username} 已激活。')
-        elif action == 'deactivate':
-            cloud_user.deactivate()
-            messages.success(request, f'用户 {cloud_user.username} 已停用。')
-        elif action == 'disable':
-            cloud_user.disable()
-            messages.success(request, f'用户 {cloud_user.username} 已禁用。')
-        elif action == 'delete':
-            cloud_user.delete_user()
-            messages.success(request, f'用户 {cloud_user.username} 已标记为删除。')
-        else:
-            messages.error(request, '无效的操作。')
-
-        return redirect('operations:cloud_user_list')
-
-    context = {
-        'cloud_user': cloud_user
-    }
-    return render(request, 'operations/cloud_user_toggle_status.html', context)
+# 已删除：toggle_cloud_user_status
+# 用户状态切换功能已迁移至 Django Admin 的 Action 实现
 
 
 @method_decorator(login_required, name='dispatch')
@@ -562,33 +418,40 @@ class MyCloudComputersView(ListView):
 @login_required
 def my_cloud_computer_detail(request, pk):
     """我的云电脑用户详情页面"""
-    cloud_user = get_object_or_404(CloudComputerUser, 
-                                  pk=pk, 
-                                  created_from_request__applicant=request.user)
-    
-    context = {
-        'cloud_user': cloud_user
-    }
+    cloud_user = get_object_or_404(CloudComputerUser, pk=pk)
+
+    # 权限检查：owner优先，兼容旧数据用created_from_request
+    if cloud_user.owner:
+        if cloud_user.owner != request.user:
+            return HttpResponseForbidden('无权访问')
+    elif cloud_user.created_from_request:
+        if cloud_user.created_from_request.applicant != request.user:
+            return HttpResponseForbidden('无权访问')
+    else:
+        return HttpResponseForbidden('无权访问')
+
+    context = {'cloud_user': cloud_user}
     return render(request, 'operations/my_cloud_computer_detail.html', context)
 
 
 @login_required
 @require_POST
 def get_password_and_burn(request, pk):
-    """获取密码并销毁 - 阅后即焚功能"""
+    """获取密码并销毁 - 阅后即焚"""
+    cloud_user = get_object_or_404(CloudComputerUser, pk=pk)
+
+    # 权限检查
+    has_access = False
+    if cloud_user.owner and cloud_user.owner == request.user:
+        has_access = True
+    elif cloud_user.created_from_request and cloud_user.created_from_request.applicant == request.user:
+        has_access = True
+
+    if not has_access:
+        return JsonResponse({'success': False, 'error': '无权访问'}, status=403)
+
     try:
-        cloud_user = get_object_or_404(CloudComputerUser, 
-                                      pk=pk, 
-                                      created_from_request__applicant=request.user)
-        
         password = cloud_user.get_and_burn_password()
-        
-        return JsonResponse({
-            'success': True,
-            'password': password
-        })
+        return JsonResponse({'success': True, 'password': password})
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        })
+        return JsonResponse({'success': False, 'error': str(e)})

@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     'apps.operations',
     'apps.dashboard',
     'apps.certificates',
-    'apps.bootstrap',
+    # 'apps.bootstrap',  # 已隐藏主机引导系统
     'apps.audit',
     'apps.tasks',
     'plugins',
@@ -67,7 +67,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'apps.bootstrap.middleware.SessionValidationMiddleware',  # 会话验证中间件
+    # 'apps.bootstrap.middleware.SessionValidationMiddleware',  # 已隐藏主机引导系统的会话验证中间件
     'config.demo_middleware.DemoModeMiddleware',  # DEMO模式中间件
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -168,10 +168,13 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG
 
 
 # Winrm settings
-WINRM_TIMEOUT = 30  # Winrm连接超时时间（秒）
-WINRM_MAX_RETRIES = 3  # Winrm连接最大重试次数
+WINRM_TIMEOUT = int(os.environ.get('WINRM_TIMEOUT', '30'))  # Winrm连接超时时间（秒）
+WINRM_MAX_RETRIES = int(os.environ.get('WINRM_RETRY_COUNT', '3'))  # Winrm连接最大重试次数
 
 # Logging settings
+LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
+LOG_FILE = os.environ.get('LOG_FILE', str(BASE_DIR / 'logs' / 'zasca.log'))
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -188,7 +191,7 @@ LOGGING = {
         },
         'file': {
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR / 'logs' / 'zasca.log',
+            'filename': LOG_FILE,
             'maxBytes': 1024 * 1024 * 10,  # 10MB
             'backupCount': 5,
             'formatter': 'verbose',
@@ -196,17 +199,17 @@ LOGGING = {
     },
     'root': {
         'handlers': ['console', 'file'],
-        'level': 'INFO',
+        'level': LOG_LEVEL,
     },
     'loggers': {
         'django': {
             'handlers': ['console', 'file'],
-            'level': 'INFO',
+            'level': LOG_LEVEL,
             'propagate': False,
         },
         'zasca': {
             'handlers': ['console', 'file'],
-            'level': 'DEBUG',
+            'level': 'DEBUG' if DEBUG else 'INFO',
             'propagate': False,
         },
     },
@@ -219,11 +222,18 @@ X_FRAME_OPTIONS = 'DENY'  # 防止点击劫持
 
 # HTTPS相关安全配置 (仅在生产环境中启用)
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
+    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True').lower() == 'true'
     SECURE_HSTS_SECONDS = 31536000  # 一年
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Redis 配置
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+
+# Celery 配置
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', REDIS_URL)
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', REDIS_URL)
 
 # Geetest (极验) 验证码配置
 GEETEST_ID = os.environ.get('GEETEST_ID')
@@ -232,6 +242,23 @@ GEETEST_KEY = os.environ.get('GEETEST_KEY')
 GEETEST_FALLBACK_LOCAL = os.environ.get('GEETEST_FALLBACK_LOCAL', 'True').lower() == 'true'
 # 缓存极验服务状态的秒数（用于短期内避免重复探测）
 GEETEST_SERVER_STATUS_CACHE_SECONDS = int(os.environ.get('GEETEST_SERVER_STATUS_CACHE_SECONDS', '300'))
+
+# Cloudflare Turnstile 配置
+TURNSTILE_SITE_KEY = os.environ.get('TURNSTILE_SITE_KEY')
+TURNSTILE_SECRET_KEY = os.environ.get('TURNSTILE_SECRET_KEY')
+
+# 系统配置
+ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@localhost')
+SYSTEM_NAME = os.environ.get('SYSTEM_NAME', 'ZASCA 管理系统')
+
+# Email settings
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '25'))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False').lower() == 'true'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'webmaster@localhost')
 
 # DEMO模式配置
 if os.environ.get('ZASCA_DEMO', '').lower() == '1':

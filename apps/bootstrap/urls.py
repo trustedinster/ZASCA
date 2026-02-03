@@ -14,13 +14,16 @@ urlpatterns = [
     # 引导管理API
     path('manage/', views.BootstrapManagementView.as_view(), name='bootstrap_management'),
     
-    # 新增API端点 - 根据规范
-    path('verify-totp/', views.verify_totp, name='verify_totp'),
+    # 新增API端点 - 基于配对码的认证机制
+    path('verify-pairing-code/', views.verify_pairing_code, name='verify_pairing_code'),
     path('exchange-token/', views.exchange_token, name='exchange_token'),
     path('session/', views.revoke_session, name='revoke_session'),
     
     # API端点别名 - 为H端提供兼容路径
-    path('api/verify_totp/', views.verify_totp, name='api_verify_totp'),
+    path('api/verify_pairing_code/', views.verify_pairing_code, name='api_verify_pairing_code'),
     path('api/exchange_token/', views.exchange_token, name='api_exchange_token'),
+    path('api/get_session_token', views.get_session_token, name='api_get_session_token_no_slash'),  # 不带斜杠版本
+    path('api/get_session_token/', views.get_session_token, name='api_get_session_token'),  # 带斜杠版本
+    path('api/check_pairing_status', views.check_pairing_status, name='api_check_pairing_status'),  # 新增：检查配对状态
     path('api/session/', views.revoke_session, name='api_revoke_session'),
 ]

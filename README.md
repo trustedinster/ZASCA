@@ -1,258 +1,147 @@
-# ZASCA (Zero Agent Share Computer Administrator)
+# ZASCA - Zero Agent Security Control Architecture
 
-## 简介
+ZASCA（零代理安全管控架构）是一个基于 Django 的企业级 Windows 主机远程管理平台，采用零代理架构，通过 WinRM 协议实现对 Windows 主机的安全管控。
 
-ZASCA（Zero Agent Share Computer Administrator）是一个不需要在共享计算机上额外安装软件的多机管理工具。它采用基于Winrm的连接方式，可以实现对多台云电脑的统一管理和开户服务。
+## 🚀 核心特性
 
-## 特性
+- **零代理架构**：无需在目标主机安装客户端软件
+- **Django Admin 优先**：最大化利用 Django 内置管理功能
+- **Material Design 3**：现代化的前端用户体验
+- **RBAC 权限控制**：细粒度的角色和权限管理
+- **安全审计**：完整的操作日志和安全监控
+- **工单系统**：标准化的运维流程管理
 
-- 🚀 **零代理部署**：采用Winrm连接方式，无需在主机端额外安装软件
-- 🔒 **安全可靠**：借助微软成熟的Winrm方案，不怕被恶意用户关闭
-- 🌐 **多机管理**：支持一控多架构，可同时管理多台云电脑
-- 💻 **跨平台支持**：Web端可在能运行Python 3.10以上的任意Linux、Windows版本上使用
-- 🔌 **灵活部署**：主机端只需端口映射，不强制要求公网IPv4
-- 👥 **用户开户系统**：支持用户自助申请和管理员审核流程
-- 🎯 **演示模式**：内置DEMO模式，方便快速体验系统功能
-- 💳 **个人云电脑管理**：用户可以查看自己拥有的云电脑，并按产品分类展示
-- 🔐 **阅后即焚密码系统**：提供一次性密码查看功能，密码查看后立即销毁，保障安全性
-- 🔄 **密码重置功能**：支持重置用户密码并设置下次登录必须修改
-- ⚡ **自动审核机制**：支持为产品配置自动审核，符合条件的申请自动通过并创建用户
-- 🔧 **维护模式**：支持一键启用维护模式，所有用户访问将被重定向到维护页面
+## 📚 文档目录
 
-## 系统架构
+详细的项目文档请查看 [`docs/`](./docs) 目录：
 
-### Web端
-- 提供网站供用户注册开户
-- 基于Django框架实现
-- 支持Python 3.10+
-- 可部署在Linux或Windows系统上
-- 使用Winrm连接到云电脑端
+- [00_开发规范指南.md](./docs/00_开发规范指南.md) - 强制执行的开发标准
+- [01_项目架构与设计.md](./docs/01_项目架构与设计.md) - 系统架构和技术选型
+- [02_API接口文档.md](./docs/02_API接口文档.md) - RESTful API 详细说明
+- [03_Database_Schema.md](./docs/03_Database_Schema.md) - 数据库设计和表结构
+- [04_部署运维手册.md](./docs/04_部署运维手册.md) - 生产环境部署指南
+- [05_更新日志.md](./docs/05_更新日志.md) - 版本发布历史
+- [06_安全配置指南.md](./docs/06_安全配置指南.md) - 安全策略和防护措施
 
-### 云电脑端（主机端）
-- 支持Windows Server 2016+
-- 支持Windows 10+
-- 需配置Winrm服务
-- 需要端口映射到公网或内网可访问
-
-## 技术栈
-
-- **后端框架**: Django 4.2+
-- **数据库**: PostgreSQL/MySQL
-- **远程连接**: pywinrm
-- **前端**: Bootstrap 5 + jQuery
-- **异步任务**: Celery + Redis
-
-## 快速开始
+## 🛠️ 快速开始
 
 ### 环境要求
 
-- Python 3.10+
-- PostgreSQL 12+ 或 MySQL 8.0+
-- Redis 6.0+
+- Python 3.8+
+- PostgreSQL 12+ (可选，也可使用 SQLite)
+- Redis 6.0+ (可选，用于缓存和 Celery)
 
-### 安装步骤
+### 环境配置
 
-1. 克隆仓库
-```bash
-git clone https://github.com/trustedinster/ZASCA.git
-cd ZASCA
-```
-
-2. 创建虚拟环境
-```bash
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# 或
-venv\Scripts\activate  # Windows
-```
-
-3. 安装依赖
-```bash
-pip install -r requirements.txt
-```
-
-4. 配置环境变量
+1. **复制环境配置文件**
 ```bash
 cp .env.example .env
-# 编辑.env文件，配置数据库、Redis等连接信息
 ```
 
-5. 数据库迁移
+2. **编辑 .env 文件**
 ```bash
-python manage.py makemigrations
+# 根据你的环境修改配置
+nano .env  # 或使用你喜欢的编辑器
+```
+
+3. **关键配置项说明**
+```bash
+# 开发环境配置
+DEBUG=True
+SECRET_KEY=your-secret-key-here  # 务必修改为随机字符串
+
+# 数据库配置 (PostgreSQL)
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=zasca_dev
+DB_USER=zasca_user
+DB_PASSWORD=your_password
+
+# 演示模式 (快速体验)
+ZASCA_DEMO=1  # 设置为1启用演示模式
+```
+
+### 开发环境搭建
+
+```bash
+# 克隆项目
+git clone https://github.com/your-org/zasca.git
+cd zasca
+
+# 创建虚拟环境
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# 或 venv\Scripts\activate  # Windows
+
+# 安装依赖
+pip install -r requirements.txt
+
+# 验证环境配置
+python check_env.py
+
+# 数据库迁移
 python manage.py migrate
-```
 
-6. 创建超级用户
-```bash
+# 创建超级用户
 python manage.py createsuperuser
-```
 
-7. 启动服务
-```bash
+# 启动开发服务器
 python manage.py runserver
 ```
 
-## DEMO模式
+访问 `http://127.0.0.1:8000/admin/` 进入管理后台。
 
-### 启用DEMO模式
-
-ZASCA提供便捷的DEMO模式，方便快速体验系统功能，无需配置数据库和外部服务。
-
-```bash
-# 设置环境变量启用DEMO模式
-export ZASCA_DEMO=1
-
-# 或者在一行命令中运行
-ZASCA_DEMO=1 python manage.py runserver
-```
-
-### DEMO模式特性
-
-- 🔐 **数据库**: 使用 DEMO.sqlite3 (数据不会持久保存)
-- 👤 **预设用户**:
-  - 用户名: User, 密码: demo_user_password
-  - 用户名: Admin, 密码: demo_admin_password
-  - 用户名: SuperAdmin, 密码: DemoSuperAdmin123!
-- 🛠️ **主机状态**: 所有主机始终显示为在线状态
-- 📧 **邮件功能**: 邮件发送功能被模拟（不会实际发送邮件）
-- 🚀 **WinRM指令**: 不会实际执行（仅模拟）
-- 🔐 **密码策略**: 忽略密码复杂度要求
-- 📋 **权限设定**: 
-  - Admin用户具有工作人员权限但不是超级用户
-  - 拥有特定权限：View登录日志、View日志记录、View开户申请、Change开户申请、View云电脑用户、Change云电脑用户、View产品
-
-### DEMO登录界面
-
-在DEMO模式下，登录页面将显示用户选择下拉框：
-- 选择"User (demo)"或"Admin (demo)"将自动填入对应账号和密码
-- 用户名和密码输入框将被禁用（只读状态）
-- 如需使用其他账户，可选择"-- 选择DEMO用户 (留空则手动输入) --"后手动输入账号信息
-
-## 使用指南
-
-### 配置云电脑端
-
-1. 在Windows主机上启用Winrm服务
-```powershell
-winrm quickconfig -q
-winrm set winrm/config/client '@{TrustedHosts="*"}'
-```
-
-2. 配置防火墙规则，允许Winrm端口（默认5985/5986）
-
-3. 在Web端添加主机信息
-
-### 用户开户系统
-
-#### 系统概述
-ZASCA 用户开户系统是一个为云电脑用户创建账户并在目标主机上创建相应用户的功能。系统利用WinRM协议连接到云电脑主机，在目标机器上创建用户账户，实现了零代理的多机管理。
-
-#### 核心模型
-- **AccountOpeningRequest (开户申请模型)**: 记录用户提交的开户申请信息
-  - 申请人信息 (applicant, contact_email)
-  - 开户信息 (username, user_fullname, user_email, user_description)
-  - 目标主机 (target_host)
-  - 审核信息 (status, approved_by, approval_date, approval_notes)
-  - 结果信息 (cloud_user_id, cloud_user_password, result_message)
-
-- **CloudComputerUser (云电脑用户模型)**: 记录在各个云电脑主机上创建的用户信息
-  - 用户信息 (username, fullname, email, description)
-  - 主机信息 (host, status, is_admin, groups)
-  - 创建信息 (created_from_request)
-
-#### 系统流程
-1. **申请阶段**: 用户提交开户申请
-2. **审核阶段**: 管理员审核申请
-3. **处理阶段**: 系统连接目标主机并创建用户
-4. **完成阶段**: 记录结果并更新状态
-
-#### 用户端功能
-- **提交开户申请**: 普通用户可以提交开户申请
-- **查看申请状态**: 查看自己提交的申请状态
-- **我拥有的云电脑**: 查看自己拥有的云电脑用户，按产品分类展示
-- **阅后即焚密码**: 在云电脑详情页查看初始密码，查看后密码立即销毁
-- **重置密码**: 重置用户密码并设置下次登录必须修改
-
-#### 管理员功能
-- **审核申请**: 批准或拒绝开户申请
-- **执行开户**: 在云电脑上创建用户账户
-- **用户管理**: 管理已创建的云电脑用户
-- **批量操作**: 支持批量审核和用户状态管理
-
-#### 使用流程
-1. **普通用户使用流程**
-   - 访问 "提交开户申请" 页面
-   - 填写申请信息 (用户名、姓名、邮箱等)
-   - 选择目标主机
-   - 提交申请并等待审核
-   - 查看申请状态
-   - 访问 "我拥有的云电脑" 页面查看自己拥有的云电脑
-   - 在详情页使用阅后即焚功能查看初始密码
-
-2. **管理员使用流程**
-   - 查看待处理的开户申请
-   - 审核申请信息
-   - 批准或拒绝申请
-   - 对于已批准的申请，执行开户操作
-   - 监控开户结果
-
-#### URL 路径
-- `/operations/account-openings/` - 开户申请列表
-- `/operations/account-openings/create/` - 创建开户申请
-- `/operations/account-openings/<id>/approve/` - 批准申请
-- `/operations/account-openings/<id>/reject/` - 拒绝申请
-- `/operations/account-openings/<id>/process/` - 处理开户
-- `/operations/cloud-users/` - 云电脑用户列表
-- `/operations/my-cloud-computers/` - 我拥有的云电脑列表
-- `/operations/my-cloud-computers/<id>/` - 云电脑用户详情页
-
-### 用户开户流程
-
-1. 管理员在Web端创建开户请求
-2. 系统通过Winrm连接到目标主机
-3. 在主机上创建用户账户
-4. 配置用户权限和资源限制
-5. 返回开户结果
-
-## 项目结构
+## 🏗️ 项目结构
 
 ```
 ZASCA/
-├── apps/
-│   ├── accounts/       # 用户管理应用
-│   ├── hosts/          # 主机管理应用
-│   ├── operations/     # 操作记录应用（含开户系统）
-│   └── dashboard/      # 仪表盘应用
-├── config/             # 配置文件
-├── static/             # 静态文件
-├── templates/          # 模板文件
-├── utils/              # 工具函数
-├── manage.py
-├── requirements.txt
-└── README.md
+├── apps/                 # 应用模块
+│   ├── accounts/        # 用户认证
+│   ├── hosts/          # 主机管理
+│   ├── operations/     # 运维操作
+│   ├── audit/          # 审计日志
+│   └── dashboard/      # 仪表盘
+├── config/             # 项目配置
+├── docs/              # 技术文档
+├── static/            # 静态文件
+├── templates/         # 模板文件
+├── utils/             # 工具模块
+├── .env.example       # 环境配置模板
+├── .env               # 环境配置文件 (git ignore)
+└── requirements.txt   # 项目依赖
 ```
 
-## 安全说明
+## 🔒 安全特性
 
-1. 使用HTTPS加密传输
-2. Winrm连接使用SSL加密
-3. 实施严格的访问控制
-4. 定期审计操作日志
-5. 使用强密码策略
+- 基于角色的访问控制 (RBAC)
+- 数据传输加密 (TLS/SSL)
+- 敏感信息加密存储
+- 完整的操作审计日志
+- 多因素认证支持
+- 防暴力破解机制
 
-## 贡献指南
+## 🤝 贡献指南
 
-欢迎提交Issue和Pull Request！
+我们欢迎任何形式的贡献！请先阅读我们的[开发规范指南](./docs/00_开发规范指南.md)。
 
-## 许可证
+### 开发流程
 
-GNU GENERAL PUBLIC LICENSE Version 2
+1. Fork 项目
+2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
+3. 提交更改 (`git commit -m 'Add some amazing feature'`)
+4. 推送到分支 (`git push origin feature/amazing-feature`)
+5. 开启 Pull Request
 
-本软件根据GPL 2.0许可证发布。您可以自由使用、修改和分发本软件，
-但必须保留原始版权声明和许可证声明。
+## 📄 许可证
 
-## 联系方式
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
 
-- 项目主页: https://github.com/trustedinster/ZASCA
-- 问题反馈: https://github.com/trustedinster/ZASCA/issues
+## 📞 联系我们
+
+- 项目主页: https://github.com/your-org/zasca
+- 问题反馈: [GitHub Issues](https://github.com/your-org/zasca/issues)
+- 邮箱支持: support@your-company.com
+
+---
+
+*ZASCA - 让 Windows 主机管理更简单、更安全*

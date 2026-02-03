@@ -1,0 +1,684 @@
+.
+├── CONTRIBUTING.md
+├── DEMO.sqlite3
+├── H_dev.md
+├── LICENSE
+├── MIGRATION_FIX_GUIDE.md
+├── MIGRATION_REPAIR_INSTRUCTIONS.md
+├── README.md
+├── ZASCA.burp
+├── agent.md
+├── api_endpoints.py
+├── apps
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   └── __init__.cpython-310.pyc
+│   ├── accounts
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-310.pyc
+│   │   │   ├── admin.cpython-310.pyc
+│   │   │   ├── apps.cpython-310.pyc
+│   │   │   ├── captcha_utils.cpython-310.pyc
+│   │   │   ├── forms.cpython-310.pyc
+│   │   │   ├── geetest_utils.cpython-310.pyc
+│   │   │   ├── models.cpython-310.pyc
+│   │   │   ├── rate_limit.cpython-310.pyc
+│   │   │   ├── signals.cpython-310.pyc
+│   │   │   ├── urls.cpython-310.pyc
+│   │   │   └── views.cpython-310.pyc
+│   │   ├── admin.py
+│   │   ├── apps.py
+│   │   ├── captcha_utils.py
+│   │   ├── forms.py
+│   │   ├── geetest_utils.py
+│   │   ├── management
+│   │   │   └── commands
+│   │   │       ├── __pycache__
+│   │   │       │   ├── create_demo_superuser.cpython-310.pyc
+│   │   │       │   └── setup_demo_users.cpython-310.pyc
+│   │   │       ├── create_demo_superuser.py
+│   │   │       └── setup_demo_users.py
+│   │   ├── migrations
+│   │   │   ├── 0001_initial.py
+│   │   │   ├── __init__.py
+│   │   │   └── __pycache__
+│   │   │       ├── 0001_initial.cpython-310.pyc
+│   │   │       └── __init__.cpython-310.pyc
+│   │   ├── models.py
+│   │   ├── rate_limit.py
+│   │   ├── signals.py
+│   │   ├── tests
+│   │   │   └── test_geetest.py
+│   │   ├── urls.py
+│   │   └── views.py
+│   ├── audit
+│   │   ├── __pycache__
+│   │   │   ├── apps.cpython-310.pyc
+│   │   │   ├── models.cpython-310.pyc
+│   │   │   ├── signals.cpython-310.pyc
+│   │   │   ├── urls.cpython-310.pyc
+│   │   │   └── views.cpython-310.pyc
+│   │   ├── apps.py
+│   │   ├── decorators.py
+│   │   ├── migrations
+│   │   │   ├── 0001_initial.py
+│   │   │   ├── __init__.py
+│   │   │   └── __pycache__
+│   │   │       ├── 0001_initial.cpython-310.pyc
+│   │   │       └── __init__.cpython-310.pyc
+│   │   ├── models.py
+│   │   ├── signals.py
+│   │   ├── urls.py
+│   │   └── views.py
+│   ├── bootstrap
+│   │   ├── README.md
+│   │   ├── __pycache__
+│   │   │   ├── admin.cpython-310.pyc
+│   │   │   ├── apps.cpython-310.pyc
+│   │   │   ├── middleware.cpython-310.pyc
+│   │   │   ├── models.cpython-310.pyc
+│   │   │   ├── signals.cpython-310.pyc
+│   │   │   ├── tasks.cpython-310.pyc
+│   │   │   ├── urls.cpython-310.pyc
+│   │   │   └── views.cpython-310.pyc
+│   │   ├── admin.py
+│   │   ├── apps.py
+│   │   ├── management
+│   │   │   └── commands
+│   │   │       └── cleanup_expired_sessions.py
+│   │   ├── middleware.py
+│   │   ├── migrations
+│   │   │   ├── 0001_initial.py
+│   │   │   ├── 0002_bootstraptoken_is_paired_bootstraptoken_paired_at_and_more.py
+│   │   │   ├── 0003_bootstraptoken_totp_secret.py
+│   │   │   ├── 0004_remove_bootstraptoken_pairing_code_and_more.py
+│   │   │   ├── 0005_delete_bootstraptoken.py
+│   │   │   ├── 0006_alter_activesession_expires_at.py
+│   │   │   ├── 0007_update_initialtoken_for_pairing.py
+│   │   │   ├── __init__.py
+│   │   │   └── __pycache__
+│   │   │       ├── 0001_initial.cpython-310.pyc
+│   │   │       ├── 0002_bootstraptoken_is_paired_bootstraptoken_paired_at_and_more.cpython-310.pyc
+│   │   │       ├── 0003_bootstraptoken_totp_secret.cpython-310.pyc
+│   │   │       ├── 0004_remove_bootstraptoken_pairing_code_and_more.cpython-310.pyc
+│   │   │       ├── 0005_delete_bootstraptoken.cpython-310.pyc
+│   │   │       ├── 0006_alter_activesession_expires_at.cpython-310.pyc
+│   │   │       ├── 0007_update_initialtoken_for_pairing.cpython-310.pyc
+│   │   │       └── __init__.cpython-310.pyc
+│   │   ├── models.py
+│   │   ├── signals.py
+│   │   ├── tasks.py
+│   │   ├── tests.py
+│   │   ├── urls.py
+│   │   └── views.py
+│   ├── certificates
+│   │   ├── __pycache__
+│   │   │   ├── apps.cpython-310.pyc
+│   │   │   ├── models.cpython-310.pyc
+│   │   │   ├── signals.cpython-310.pyc
+│   │   │   ├── urls.cpython-310.pyc
+│   │   │   └── views.cpython-310.pyc
+│   │   ├── apps.py
+│   │   ├── migrations
+│   │   │   ├── 0001_initial.py
+│   │   │   ├── 0002_alter_certificateauthority_expires_at_and_more.py
+│   │   │   ├── 0003_remove_certificateauthority_private_key_and_more.py
+│   │   │   ├── __init__.py
+│   │   │   └── __pycache__
+│   │   │       ├── 0001_initial.cpython-310.pyc
+│   │   │       ├── 0002_alter_certificateauthority_expires_at_and_more.cpython-310.pyc
+│   │   │       ├── 0003_remove_certificateauthority_private_key_and_more.cpython-310.pyc
+│   │   │       └── __init__.cpython-310.pyc
+│   │   ├── models.py
+│   │   ├── signals.py
+│   │   ├── urls.py
+│   │   └── views.py
+│   ├── dashboard
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-310.pyc
+│   │   │   ├── admin.cpython-310.pyc
+│   │   │   ├── apps.cpython-310.pyc
+│   │   │   ├── forms.cpython-310.pyc
+│   │   │   ├── models.cpython-310.pyc
+│   │   │   ├── signals.cpython-310.pyc
+│   │   │   ├── urls.cpython-310.pyc
+│   │   │   └── views.cpython-310.pyc
+│   │   ├── admin.py
+│   │   ├── apps.py
+│   │   ├── forms.py
+│   │   ├── migrations
+│   │   │   ├── 0001_initial.py
+│   │   │   ├── 0002_systemconfig_email_suffix_list_and_more.py
+│   │   │   ├── __init__.py
+│   │   │   └── __pycache__
+│   │   │       ├── 0001_initial.cpython-310.pyc
+│   │   │       ├── 0002_systemconfig_email_suffix_list_and_more.cpython-310.pyc
+│   │   │       ├── 0005_remove_systemconfig_geetest_captcha_id_and_more.cpython-310.pyc
+│   │   │       ├── 0006_add_enable_registration_field.cpython-310.pyc
+│   │   │       ├── 0007_systemconfig_email_captcha_provider_and_more.cpython-310.pyc
+│   │   │       ├── 0008_systemconfig_email_captcha_id_and_more.cpython-310.pyc
+│   │   │       ├── 0009_remove_systemconfig_email_captcha_id_and_more.cpython-310.pyc
+│   │   │       ├── 0010_systemconfig_email_captcha_id_and_more.cpython-310.pyc
+│   │   │       └── __init__.cpython-310.pyc
+│   │   ├── models.py
+│   │   ├── signals.py
+│   │   ├── templatetags
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   │   ├── __init__.cpython-310.pyc
+│   │   │   │   └── markdown_extras.cpython-310.pyc
+│   │   │   └── markdown_extras.py
+│   │   ├── urls.py
+│   │   ├── views.py
+│   │   └── views_old.py
+│   ├── hosts
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-310.pyc
+│   │   │   ├── admin.cpython-310.pyc
+│   │   │   ├── apps.cpython-310.pyc
+│   │   │   ├── models.cpython-310.pyc
+│   │   │   ├── tasks.cpython-310.pyc
+│   │   │   ├── urls.cpython-310.pyc
+│   │   │   └── views.cpython-310.pyc
+│   │   ├── admin.py
+│   │   ├── apps.py
+│   │   ├── management
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   │   └── __init__.cpython-310.pyc
+│   │   │   └── commands
+│   │   │       ├── __init__.py
+│   │   │       └── test_host_connection.py
+│   │   ├── migrations
+│   │   │   ├── 0001_initial.py
+│   │   │   ├── 0002_alter_hostgroup_hosts.py
+│   │   │   ├── 0003_alter_host_password_rename_password_host__password_and_more.py
+│   │   │   ├── 0004_alter_host_port_delete_hostpermission.py
+│   │   │   ├── 0005_host_connection_type_alter_host_port.py
+│   │   │   ├── __init__.py
+│   │   │   └── __pycache__
+│   │   │       ├── 0001_initial.cpython-310.pyc
+│   │   │       ├── 0002_alter_hostgroup_hosts.cpython-310.pyc
+│   │   │       ├── 0002_host_rdp_port_alter_host_port_alter_host_table_and_more.cpython-310.pyc
+│   │   │       ├── 0003_alter_host_password_rename_password_host__password_and_more.cpython-310.pyc
+│   │   │       ├── 0004_alter_host_port_delete_hostpermission.cpython-310.pyc
+│   │   │       ├── 0005_host_connection_type_alter_host_port.cpython-310.pyc
+│   │   │       └── __init__.cpython-310.pyc
+│   │   ├── models.py
+│   │   ├── tasks.py
+│   │   ├── templates
+│   │   │   └── hosts
+│   │   │       └── hostgroup_list.html
+│   │   ├── templatetags
+│   │   │   └── __pycache__
+│   │   │       ├── host_markdown_extras.cpython-310.pyc
+│   │   │       └── markdown_extras.cpython-310.pyc
+│   │   ├── urls.py
+│   │   └── views.py
+│   ├── operations
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-310.pyc
+│   │   │   ├── admin.cpython-310.pyc
+│   │   │   ├── apps.cpython-310.pyc
+│   │   │   ├── forms.cpython-310.pyc
+│   │   │   ├── models.cpython-310.pyc
+│   │   │   ├── urls.cpython-310.pyc
+│   │   │   └── views.cpython-310.pyc
+│   │   ├── admin.py
+│   │   ├── apps.py
+│   │   ├── forms.py
+│   │   ├── management
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   │   └── __init__.cpython-310.pyc
+│   │   │   └── commands
+│   │   │       ├── __init__.py
+│   │   │       ├── __pycache__
+│   │   │       │   ├── __init__.cpython-310.pyc
+│   │   │       │   └── create_public_host_info.cpython-310.pyc
+│   │   │       └── create_public_host_info.py
+│   │   ├── migrations
+│   │   │   ├── 0001_initial.py
+│   │   │   ├── 0002_publichostinfo.py
+│   │   │   ├── 0003_manual_fix.py
+│   │   │   ├── 0004_remove_accountopeningrequest_requested_password_and_more.py
+│   │   │   ├── 0005_cloudcomputeruser_owner.py
+│   │   │   ├── __init__.py
+│   │   │   └── __pycache__
+│   │   │       ├── 0001_initial.cpython-310.pyc
+│   │   │       ├── 0002_accountopeningrequest_cloudcomputeruser_and_more.cpython-310.pyc
+│   │   │       ├── 0002_publichostinfo.cpython-310.pyc
+│   │   │       ├── 0003_auto_20260125_2019.cpython-310.pyc
+│   │   │       ├── 0003_cloudcomputeruser_initial_password_and_more.cpython-310.pyc
+│   │   │       ├── 0003_manual_fix.cpython-310.pyc
+│   │   │       ├── 0004_add_user_requested_password.cpython-310.pyc
+│   │   │       ├── 0004_auto_20260128_2213.cpython-310.pyc
+│   │   │       ├── 0004_remove_accountopeningrequest_requested_password_and_more.cpython-310.pyc
+│   │   │       ├── 0005_accountopeningrequest_requested_password.cpython-310.pyc
+│   │   │       ├── 0005_cloudcomputeruser_owner.cpython-310.pyc
+│   │   │       ├── 0005_publichostinfo.cpython-310.pyc
+│   │   │       ├── 0006_delete_publichostinfo.cpython-310.pyc
+│   │   │       ├── 0006_product_remove_publichostinfo_internal_host_and_more.cpython-310.pyc
+│   │   │       ├── 0006_remove_requested_password_from_account_opening_request.cpython-310.pyc
+│   │   │       ├── 0007_auto_20260126_1025.cpython-310.pyc
+│   │   │       ├── 0007_create_product_model.cpython-310.pyc
+│   │   │       ├── 0007_product_and_more.cpython-310.pyc
+│   │   │       ├── 0007_product_auto_approval.cpython-310.pyc
+│   │   │       ├── 0008_auto_20260126_1033.cpython-310.pyc
+│   │   │       ├── 0008_auto_20260126_1118.cpython-310.pyc
+│   │   │       ├── 0009_merge_0007_auto_20260126_1025_0008_auto_20260126_1033.cpython-310.pyc
+│   │   │       └── __init__.cpython-310.pyc
+│   │   ├── models.py
+│   │   ├── models.py.bak
+│   │   ├── tasks.py
+│   │   ├── urls.py
+│   │   └── views.py
+│   └── tasks
+│       ├── __pycache__
+│       │   └── models.cpython-310.pyc
+│       ├── migrations
+│       │   ├── 0001_initial.py
+│       │   ├── __init__.py
+│       │   └── __pycache__
+│       │       ├── 0001_initial.cpython-310.pyc
+│       │       └── __init__.cpython-310.pyc
+│       └── models.py
+├── check_env.py
+├── config
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-310.pyc
+│   │   ├── admin.cpython-310.pyc
+│   │   ├── demo_middleware.cpython-310.pyc
+│   │   ├── demo_startup.cpython-310.pyc
+│   │   ├── maintenance_middleware.cpython-310.pyc
+│   │   ├── settings.cpython-310.pyc
+│   │   ├── urls.cpython-310.pyc
+│   │   ├── views.cpython-310.pyc
+│   │   └── wsgi.cpython-310.pyc
+│   ├── celery.py
+│   ├── demo_middleware.py
+│   ├── demo_startup.py
+│   ├── maintenance_middleware.py
+│   ├── management
+│   │   └── commands
+│   │       └── init_demo.py
+│   ├── settings.py
+│   ├── urls.py
+│   ├── views.py
+│   └── wsgi.py
+├── create_default_qq_config.py
+├── create_default_qq_configs.py
+├── db.sqlite3
+├── docs
+│   ├── 00_开发规范指南.md
+│   ├── 01_项目架构与设计.md
+│   ├── 02_API接口文档.md
+│   ├── 03_Database_Schema.md
+│   ├── 04_部署运维手册.md
+│   ├── 05_更新日志.md
+│   └── 06_安全配置指南.md
+├── logs
+│   └── zasca.log
+├── manage.py
+├── opening_system_documentation.md
+├── plugins
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-310.pyc
+│   │   ├── admin.cpython-310.pyc
+│   │   ├── apps.cpython-310.pyc
+│   │   ├── available_plugins.cpython-310.pyc
+│   │   ├── models.cpython-310.pyc
+│   │   └── signals.cpython-310.pyc
+│   ├── admin.py
+│   ├── apps.py
+│   ├── available_plugins.py
+│   ├── core
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-310.pyc
+│   │   │   ├── base.cpython-310.pyc
+│   │   │   └── plugin_manager.cpython-310.pyc
+│   │   ├── base.py
+│   │   └── plugin_manager.py
+│   ├── django_integration.py
+│   ├── example_plugin.py
+│   ├── management
+│   │   └── commands
+│   │       └── plugin.py
+│   ├── migrations
+│   │   ├── 0001_initial.py
+│   │   ├── 0002_qqverifyconfig_and_more.py
+│   │   ├── 0003_auto_20260129_1808.py
+│   │   ├── 0005_auto_20260130_1041.py
+│   │   ├── 0006_delete_qqverifyconfig_alter_pluginrecord_options_and_more.py
+│   │   ├── __init__.py
+│   │   └── __pycache__
+│   │       ├── 0001_initial.cpython-310.pyc
+│   │       ├── 0002_qqverifyconfig_and_more.cpython-310.pyc
+│   │       ├── 0003_auto_20260129_1808.cpython-310.pyc
+│   │       ├── 0005_auto_20260130_1041.cpython-310.pyc
+│   │       ├── 0006_delete_qqverifyconfig_alter_pluginrecord_options_and_more.cpython-310.pyc
+│   │       └── __init__.cpython-310.pyc
+│   ├── models.py
+│   ├── plugin_manager.py
+│   ├── sample_plugins
+│   │   ├── demo_auth_plugin.py
+│   │   ├── email_notification_plugin.py
+│   │   └── example_plugin.py
+│   ├── signals.py
+│   ├── urls.py
+│   └── views.py
+├── requirements.txt
+├── scripts
+├── static
+│   ├── admin
+│   │   ├── css
+│   │   │   ├── bootstrap-deploy-button.css
+│   │   │   └── bootstrap_admin.css
+│   │   └── js
+│   │       ├── bootstrap-deploy-button.js
+│   │       └── bootstrap_admin.js
+│   ├── css
+│   │   ├── accounts.css
+│   │   ├── base.css
+│   │   ├── dashboard.css
+│   │   ├── hosts.css
+│   │   ├── operations.css
+│   │   └── profile.css
+│   ├── img
+│   │   ├── default.png
+│   │   ├── favicon.ico
+│   │   └── favicon.png
+│   └── js
+│       ├── accounts.js
+│       ├── auth-animation.js
+│       ├── base.js
+│       ├── dashboard.js
+│       ├── email_code.js
+│       ├── geetest_v4_adapter.js
+│       ├── gt4.js
+│       ├── hosts.js
+│       ├── local_captcha_adapter.js
+│       ├── operations.js
+│       └── turnstile_adapter.js
+├── staticfiles
+│   ├── admin
+│   │   ├── css
+│   │   │   ├── autocomplete.css
+│   │   │   ├── base.css
+│   │   │   ├── bootstrap-deploy-button.css
+│   │   │   ├── bootstrap_admin.css
+│   │   │   ├── changelists.css
+│   │   │   ├── dark_mode.css
+│   │   │   ├── dashboard.css
+│   │   │   ├── forms.css
+│   │   │   ├── login.css
+│   │   │   ├── nav_sidebar.css
+│   │   │   ├── responsive.css
+│   │   │   ├── responsive_rtl.css
+│   │   │   ├── rtl.css
+│   │   │   ├── vendor
+│   │   │   │   └── select2
+│   │   │   │       ├── LICENSE-SELECT2.md
+│   │   │   │       ├── select2.css
+│   │   │   │       └── select2.min.css
+│   │   │   └── widgets.css
+│   │   ├── img
+│   │   │   ├── LICENSE
+│   │   │   ├── README.txt
+│   │   │   ├── calendar-icons.svg
+│   │   │   ├── gis
+│   │   │   │   ├── move_vertex_off.svg
+│   │   │   │   └── move_vertex_on.svg
+│   │   │   ├── icon-addlink.svg
+│   │   │   ├── icon-alert.svg
+│   │   │   ├── icon-calendar.svg
+│   │   │   ├── icon-changelink.svg
+│   │   │   ├── icon-clock.svg
+│   │   │   ├── icon-deletelink.svg
+│   │   │   ├── icon-no.svg
+│   │   │   ├── icon-unknown-alt.svg
+│   │   │   ├── icon-unknown.svg
+│   │   │   ├── icon-viewlink.svg
+│   │   │   ├── icon-yes.svg
+│   │   │   ├── inline-delete.svg
+│   │   │   ├── search.svg
+│   │   │   ├── selector-icons.svg
+│   │   │   ├── sorting-icons.svg
+│   │   │   ├── tooltag-add.svg
+│   │   │   └── tooltag-arrowright.svg
+│   │   └── js
+│   │       ├── SelectBox.js
+│   │       ├── SelectFilter2.js
+│   │       ├── actions.js
+│   │       ├── admin
+│   │       │   ├── DateTimeShortcuts.js
+│   │       │   └── RelatedObjectLookups.js
+│   │       ├── autocomplete.js
+│   │       ├── bootstrap-deploy-button.js
+│   │       ├── bootstrap_admin.js
+│   │       ├── calendar.js
+│   │       ├── cancel.js
+│   │       ├── change_form.js
+│   │       ├── collapse.js
+│   │       ├── core.js
+│   │       ├── filters.js
+│   │       ├── inlines.js
+│   │       ├── jquery.init.js
+│   │       ├── nav_sidebar.js
+│   │       ├── popup_response.js
+│   │       ├── prepopulate.js
+│   │       ├── prepopulate_init.js
+│   │       ├── theme.js
+│   │       ├── urlify.js
+│   │       └── vendor
+│   │           ├── jquery
+│   │           │   ├── LICENSE.txt
+│   │           │   ├── jquery.js
+│   │           │   └── jquery.min.js
+│   │           ├── select2
+│   │           │   ├── LICENSE.md
+│   │           │   ├── i18n
+│   │           │   │   ├── af.js
+│   │           │   │   ├── ar.js
+│   │           │   │   ├── az.js
+│   │           │   │   ├── bg.js
+│   │           │   │   ├── bn.js
+│   │           │   │   ├── bs.js
+│   │           │   │   ├── ca.js
+│   │           │   │   ├── cs.js
+│   │           │   │   ├── da.js
+│   │           │   │   ├── de.js
+│   │           │   │   ├── dsb.js
+│   │           │   │   ├── el.js
+│   │           │   │   ├── en.js
+│   │           │   │   ├── es.js
+│   │           │   │   ├── et.js
+│   │           │   │   ├── eu.js
+│   │           │   │   ├── fa.js
+│   │           │   │   ├── fi.js
+│   │           │   │   ├── fr.js
+│   │           │   │   ├── gl.js
+│   │           │   │   ├── he.js
+│   │           │   │   ├── hi.js
+│   │           │   │   ├── hr.js
+│   │           │   │   ├── hsb.js
+│   │           │   │   ├── hu.js
+│   │           │   │   ├── hy.js
+│   │           │   │   ├── id.js
+│   │           │   │   ├── is.js
+│   │           │   │   ├── it.js
+│   │           │   │   ├── ja.js
+│   │           │   │   ├── ka.js
+│   │           │   │   ├── km.js
+│   │           │   │   ├── ko.js
+│   │           │   │   ├── lt.js
+│   │           │   │   ├── lv.js
+│   │           │   │   ├── mk.js
+│   │           │   │   ├── ms.js
+│   │           │   │   ├── nb.js
+│   │           │   │   ├── ne.js
+│   │           │   │   ├── nl.js
+│   │           │   │   ├── pl.js
+│   │           │   │   ├── ps.js
+│   │           │   │   ├── pt-BR.js
+│   │           │   │   ├── pt.js
+│   │           │   │   ├── ro.js
+│   │           │   │   ├── ru.js
+│   │           │   │   ├── sk.js
+│   │           │   │   ├── sl.js
+│   │           │   │   ├── sq.js
+│   │           │   │   ├── sr-Cyrl.js
+│   │           │   │   ├── sr.js
+│   │           │   │   ├── sv.js
+│   │           │   │   ├── th.js
+│   │           │   │   ├── tk.js
+│   │           │   │   ├── tr.js
+│   │           │   │   ├── uk.js
+│   │           │   │   ├── vi.js
+│   │           │   │   ├── zh-CN.js
+│   │           │   │   └── zh-TW.js
+│   │           │   ├── select2.full.js
+│   │           │   └── select2.full.min.js
+│   │           └── xregexp
+│   │               ├── LICENSE.txt
+│   │               ├── xregexp.js
+│   │               └── xregexp.min.js
+│   ├── css
+│   │   ├── accounts.css
+│   │   ├── base.css
+│   │   ├── dashboard.css
+│   │   ├── hosts.css
+│   │   ├── operations.css
+│   │   └── profile.css
+│   ├── img
+│   │   ├── default.png
+│   │   ├── favicon.ico
+│   │   └── favicon.png
+│   ├── js
+│   │   ├── accounts.js
+│   │   ├── auth-animation.js
+│   │   ├── base.js
+│   │   ├── dashboard.js
+│   │   ├── email_code.js
+│   │   ├── geetest_v4_adapter.js
+│   │   ├── gt4.js
+│   │   ├── hosts.js
+│   │   ├── local_captcha_adapter.js
+│   │   ├── operations.js
+│   │   └── turnstile_adapter.js
+│   └── rest_framework
+│       ├── css
+│       │   ├── bootstrap-theme.min.css
+│       │   ├── bootstrap-theme.min.css.map
+│       │   ├── bootstrap-tweaks.css
+│       │   ├── bootstrap.min.css
+│       │   ├── bootstrap.min.css.map
+│       │   ├── default.css
+│       │   ├── font-awesome-4.0.3.css
+│       │   └── prettify.css
+│       ├── docs
+│       │   ├── css
+│       │   │   ├── base.css
+│       │   │   ├── highlight.css
+│       │   │   └── jquery.json-view.min.css
+│       │   ├── img
+│       │   │   ├── favicon.ico
+│       │   │   └── grid.png
+│       │   └── js
+│       │       ├── api.js
+│       │       ├── highlight.pack.js
+│       │       └── jquery.json-view.min.js
+│       ├── fonts
+│       │   ├── fontawesome-webfont.eot
+│       │   ├── fontawesome-webfont.svg
+│       │   ├── fontawesome-webfont.ttf
+│       │   ├── fontawesome-webfont.woff
+│       │   ├── glyphicons-halflings-regular.eot
+│       │   ├── glyphicons-halflings-regular.svg
+│       │   ├── glyphicons-halflings-regular.ttf
+│       │   ├── glyphicons-halflings-regular.woff
+│       │   └── glyphicons-halflings-regular.woff2
+│       ├── img
+│       │   ├── glyphicons-halflings-white.png
+│       │   ├── glyphicons-halflings.png
+│       │   └── grid.png
+│       └── js
+│           ├── ajax-form.js
+│           ├── bootstrap.min.js
+│           ├── coreapi-0.1.1.js
+│           ├── csrf.js
+│           ├── default.js
+│           ├── jquery-3.7.1.min.js
+│           ├── load-ajax-form.js
+│           └── prettify-min.js
+├── templates
+│   ├── accounts
+│   │   ├── forgot_password.html
+│   │   ├── login.html
+│   │   ├── profile.html
+│   │   └── register.html
+│   ├── admin
+│   │   ├── base.html
+│   │   ├── base_site.html
+│   │   └── hosts
+│   │       └── host
+│   │           └── manage_permissions.html
+│   ├── base.html
+│   ├── dashboard
+│   │   ├── base.html
+│   │   ├── index.html
+│   │   ├── system_config.html
+│   │   └── widget_config.html
+│   ├── hosts
+│   │   ├── host_detail.html
+│   │   ├── host_disabled.html
+│   │   ├── host_list.html
+│   │   ├── host_list_disabled.html
+│   │   └── hostgroup_list.html
+│   ├── maintenance.html
+│   └── operations
+│       ├── account_opening_confirm.html
+│       ├── account_opening_request_detail.html
+│       ├── account_opening_request_form.html
+│       ├── account_opening_request_list.html
+│       ├── cloud_computer_user_list.html
+│       ├── cloud_user_toggle_status.html
+│       ├── my_cloud_computer_detail.html
+│       ├── my_cloud_computers.html
+│       ├── systemtask_detail.html
+│       └── systemtask_list.html
+├── test_admin_frontend.py
+├── test_api.py
+├── test_bootstrap.py
+├── test_bootstrap_admin.py
+├── test_bootstrap_setup.py
+├── test_django_plugin_integration.py
+├── test_fix.py
+├── test_frontend_cleanup.py
+├── test_host_permissions.py
+├── test_host_types.py
+├── test_local_client.py
+├── test_pairing_system.py
+├── test_plugin_admin_integration.py
+├── test_plugin_system.py
+├── test_qq_plugin.py
+├── test_qq_verification_complete.py
+├── test_totp_flow.py
+├── trees.txt
+└── utils
+    ├── __init__.py
+    ├── __pycache__
+    │   ├── __init__.cpython-310.pyc
+    │   └── winrm_client.cpython-310.pyc
+    ├── helpers.py
+    ├── local_winserver_client.py
+    └── winrm_client.py
+
+113 directories, 569 files

@@ -21,10 +21,10 @@ User = get_user_model()
 
 class InitialTokenAdmin(admin.ModelAdmin):
     """初始令牌管理后台"""
-    list_display = ('short_token', 'host_link', 'status', 'created_at', 'expires_at', 'is_expired_display', 'actions_column')
+    list_display = ('short_token', 'host_link', 'status', 'pairing_code_display', 'created_at', 'expires_at', 'is_expired_display', 'actions_column')
     list_filter = ('status', 'created_at', 'expires_at')
-    search_fields = ('token', 'host__name', 'host__hostname')
-    readonly_fields = ('token', 'created_at', 'totp_secret_display')
+    search_fields = ('token', 'host__name', 'host__hostname', 'pairing_code')
+    readonly_fields = ('token', 'created_at', 'pairing_code_info')
     exclude = ('host',)  # 在表单中排除host字段，通过弹窗选择
     ordering = ('-created_at',)
 
@@ -50,14 +50,48 @@ class InitialTokenAdmin(admin.ModelAdmin):
         return format_html('<span style="color: {};">{}</span>', color, '是' if expired else '否')
     is_expired_display.short_description = '已过期'
 
-    def totp_secret_display(self, obj):
-        """显示TOTP密钥（用于调试）"""
-        if obj.status == 'ISSUED':  # 只在未验证时显示
-            secret = obj.generate_totp_secret()
-            return format_html('<code>{}</code>', secret)
+    def pairing_code_display(self, obj):
+        """显示配对码状态"""
+        if obj.pairing_code and obj.pairing_code_expires_at:
+            now = timezone.now()
+            if now > obj.pairing_code_expires_at:
+                return format_html('<span style="color: red;">已过期</span>')
+            else:
+                remaining = obj.pairing_code_expires_at - now
+                minutes = int(remaining.total_seconds() // 60)
+                return format_html(
+                    '<div class="pairing-code-display" style="background: #e3f2fd; padding: 4px 8px; border-radius: 4px; display: inline-block;">'
+                    '<strong>{}</strong><br><small>剩余{}分钟</small></div>', 
+                    obj.pairing_code, minutes
+                )
+        elif obj.status == 'ISSUED':
+            return format_html('<span style="color: orange;">未生成</span>')
         else:
-            return "已验证或已消耗，密钥不再显示"
-    totp_secret_display.short_description = "TOTP密钥"
+            return format_html('<span style="color: green;">已使用</span>')
+    pairing_code_display.short_description = '配对码状态'
+
+    def pairing_code_info(self, obj):
+        """显示配对码详细信息"""
+        if obj.pairing_code and obj.pairing_code_expires_at:
+            now = timezone.now()
+            if now <= obj.pairing_code_expires_at:
+                remaining = obj.pairing_code_expires_at - now
+                minutes = int(remaining.total_seconds() // 60)
+                seconds = int(remaining.total_seconds() % 60)
+                return format_html(
+                    '<div style="padding: 10px; background: #e3f2fd; border-left: 4px solid #2196f3; margin: 10px 0;">'
+                    '<h4 style="margin: 0 0 10px 0;">🔐 当前配对码</h4>'
+                    '<div style="font-size: 2em; font-weight: bold; color: #1976d2; letter-spacing: 3px;">{}</div>'
+                    '<div style="margin-top: 8px; color: #666;">有效期剩余: {}分{}秒</div>'
+                    '<div style="margin-top: 5px; font-size: 0.9em; color: #888;">过期时间: {}</div>'
+                    '</div>',
+                    obj.pairing_code, minutes, seconds, obj.pairing_code_expires_at.strftime('%Y-%m-%d %H:%M:%S')
+                )
+            else:
+                return format_html('<div style="color: red; padding: 10px;">⚠️ 配对码已过期</div>')
+        else:
+            return format_html('<div style="color: #666; padding: 10px;">ℹ️ 暂无有效配对码</div>')
+    pairing_code_info.short_description = "配对码信息"
 
     def actions_column(self, obj):
         """操作列"""
@@ -78,10 +112,25 @@ class InitialTokenAdmin(admin.ModelAdmin):
         encoded_bytes = base64.b64encode(json_str.encode('utf-8'))
         encoded_str = encoded_bytes.decode('utf-8')
         
+        # 复制配置按钮
         html_parts.append(format_html(
             '<button class="btn btn-outline-primary btn-sm copy-btn" '
-            'data-value="{}" onclick="copyToClipboard(this)">复制配置</button>',
+            'data-value="{}" onclick="copyToClipboard(this)" title="复制Base64配置字符串">📋 复制配置</button>',
             encoded_str
+        ))
+        
+        # 刷新配对码按钮（仅对ISSUED状态）
+        if obj.status == 'ISSUED':
+            html_parts.append(format_html(
+                '&nbsp;<button class="btn btn-outline-warning btn-sm" '
+                'onclick="refreshPairingCode({})" title="刷新配对码">🔄 刷新码</button>',
+                obj.token
+            ))
+        
+        # 查看详情按钮
+        html_parts.append(format_html(
+            '&nbsp;<a href="{}" class="btn btn-outline-info btn-sm" title="查看详情">👁️ 详情</a>',
+            reverse('admin:bootstrap_initialtoken_change', args=[obj.token])
         ))
         
         return format_html('<div>{}</div>', format_html(''.join(html_parts)))
@@ -94,9 +143,9 @@ class InitialTokenAdmin(admin.ModelAdmin):
             path('generate-token/', 
                  self.admin_site.admin_view(self.generate_token), 
                  name='bootstrap_initialtoken_generate_token'),
-            path('<int:object_id>/regenerate-totp-secret/', 
-                 self.admin_site.admin_view(self.regenerate_totp_secret), 
-                 name='bootstrap_initialtoken_regenerate_totp_secret'),
+            path('<str:object_id>/refresh-pairing-code/', 
+                 self.admin_site.admin_view(self.refresh_pairing_code), 
+                 name='bootstrap_initialtoken_refresh_pairing_code'),
         ]
         return custom_urls + urls
 
@@ -127,8 +176,8 @@ class InitialTokenAdmin(admin.ModelAdmin):
                 status='ISSUED'
             )
             
-            # 计算TOTP密钥
-            totp_secret = initial_token.generate_totp_secret()
+            # 生成配对码
+            pairing_code = initial_token.generate_pairing_code()
             
             # 生成配置字符串
             current_site = request.build_absolute_uri('/').rstrip('/')
@@ -153,7 +202,7 @@ class InitialTokenAdmin(admin.ModelAdmin):
                     'hostname': host.hostname,
                     'expires_at': initial_token.expires_at.isoformat(),
                     'config_string': encoded_str,
-                    'totp_secret': totp_secret
+                    'pairing_code': pairing_code
                 }
             })
             
@@ -162,21 +211,23 @@ class InitialTokenAdmin(admin.ModelAdmin):
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
-    def regenerate_totp_secret(self, request, object_id):
-        """重新生成TOTP密钥"""
+    def refresh_pairing_code(self, request, object_id):
+        """刷新配对码"""
         try:
-            token_obj = InitialToken.objects.get(id=object_id)
+            token_obj = InitialToken.objects.get(token=object_id)
             if token_obj.status != 'ISSUED':
                 return JsonResponse({
                     'success': False, 
-                    'error': 'Cannot regenerate TOTP secret for verified or consumed tokens'
+                    'error': 'Cannot refresh pairing code for paired or consumed tokens'
                 }, status=400)
             
-            totp_secret = token_obj.generate_totp_secret()
+            # 生成新的配对码
+            pairing_code = token_obj.generate_pairing_code()
             
             return JsonResponse({
                 'success': True,
-                'totp_secret': totp_secret
+                'pairing_code': pairing_code,
+                'expires_in_minutes': 5
             })
         except InitialToken.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Token not found'}, status=404)
@@ -221,9 +272,9 @@ class ActiveSessionAdmin(admin.ModelAdmin):
     is_expired_display.short_description = '已过期'
 
 
-# 注册模型
-admin.site.register(InitialToken, InitialTokenAdmin)
-admin.site.register(ActiveSession, ActiveSessionAdmin)
+# 已隐藏主机引导系统的模型注册
+# admin.site.register(InitialToken, InitialTokenAdmin)
+# admin.site.register(ActiveSession, ActiveSessionAdmin)
 
 
 # 添加JavaScript和CSS到静态文件

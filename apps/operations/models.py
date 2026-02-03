@@ -600,37 +600,24 @@ class AccountOpeningRequest(models.Model):
             self.auto_process_creation()
 
     def auto_process_creation(self):
-        """
-        自动处理用户创建
-        当申请被批准时调用此方法
-        """
-        try:
-            from utils.winrm_client import WinrmClient
-            import secrets
-            import string
-            import os
-            
-            # 连接到产品关联的主机
-            product = self.target_product
-            host = product.host
-            
-            # 如果是DEMO模式，不执行实际的WinRM操作
-            if os.environ.get('ZASCA_DEMO', '').lower() == '1':
-                # 在DEMO模式下模拟创建用户
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.info(f'DEMO模式: 模拟创建用户 {self.username} 在产品 {product.display_name}')
-                
-                # 生成系统密码（在DEMO模式下使用符合复杂度的密码）
-                password = CloudComputerUser.generate_complex_password()
-                
-                # 模拟成功创建用户
+        """审批通过后自动创建用户"""
+        from django.db import transaction
+        import os
+
+        product = self.target_product
+        host = product.host
+
+        # DEMO模式
+        if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+            logger.info(f'DEMO模式: 模拟创建用户 {self.username}')
+            password = CloudComputerUser.generate_complex_password()
+
+            with transaction.atomic():
                 self.status = 'completed'
-                self.result_message = f"用户 {self.username} 已在DEMO模式下成功创建（模拟）"
+                self.result_message = f"用户 {self.username} 已在DEMO模式下创建（模拟）"
                 self.save(update_fields=['status', 'result_message'])
-                
-                # 创建云电脑用户记录，并存储初始密码
-                cloud_user, created = CloudComputerUser.objects.get_or_create(
+
+                CloudComputerUser.objects.get_or_create(
                     username=self.username,
                     product=self.target_product,
                     defaults={
@@ -638,13 +625,16 @@ class AccountOpeningRequest(models.Model):
                         'email': self.user_email,
                         'description': self.user_description,
                         'created_from_request': self,
-                        'initial_password': password  # 存储生成的密码
+                        'owner': self.applicant,
+                        'initial_password': password
                     }
                 )
-                
-                return
-            
-            # 非DEMO模式下正常执行
+            return
+
+        # 正式模式
+        try:
+            from utils.winrm_client import WinrmClient
+
             client = WinrmClient(
                 hostname=host.hostname,
                 port=host.port,
@@ -652,47 +642,42 @@ class AccountOpeningRequest(models.Model):
                 password=host.password,
                 use_ssl=host.use_ssl
             )
-            
-            # 系统生成强密码
+
             password = CloudComputerUser.generate_complex_password()
-            
-            # 使用WinrmClient创建用户
             result = client.create_user(
                 username=self.username,
                 password=password,
                 description=self.user_description
             )
-            
+
             if result.status_code == 0:
-                # 成功创建用户
-                self.status = 'completed'
-                # 出于安全考虑，不存储用户密码明文到申请记录
-                self.result_message = f"用户 {self.username} 已成功创建"
-                self.save(update_fields=['status', 'result_message'])
-                
-                # 创建云电脑用户记录，并存储初始密码
-                cloud_user, created = CloudComputerUser.objects.get_or_create(
-                    username=self.username,
-                    product=self.target_product,
-                    defaults={
-                        'fullname': self.user_fullname,
-                        'email': self.user_email,
-                        'description': self.user_description,
-                        'created_from_request': self,
-                        'initial_password': password  # 存储生成的密码
-                    }
-                )
+                # 远程成功后，事务写本地
+                with transaction.atomic():
+                    self.status = 'completed'
+                    self.result_message = f"用户 {self.username} 已成功创建"
+                    self.save(update_fields=['status', 'result_message'])
+
+                    CloudComputerUser.objects.get_or_create(
+                        username=self.username,
+                        product=self.target_product,
+                        defaults={
+                            'fullname': self.user_fullname,
+                            'email': self.user_email,
+                            'description': self.user_description,
+                            'created_from_request': self,
+                            'owner': self.applicant,
+                            'initial_password': password
+                        }
+                    )
             else:
-                # 创建用户失败
-                error_msg = result.std_err if result.std_err else '未知错误'
+                error_msg = result.std_err or '未知错误'
                 self.status = 'failed'
                 self.result_message = f"创建用户失败: {error_msg}"
                 self.save(update_fields=['status', 'result_message'])
+
         except Exception as e:
-            # 处理异常
-            error_msg = str(e)
             self.status = 'failed'
-            self.result_message = f"处理过程中出现异常: {error_msg}"
+            self.result_message = f"处理异常: {str(e)}"
             self.save(update_fields=['status', 'result_message'])
 
 
@@ -765,6 +750,15 @@ class CloudComputerUser(models.Model):
         blank=True,
         verbose_name=_('来源申请'),
         help_text=_('创建此用户的开户申请')
+    )
+    owner = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cloud_users',
+        verbose_name=_('所有者'),
+        help_text=_('拥有此云电脑账户的用户')
     )
     
     # 密码信息（临时存储）
@@ -986,39 +980,25 @@ class CloudComputerUser(models.Model):
             print(f"Error deleting user {self.username} on host {host.name}: {str(e)}")
 
     def get_and_burn_password(self):
-        """
-        获取并销毁密码 - 实现阅后即焚功能
-        """
-        import secrets
-        import string
+        """阅后即焚 - 只能看一次"""
         from django.utils import timezone
-        
-        # 如果密码从未被查看过（首次访问），返回初始密码并标记为已查看
-        if not self.password_viewed and self.initial_password:
-            # 获取当前密码
-            password = self.initial_password
-            
-            # 标记密码已被查看并清空存储的密码
-            self.password_viewed = True
-            self.password_viewed_at = timezone.now()
-            self.initial_password = ''  # 清空密码
-            self.save(update_fields=['password_viewed', 'password_viewed_at', 'initial_password'])
-            
-            return password
-        else:
-            # 如果已经查看过密码（即后续访问），生成新密码但不存储，直接返回
-            # 这样用户可以获取临时密码，但不会改变password_viewed状态
-            new_password = CloudComputerUser.generate_complex_password()
-            
-            # 通过远程命令重置Windows用户密码并设置下次登录必须修改
-            self.reset_windows_password(new_password)
-            
-            # 注意：这里不修改数据库中的任何状态，保持password_viewed=True
-            return new_password
+
+        if self.password_viewed:
+            raise Exception('密码已被查看，无法再次获取。如需重置请联系管理员。')
+
+        if not self.initial_password:
+            raise Exception('密码不存在')
+
+        password = self.initial_password
+        self.password_viewed = True
+        self.password_viewed_at = timezone.now()
+        self.initial_password = ''
+        self.save(update_fields=['password_viewed', 'password_viewed_at', 'initial_password'])
+        return password
 
     def reset_windows_password(self, new_password):
         """
-        重置Windows用户密码并设置下次登录必须修改
+        重置Windows用户密码
         """
         import os
         if os.environ.get('ZASCA_DEMO', '').lower() == '1':

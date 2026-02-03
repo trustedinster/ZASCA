@@ -360,7 +360,6 @@ def geetest_validate(request):
     return JsonResponse({'result': 'fail', 'detail': '参数不完整'}, status=400)
 
 
-@csrf_exempt
 @login_required
 @require_http_methods(["POST"])
 def password_change_api(request):
@@ -565,7 +564,6 @@ def send_register_email_code(request):
 
 
 @login_required
-@csrf_exempt
 @require_http_methods(["POST"])
 @rate_limit.avatar_upload_rate_limit
 def upload_avatar(request):

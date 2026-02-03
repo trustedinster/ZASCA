@@ -1,0 +1,126 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label='hosts' %}">主机管理</a>
+    &rsaquo; <a href="{% url 'admin:hosts_host_changelist' %}">主机</a>
+    &rsaquo; <a href="{% url 'admin:hosts_host_change' host.pk %}">{{ host.name }}</a>
+    &rsaquo; 权限管理
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="module">
+    <h2>{{ host.name }} - 权限管理</h2>
+    
+    <div class="alert alert-info">
+        <strong>说明：</strong>在此页面您可以管理主机上用户的管理员权限。只有关联到此主机的产品用户才会显示在这里。
+    </div>
+
+    {% if products %}
+        {% for product in products %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>{{ product.display_name }}</h3>
+                <p class="mb-0 text-muted">{{ product.display_description|default:"无描述" }}</p>
+            </div>
+            <div class="card-body">
+                {% with product_users=users|dictsort:"username" %}
+                {% if product_users %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>用户名</th>
+                                <th>用户姓名</th>
+                                <th>邮箱</th>
+                                <th>状态</th>
+                                <th>管理员权限</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in product_users %}
+                            {% if user.product.id == product.id %}
+                            <tr>
+                                <td>{{ user.username }}</td>
+                                <td>{{ user.fullname|default:"-" }}</td>
+                                <td>{{ user.email|default:"-" }}</td>
+                                <td>
+                                    <span class="badge {% if user.status == 'active' %}bg-success{% elif user.status == 'inactive' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                        {{ user.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if user.is_admin %}
+                                        <span class="badge bg-primary">管理员</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">普通用户</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.is_admin %}
+                                        <a href="{% url 'admin:hosts_host_revoke_admin' host.pk user.pk %}" 
+                                           class="btn btn-sm btn-warning"
+                                           onclick="return confirm('确定要撤销用户 {{ user.username }} 的管理员权限吗？')">
+                                            撤销管理员
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'admin:hosts_host_grant_admin' host.pk user.pk %}" 
+                                           class="btn btn-sm btn-success"
+                                           onclick="return confirm('确定要授予用户 {{ user.username }} 管理员权限吗？')">
+                                            授予管理员
+                                        </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">此产品暂无用户</p>
+                {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-warning">
+            <h4>暂无关联产品</h4>
+            <p>此主机尚未关联任何产品，因此没有可管理的用户权限。</p>
+        </div>
+    {% endif %}
+
+    <div class="form-group">
+        <a href="{% url 'admin:hosts_host_change' host.pk %}" class="btn btn-secondary">返回主机详情</a>
+        <a href="{% url 'admin:hosts_host_changelist' %}" class="btn btn-outline-secondary">返回主机列表</a>
+    </div>
+</div>
+
+<style>
+.card {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+}
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+.badge {
+    font-size: 0.75em;
+}
+.table th {
+    border-top: none;
+}
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}

@@ -275,6 +275,78 @@ class AccountOpeningRequestAdmin(admin.ModelAdmin):
         # 调用父类方法保存模型
         super().save_model(request, obj, form, change)
 
+    def process_selected(self, request, queryset):
+        """
+        批量执行开户操作
+        """
+        if isinstance(queryset, bytes) or isinstance(queryset, str):
+            self.message_user(
+                request,
+                '错误：无法处理所选项目，请刷新页面后重试。',
+                level='error'
+            )
+            return
+        
+        processed_count = 0
+        failed_count = 0
+        
+        for obj in queryset:
+            if obj.status in ['approved', 'pending']:  # 只能处理已批准或待处理的申请
+                try:
+                    # 调用Service层执行开户
+                    services.execute_account_opening(obj)
+                    processed_count += 1
+                except Exception as e:
+                    failed_count += 1
+                    self.message_user(
+                        request,
+                        f'处理申请 {obj.username} 时发生错误: {str(e)}',
+                        level='error'
+                    )
+            else:
+                self.message_user(
+                    request,
+                    f'申请 {obj.username} 状态为 {obj.get_status_display()}，无法执行开户操作',
+                    level='warning'
+                )
+        
+        if processed_count > 0:
+            self.message_user(
+                request,
+                f'成功处理了 {processed_count} 个开户申请。'
+            )
+        if failed_count > 0:
+            self.message_user(
+                request,
+                f'有 {failed_count} 个申请处理失败。',
+                level='error'
+            )
+    
+    process_selected.short_description = "执行选中的开户申请"
+    
+    def get_actions(self, request):
+        """
+        注册自定义操作
+        """
+        actions = super().get_actions(request)
+        # 添加批量通过、批量驳回和批量执行操作
+        actions['approve_selected'] = (
+            self.approve_selected,
+            'approve_selected',
+            '批准选中的开户申请'
+        )
+        actions['reject_selected'] = (
+            self.reject_selected,
+            'reject_selected',
+            '驳回选中的开户申请'
+        )
+        actions['process_selected'] = (
+            self.process_selected,
+            'process_selected',
+            '执行选中的开户申请'
+        )
+        return actions
+
 
 @admin.register(CloudComputerUser)
 class CloudComputerUserAdmin(admin.ModelAdmin):
@@ -328,36 +400,75 @@ class CloudComputerUserAdmin(admin.ModelAdmin):
             # 根据管理员权限变更调用相应的WinRM操作
             if old_is_admin != new_is_admin:
                 try:
-                    # 连接到产品关联的主机
-                    product = obj.product
-                    host = product.host
-                    client = WinrmClient(
-                        hostname=host.hostname,
-                        port=host.port,
-                        username=host.username,
-                        password=host.password,
-                        use_ssl=host.use_ssl
-                    )
-                    
-                    if new_is_admin:
-                        # 授予管理员权限
-                        success = client.op_user(obj.username)
-                        if success:
-                            self.message_user(request, f'成功为用户 {obj.username} 授予管理员权限')
-                        else:
-                            self.message_user(request, f'为用户 {obj.username} 授予管理员权限失败', level='error')
-                    else:
-                        # 剥夺管理员权限
-                        success = client.deop_user(obj.username)
-                        if success:
-                            self.message_user(request, f'成功撤销用户 {obj.username} 的管理员权限')
-                        else:
-                            self.message_user(request, f'撤销用户 {obj.username} 的管理员权限失败', level='error')
+                    # 调用Service层处理权限变更
+                    services.update_user_admin_permission(obj, new_is_admin)
+                    action = "授予" if new_is_admin else "撤销"
+                    self.message_user(request, f'成功{action}用户 {obj.username} 的管理员权限')
                 except Exception as e:
-                    self.message_user(request, f'处理管理员权限时发生错误: {str(e)}', level='error')
+                    action = "授予" if new_is_admin else "撤销"
+                    self.message_user(request, f'{action}用户 {obj.username} 的管理员权限失败: {str(e)}', level='error')
         else:
             # 新建或没有is_admin字段变更的情况
             super().save_model(request, obj, form, change)
+
+    def activate_selected(self, request, queryset):
+        """
+        批量激活选中的用户
+        """
+        updated_count = queryset.filter(status__in=['inactive', 'disabled']).update(status='active')
+        if updated_count > 0:
+            self.message_user(request, f'成功激活了 {updated_count} 个用户。')
+        else:
+            self.message_user(request, '没有符合条件的用户需要激活。', level='warning')
+    
+    activate_selected.short_description = "激活选中的用户"
+    
+    def deactivate_selected(self, request, queryset):
+        """
+        批量停用选中的用户
+        """
+        updated_count = queryset.filter(status='active').update(status='inactive')
+        if updated_count > 0:
+            self.message_user(request, f'成功停用了 {updated_count} 个用户。')
+        else:
+            self.message_user(request, '没有符合条件的用户需要停用。', level='warning')
+    
+    deactivate_selected.short_description = "停用选中的用户"
+    
+    def disable_selected(self, request, queryset):
+        """
+        批量禁用选中的用户
+        """
+        updated_count = queryset.exclude(status='deleted').update(status='disabled')
+        if updated_count > 0:
+            self.message_user(request, f'成功禁用了 {updated_count} 个用户。')
+        else:
+            self.message_user(request, '没有符合条件的用户需要禁用。', level='warning')
+    
+    disable_selected.short_description = "禁用选中的用户"
+    
+    def get_actions(self, request):
+        """
+        注册自定义操作
+        """
+        actions = super().get_actions(request)
+        # 添加状态管理操作
+        actions['activate_selected'] = (
+            self.activate_selected,
+            'activate_selected',
+            '激活选中的用户'
+        )
+        actions['deactivate_selected'] = (
+            self.deactivate_selected,
+            'deactivate_selected',
+            '停用选中的用户'
+        )
+        actions['disable_selected'] = (
+            self.disable_selected,
+            'disable_selected',
+            '禁用选中的用户'
+        )
+        return actions
 
     def changelist_view(self, request, extra_context=None):
         """
