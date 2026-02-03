@@ -1,0 +1,256 @@
+/*
+ * Material Design 3 主题变量
+ * 定义项目的色彩、形状、排版等设计令牌
+ */
+
+:root {
+  /* ==================== 颜色系统 ==================== */
+  
+  /* 主要颜色 (Primary) */
+  --md-sys-color-primary: #6750A4;
+  --md-sys-color-on-primary: #FFFFFF;
+  --md-sys-color-primary-container: #EADDFF;
+  --md-sys-color-on-primary-container: #21005D;
+  
+  /* 次要颜色 (Secondary) */
+  --md-sys-color-secondary: #625B71;
+  --md-sys-color-on-secondary: #FFFFFF;
+  --md-sys-color-secondary-container: #E8DEF8;
+  --md-sys-color-on-secondary-container: #1D192B;
+  
+  /* 第三颜色 (Tertiary) */
+  --md-sys-color-tertiary: #7D5260;
+  --md-sys-color-on-tertiary: #FFFFFF;
+  --md-sys-color-tertiary-container: #FFD8E4;
+  --md-sys-color-on-tertiary-container: #31111D;
+  
+  /* 错误颜色 (Error) */
+  --md-sys-color-error: #B3261E;
+  --md-sys-color-on-error: #FFFFFF;
+  --md-sys-color-error-container: #F9DEDC;
+  --md-sys-color-on-error-container: #410E0B;
+  
+  /* 背景色 (Background) */
+  --md-sys-color-background: #FFFBFE;
+  --md-sys-color-on-background: #1C1B1F;
+  
+  /* 表面色 (Surface) */
+  --md-sys-color-surface: #FFFBFE;
+  --md-sys-color-on-surface: #1C1B1F;
+  --md-sys-color-surface-variant: #E7E0EC;
+  --md-sys-color-on-surface-variant: #49454F;
+  
+  /* 其他颜色 */
+  --md-sys-color-outline: #79747E;
+  --md-sys-color-outline-variant: #CAC4D0;
+  --md-sys-color-shadow: #000000;
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-inverse-surface: #313033;
+  --md-sys-color-inverse-on-surface: #F4EFF4;
+  --md-sys-color-inverse-primary: #D0BCFF;
+  
+  /* ==================== 形状系统 ==================== */
+  
+  /* 圆角 (Shape) */
+  --md-sys-shape-corner-none: 0px;
+  --md-sys-shape-corner-extra-small: 4px;
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
+  --md-sys-shape-corner-extra-large: 28px;
+  
+  /* ==================== 排版系统 ==================== */
+  
+  /* 字体大小 (Typography - Size) */
+  --md-sys-typescale-display-large-size: 57px;
+  --md-sys-typescale-display-medium-size: 45px;
+  --md-sys-typescale-display-small-size: 36px;
+  
+  --md-sys-typescale-headline-large-size: 32px;
+  --md-sys-typescale-headline-medium-size: 28px;
+  --md-sys-typescale-headline-small-size: 24px;
+  
+  --md-sys-typescale-title-large-size: 22px;
+  --md-sys-typescale-title-medium-size: 16px;
+  --md-sys-typescale-title-small-size: 14px;
+  
+  --md-sys-typescale-body-large-size: 16px;
+  --md-sys-typescale-body-medium-size: 14px;
+  --md-sys-typescale-body-small-size: 12px;
+  
+  --md-sys-typescale-label-large-size: 14px;
+  --md-sys-typescale-label-medium-size: 12px;
+  --md-sys-typescale-label-small-size: 11px;
+  
+  /* 字体粗细 (Typography - Weight) */
+  --md-sys-typescale-weight-regular: 400;
+  --md-sys-typescale-weight-medium: 500;
+  --md-sys-typescale-weight-bold: 700;
+  
+  /* 行高 (Typography - Line Height) */
+  --md-sys-typescale-line-height-default: 1.5;
+  --md-sys-typescale-line-height-condensed: 1.2;
+  --md-sys-typescale-line-height-relaxed: 1.8;
+  
+  /* ==================== 间距系统 ==================== */
+  
+  /* 内边距 (Padding) */
+  --md-sys-spacing-padding-none: 0px;
+  --md-sys-spacing-padding-xs: 4px;
+  --md-sys-spacing-padding-sm: 8px;
+  --md-sys-spacing-padding-md: 16px;
+  --md-sys-spacing-padding-lg: 24px;
+  --md-sys-spacing-padding-xl: 32px;
+  --md-sys-spacing-padding-xxl: 48px;
+  
+  /* 外边距 (Margin) */
+  --md-sys-spacing-margin-none: 0px;
+  --md-sys-spacing-margin-xs: 4px;
+  --md-sys-spacing-margin-sm: 8px;
+  --md-sys-spacing-margin-md: 16px;
+  --md-sys-spacing-margin-lg: 24px;
+  --md-sys-spacing-margin-xl: 32px;
+  --md-sys-spacing-margin-xxl: 48px;
+  
+  /* ==================== 阴影系统 ==================== */
+  
+  /* 状态层 (State Layers) */
+  --md-sys-state-hover-opacity: 0.08;
+  --md-sys-state-focus-opacity: 0.12;
+  --md-sys-state-pressed-opacity: 0.12;
+  --md-sys-state-dragged-opacity: 0.16;
+  --md-sys-state-selected-opacity: 0.08;
+  
+  /* 阴影 (Elevation) */
+  --md-sys-elevation-level0: 0px 0px 0px 0px rgba(0, 0, 0, 0.20), 0px 0px 0px 0px rgba(0, 0, 0, 0.14), 0px 0px 0px 0px rgba(0, 0, 0, 0.12);
+  --md-sys-elevation-level1: 0px 3px 1px -2px rgba(0, 0, 0, 0.20), 0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12);
+  --md-sys-elevation-level2: 0px 2px 4px -1px rgba(0, 0, 0, 0.20), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12);
+  --md-sys-elevation-level3: 0px 5px 5px -3px rgba(0, 0, 0, 0.20), 0px 8px 10px 1px rgba(0, 0, 0, 0.14), 0px 3px 14px 2px rgba(0, 0, 0, 0.12);
+  --md-sys-elevation-level4: 0px 5px 5px -3px rgba(0, 0, 0, 0.20), 0px 8px 10px 1px rgba(0, 0, 0, 0.14), 0px 3px 14px 2px rgba(0, 0, 0, 0.12);
+  --md-sys-elevation-level5: 0px 8px 10px -6px rgba(0, 0, 0, 0.20), 0px 16px 24px 2px rgba(0, 0, 0, 0.14), 0px 6px 30px 5px rgba(0, 0, 0, 0.12);
+  
+  /* ==================== 过渡动画 ==================== */
+  
+  /* 动画持续时间 */
+  --md-sys-motion-duration-short1: 50ms;
+  --md-sys-motion-duration-short2: 100ms;
+  --md-sys-motion-duration-short3: 150ms;
+  --md-sys-motion-duration-short4: 200ms;
+  --md-sys-motion-duration-medium1: 250ms;
+  --md-sys-motion-duration-medium2: 300ms;
+  --md-sys-motion-duration-medium3: 350ms;
+  --md-sys-motion-duration-medium4: 400ms;
+  --md-sys-motion-duration-long1: 450ms;
+  --md-sys-motion-duration-long2: 500ms;
+  --md-sys-motion-duration-long3: 550ms;
+  --md-sys-motion-duration-long4: 600ms;
+  --md-sys-motion-duration-extra-long1: 700ms;
+  --md-sys-motion-duration-extra-long2: 800ms;
+  --md-sys-motion-duration-extra-long3: 900ms;
+  --md-sys-motion-duration-extra-long4: 1000ms;
+  
+  /* 缓动函数 */
+  --md-sys-motion-easing-linear: cubic-bezier(0, 0, 1, 1);
+  --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-standard-accelerate: cubic-bezier(0.3, 0, 1, 1);
+  --md-sys-motion-easing-standard-decelerate: cubic-bezier(0, 0, 0, 1);
+  --md-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  
+  /* ==================== 断点系统 ==================== */
+  
+  /* 响应式断点 */
+  --md-sys-breakpoint-xs: 0px;
+  --md-sys-breakpoint-sm: 600px;
+  --md-sys-breakpoint-md: 900px;
+  --md-sys-breakpoint-lg: 1200px;
+  --md-sys-breakpoint-xl: 1500px;
+  
+  /* ==================== 组件特定变量 ==================== */
+  
+  /* 按钮 */
+  --md-comp-button-height: 40px;
+  --md-comp-button-min-width: 64px;
+  --md-comp-button-padding-horizontal: 24px;
+  --md-comp-button-padding-vertical: 10px;
+  --md-comp-button-icon-size: 18px;
+  --md-comp-button-icon-margin: 8px;
+  
+  /* 卡片 */
+  --md-comp-card-padding: var(--md-sys-spacing-padding-lg);
+  --md-comp-card-margin: var(--md-sys-spacing-margin-md);
+  
+  /* 输入框 */
+  --md-comp-text-field-height: 56px;
+  --md-comp-text-field-padding-horizontal: 16px;
+  --md-comp-text-field-padding-vertical: 16px;
+  --md-comp-text-field-label-padding: 4px;
+  
+  /* 警告框 */
+  --md-comp-alert-padding: var(--md-sys-spacing-padding-md);
+  --md-comp-alert-margin: var(--md-sys-spacing-margin-md);
+  --md-comp-alert-border-radius: var(--md-sys-shape-corner-medium);
+}
+
+/* 暗色主题变量 */
+[data-theme="dark"] {
+  /* 主要颜色 (Dark Theme) */
+  --md-sys-color-primary: #D0BCFF;
+  --md-sys-color-on-primary: #381E72;
+  --md-sys-color-primary-container: #4F378B;
+  --md-sys-color-on-primary-container: #EADDFF;
+  
+  /* 次要颜色 */
+  --md-sys-color-secondary: #CCC2DC;
+  --md-sys-color-on-secondary: #332D41;
+  --md-sys-color-secondary-container: #4A4458;
+  --md-sys-color-on-secondary-container: #E8DEF8;
+  
+  /* 背景色 */
+  --md-sys-color-background: #1C1B1F;
+  --md-sys-color-on-background: #E6E1E5;
+  
+  /* 表面色 */
+  --md-sys-color-surface: #1C1B1F;
+  --md-sys-color-on-surface: #E6E1E5;
+  --md-sys-color-surface-variant: #49454F;
+  --md-sys-color-on-surface-variant: #CAC4D0;
+  
+  /* 其他颜色 */
+  --md-sys-color-outline: #938F99;
+  --md-sys-color-outline-variant: #49454F;
+  --md-sys-color-inverse-surface: #E6E1E5;
+  --md-sys-color-inverse-on-surface: #313033;
+  --md-sys-color-inverse-primary: #6750A4;
+}
+
+/* 高对比度主题变量 */
+@media (prefers-contrast: high) {
+  :root {
+    --md-sys-color-outline: #000000;
+    --md-sys-color-outline-variant: #000000;
+  }
+}
+
+/* 减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --md-sys-motion-duration-short1: 0ms;
+    --md-sys-motion-duration-short2: 0ms;
+    --md-sys-motion-duration-short3: 0ms;
+    --md-sys-motion-duration-short4: 0ms;
+    --md-sys-motion-duration-medium1: 0ms;
+    --md-sys-motion-duration-medium2: 0ms;
+    --md-sys-motion-duration-medium3: 0ms;
+    --md-sys-motion-duration-medium4: 0ms;
+    --md-sys-motion-duration-long1: 0ms;
+    --md-sys-motion-duration-long2: 0ms;
+    --md-sys-motion-duration-long3: 0ms;
+    --md-sys-motion-duration-long4: 0ms;
+    --md-sys-motion-duration-extra-long1: 0ms;
+    --md-sys-motion-duration-extra-long2: 0ms;
+    --md-sys-motion-duration-extra-long3: 0ms;
+    --md-sys-motion-duration-extra-long4: 0ms;
+  }
+}

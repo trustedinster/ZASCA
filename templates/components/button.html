@@ -1,0 +1,230 @@
+{# Material Design 3 按钮组件 #}
+{# 
+使用示例:
+{% include 'components/button.html' with 
+    variant="filled"          # filled, outlined, text, elevated, tonal
+    size="medium"             # small, medium, large
+    color="primary"           # primary, secondary, tertiary, error
+    icon="check"              # 图标名称（可选）
+    icon_position="start"     # start, end（图标位置）
+    disabled=false            # 是否禁用
+    href="#"                  # 链接地址（可选，用于链接按钮）
+    type="button"             # button, submit, reset
+    text="点击我"             # 按钮文本
+    classes="custom-class"    # 自定义CSS类（可选）
+%}
+#}
+
+{% load static %}
+
+{# 设置默认值 #}
+{% with 
+    variant=variant|default:"filled"
+    size=size|default:"medium"  
+    color=color|default:"primary"
+    icon_position=icon_position|default:"start"
+    disabled=disabled|default:False
+    type=type|default:"button"
+    classes=classes|default:""
+%}
+
+<button 
+    class="md-button md-button--{{ variant }} md-button--{{ size }} md-button--{{ color }} {{ classes }}{% if disabled %} md-button--disabled{% endif %}"
+    {% if href %}onclick="location.href='{{ href }}'"{% endif %}
+    {% if disabled %}disabled{% endif %}
+    type="{{ type }}"
+    {% if title %}title="{{ title }}"{% endif %}
+>
+    {% if icon and icon_position == "start" %}
+        <span class="md-button__icon material-icons">{{ icon }}</span>
+    {% endif %}
+    
+    <span class="md-button__label">{{ text }}</span>
+    
+    {% if icon and icon_position == "end" %}
+        <span class="md-button__icon material-icons">{{ icon }}</span>
+    {% endif %}
+</button>
+
+{% endwith %}
+
+<style>
+/* MD3 按钮样式 */
+.md-button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    user-select: none;
+    font-family: inherit;
+    font-weight: var(--md-sys-typescale-weight-medium);
+    text-decoration: none;
+    text-transform: none;
+    white-space: nowrap;
+    vertical-align: middle;
+    overflow: hidden;
+    transition: 
+        background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+        color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+        box-shadow var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+        opacity var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+    
+    /* 状态层效果 */
+    background-image: radial-gradient(circle, transparent 1%, transparent 1%);
+    background-position: center;
+    background-size: 10000%;
+}
+
+.md-button:focus {
+    outline: 2px solid var(--md-sys-color-primary);
+    outline-offset: 2px;
+}
+
+.md-button:hover {
+    background-size: 0%;
+}
+
+.md-button:active {
+    background-size: 10000%;
+    transition: background-size 0.01s;
+}
+
+/* 按钮变体样式 */
+.md-button--filled {
+    background-color: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+    box-shadow: var(--md-sys-elevation-level1);
+}
+
+.md-button--filled:hover {
+    box-shadow: var(--md-sys-elevation-level2);
+    background-color: color-mix(in srgb, var(--md-sys-color-primary) 90%, black);
+}
+
+.md-button--filled:active {
+    box-shadow: var(--md-sys-elevation-level1);
+}
+
+.md-button--outlined {
+    background-color: transparent;
+    color: var(--md-sys-color-primary);
+    border: 1px solid var(--md-sys-color-outline);
+}
+
+.md-button--outlined:hover {
+    background-color: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+    border-color: var(--md-sys-color-primary);
+}
+
+.md-button--text {
+    background-color: transparent;
+    color: var(--md-sys-color-primary);
+}
+
+.md-button--text:hover {
+    background-color: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+}
+
+.md-button--elevated {
+    background-color: var(--md-sys-color-surface);
+    color: var(--md-sys-color-primary);
+    box-shadow: var(--md-sys-elevation-level1);
+    border: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.md-button--elevated:hover {
+    box-shadow: var(--md-sys-elevation-level2);
+    border-color: var(--md-sys-color-outline);
+}
+
+.md-button--tonal {
+    background-color: var(--md-sys-color-secondary-container);
+    color: var(--md-sys-color-on-secondary-container);
+}
+
+.md-button--tonal:hover {
+    background-color: color-mix(in srgb, var(--md-sys-color-on-secondary-container) 8%, var(--md-sys-color-secondary-container));
+}
+
+/* 颜色变体 */
+.md-button--secondary {
+    --md-sys-color-primary: var(--md-sys-color-secondary);
+    --md-sys-color-on-primary: var(--md-sys-color-on-secondary);
+}
+
+.md-button--tertiary {
+    --md-sys-color-primary: var(--md-sys-color-tertiary);
+    --md-sys-color-on-primary: var(--md-sys-color-on-tertiary);
+}
+
+.md-button--error {
+    --md-sys-color-primary: var(--md-sys-color-error);
+    --md-sys-color-on-primary: var(--md-sys-color-on-error);
+}
+
+/* 尺寸变体 */
+.md-button--small {
+    height: 24px;
+    padding: 0 12px;
+    font-size: var(--md-sys-typescale-label-large-size);
+    border-radius: var(--md-sys-shape-corner-small);
+}
+
+.md-button--medium {
+    height: 40px;
+    padding: 0 24px;
+    font-size: var(--md-sys-typescale-label-large-size);
+    border-radius: var(--md-sys-shape-corner-full, var(--md-sys-shape-corner-medium));
+}
+
+.md-button--large {
+    height: 56px;
+    padding: 0 32px;
+    font-size: var(--md-sys-typescale-label-large-size);
+    border-radius: var(--md-sys-shape-corner-medium);
+}
+
+/* 禁用状态 */
+.md-button--disabled {
+    opacity: 0.38;
+    cursor: default;
+    pointer-events: none;
+}
+
+.md-button--filled.md-button--disabled {
+    background-color: var(--md-sys-color-on-surface);
+    color: var(--md-sys-color-surface);
+    box-shadow: none;
+}
+
+.md-button--outlined.md-button--disabled,
+.md-button--text.md-button--disabled {
+    color: var(--md-sys-color-on-surface);
+    border-color: var(--md-sys-color-on-surface);
+}
+
+/* 图标样式 */
+.md-button__icon {
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.md-button__icon:first-child {
+    margin-right: 8px;
+}
+
+.md-button__icon:last-child {
+    margin-left: 8px;
+}
+
+.md-button__label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>

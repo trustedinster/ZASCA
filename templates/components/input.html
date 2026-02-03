@@ -1,0 +1,304 @@
+{# Material Design 3 输入框组件 #}
+{# 
+使用示例:
+{% include 'components/input.html' with 
+    type="text"               # text, email, password, number, tel, url, search, textarea
+    name="username"           # 输入框名称
+    id="username"             # 输入框ID
+    label="用户名"            # 标签文本
+    placeholder="请输入用户名" # 占位符文本（可选）
+    value=""                  # 初始值（可选）
+    required=false            # 是否必填
+    disabled=false            # 是否禁用
+    error=""                  # 错误消息（可选）
+    helper=""                 # 帮助文本（可选）
+    icon="person"             # 前置图标（可选）
+    trailing_icon=""          # 后置图标（可选）
+    variant="filled"          # filled, outlined
+    size="medium"             # small, medium, large
+    classes="custom-class"    # 自定义CSS类（可选）
+%}
+#}
+
+{# 设置默认值 #}
+{% with 
+    type=type|default:"text"
+    variant=variant|default:"filled"
+    size=size|default:"medium"
+    required=required|default:False
+    disabled=disabled|default:False
+    classes=classes|default:""
+%}
+
+<div class="md-input-wrapper md-input-wrapper--{{ variant }} md-input-wrapper--{{ size }} {{ classes }}{% if error %} md-input-wrapper--error{% endif %}{% if disabled %} md-input-wrapper--disabled{% endif %}">
+    
+    {% if type == "textarea" %}
+        <textarea
+            class="md-input md-input--textarea"
+            name="{{ name }}"
+            id="{{ id|default:name }}"
+            {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+            {% if value %}value="{{ value }}"{% endif %}
+            {% if required %}required{% endif %}
+            {% if disabled %}disabled{% endif %}
+            {% if rows %}rows="{{ rows }}"{% endif %}
+            {% if cols %}cols="{{ cols }}"{% endif %}
+        >{{ value|default:"" }}</textarea>
+    {% else %}
+        <input
+            type="{{ type }}"
+            class="md-input"
+            name="{{ name }}"
+            id="{{ id|default:name }}"
+            {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+            {% if value %}value="{{ value }}"{% endif %}
+            {% if required %}required{% endif %}
+            {% if disabled %}disabled{% endif %}
+            {% if min %}min="{{ min }}"{% endif %}
+            {% if max %}max="{{ max }}"{% endif %}
+            {% if minlength %}minlength="{{ minlength }}"{% endif %}
+            {% if maxlength %}maxlength="{{ maxlength }}"{% endif %}
+        >
+    {% endif %}
+    
+    {% if icon %}
+        <span class="md-input__icon md-input__icon--leading material-icons">{{ icon }}</span>
+    {% endif %}
+    
+    {% if trailing_icon %}
+        <span class="md-input__icon md-input__icon--trailing material-icons">{{ trailing_icon }}</span>
+    {% endif %}
+    
+    <label class="md-input__label" for="{{ id|default:name }}">{{ label }}{% if required %}<span class="md-input__required">*</span>{% endif %}</label>
+    
+    {% if helper %}
+        <div class="md-input__helper">{{ helper }}</div>
+    {% endif %}
+    
+    {% if error %}
+        <div class="md-input__error">{{ error }}</div>
+    {% endif %}
+</div>
+
+{% endwith %}
+
+<style>
+/* MD3 输入框容器 */
+.md-input-wrapper {
+    position: relative;
+    display: block;
+    margin-bottom: var(--md-sys-spacing-margin-md);
+}
+
+/* 输入框基础样式 */
+.md-input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: var(--md-sys-typescale-body-large-size);
+    color: var(--md-sys-color-on-surface);
+    resize: vertical;
+}
+
+.md-input::placeholder {
+    color: transparent;
+}
+
+/* 标签样式 */
+.md-input__label {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    color: var(--md-sys-color-on-surface-variant);
+    font-size: var(--md-sys-typescale-body-large-size);
+    font-weight: var(--md-sys-typescale-weight-regular);
+    pointer-events: none;
+    transition: 
+        all var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+/* 必填标记 */
+.md-input__required {
+    color: var(--md-sys-color-error);
+    margin-left: 4px;
+}
+
+/* 图标样式 */
+.md-input__icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--md-sys-color-on-surface-variant);
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.md-input__icon--leading {
+    left: 16px;
+}
+
+.md-input__icon--trailing {
+    right: 16px;
+    cursor: pointer;
+}
+
+/* 填充式输入框 */
+.md-input-wrapper--filled {
+    background-color: var(--md-sys-color-surface-variant);
+    border-top-left-radius: var(--md-sys-shape-corner-extra-large);
+    border-top-right-radius: var(--md-sys-shape-corner-extra-large);
+}
+
+.md-input-wrapper--filled .md-input {
+    padding: 24px 16px 8px;
+}
+
+.md-input-wrapper--filled .md-input__label {
+    left: 16px;
+}
+
+.md-input-wrapper--filled .md-input__icon--leading {
+    left: 16px;
+}
+
+.md-input-wrapper--filled .md-input__icon--trailing {
+    right: 16px;
+}
+
+/* 轮廓式输入框 */
+.md-input-wrapper--outlined {
+    background-color: transparent;
+}
+
+.md-input-wrapper--outlined .md-input {
+    padding: 16px;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-corner-small);
+}
+
+.md-input-wrapper--outlined .md-input__label {
+    left: 16px;
+    background-color: var(--md-sys-color-surface);
+    padding: 0 4px;
+}
+
+.md-input-wrapper--outlined .md-input__icon--leading {
+    left: 16px;
+}
+
+.md-input-wrapper--outlined .md-input__icon--trailing {
+    right: 16px;
+}
+
+/* 尺寸变体 */
+.md-input-wrapper--small .md-input {
+    font-size: var(--md-sys-typescale-body-small-size);
+    padding-top: 16px;
+    padding-bottom: 4px;
+}
+
+.md-input-wrapper--small .md-input__label {
+    font-size: var(--md-sys-typescale-body-small-size);
+}
+
+.md-input-wrapper--large .md-input {
+    font-size: var(--md-sys-typescale-body-large-size);
+    padding-top: 28px;
+    padding-bottom: 12px;
+}
+
+.md-input-wrapper--large .md-input__label {
+    font-size: var(--md-sys-typescale-body-large-size);
+}
+
+/* 焦点状态 */
+.md-input:focus + .md-input__label,
+.md-input:not(:placeholder-shown) + .md-input__label {
+    top: 8px;
+    transform: translateY(0);
+    font-size: var(--md-sys-typescale-body-small-size);
+    color: var(--md-sys-color-primary);
+}
+
+.md-input-wrapper--filled .md-input:focus,
+.md-input-wrapper--filled .md-input:not(:placeholder-shown) {
+    background-color: color-mix(in srgb, var(--md-sys-color-on-surface-variant) 4%, var(--md-sys-color-surface-variant));
+}
+
+.md-input-wrapper--outlined .md-input:focus {
+    border-color: var(--md-sys-color-primary);
+    border-width: 2px;
+}
+
+.md-input-wrapper--outlined .md-input:focus + .md-input__label {
+    border-color: var(--md-sys-color-primary);
+}
+
+/* 错误状态 */
+.md-input-wrapper--error .md-input {
+    border-color: var(--md-sys-color-error);
+}
+
+.md-input-wrapper--error .md-input:focus {
+    border-color: var(--md-sys-color-error);
+}
+
+.md-input-wrapper--error .md-input__label {
+    color: var(--md-sys-color-error);
+}
+
+.md-input-wrapper--error .md-input__icon {
+    color: var(--md-sys-color-error);
+}
+
+/* 禁用状态 */
+.md-input-wrapper--disabled {
+    opacity: 0.38;
+}
+
+.md-input-wrapper--disabled .md-input {
+    cursor: not-allowed;
+}
+
+.md-input-wrapper--disabled .md-input__label {
+    color: var(--md-sys-color-on-surface);
+}
+
+/* 辅助文本 */
+.md-input__helper {
+    margin-top: 4px;
+    font-size: var(--md-sys-typescale-body-small-size);
+    color: var(--md-sys-color-on-surface-variant);
+}
+
+/* 错误文本 */
+.md-input__error {
+    margin-top: 4px;
+    font-size: var(--md-sys-typescale-body-small-size);
+    color: var(--md-sys-color-error);
+}
+
+/* 响应式设计 */
+@media (max-width: 599px) {
+    .md-input-wrapper--filled .md-input {
+        padding: 20px 12px 4px;
+    }
+    
+    .md-input-wrapper--filled .md-input__label {
+        left: 12px;
+    }
+    
+    .md-input-wrapper--outlined .md-input {
+        padding: 12px;
+    }
+    
+    .md-input-wrapper--outlined .md-input__label {
+        left: 12px;
+    }
+}
+</style>

@@ -1,0 +1,140 @@
+{# Material Design 3 卡片组件 #}
+{# 
+使用示例:
+{% include 'components/card.html' with 
+    variant="elevated"        # elevated, filled, outlined
+    size="medium"             # small, medium, large
+    clickable=false           # 是否可点击
+    href="#"                  # 点击链接（可选）
+    classes="custom-class"    # 自定义CSS类（可选）
+%}
+内容区域
+{% endinclude %}
+#}
+
+{# 设置默认值 #}
+{% with 
+    variant=variant|default:"elevated"
+    size=size|default:"medium"
+    clickable=clickable|default:False
+    classes=classes|default:""
+%}
+
+<div 
+    class="md-card md-card--{{ variant }} md-card--{{ size }} {{ classes }}{% if clickable %} md-card--clickable{% endif %}"
+    {% if href and clickable %}onclick="location.href='{{ href }}'"{% endif %}
+    {% if clickable %}role="button" tabindex="0"{% endif %}
+>
+    {{ content|default:block.super }}
+</div>
+
+{% endwith %}
+
+<style>
+/* MD3 卡片样式 */
+.md-card {
+    display: block;
+    position: relative;
+    background-color: var(--md-sys-color-surface);
+    color: var(--md-sys-color-on-surface);
+    border-radius: var(--md-sys-shape-corner-medium);
+    transition: 
+        box-shadow var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+        transform var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+/* 卡片变体样式 */
+.md-card--elevated {
+    box-shadow: var(--md-sys-elevation-level1);
+    border: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.md-card--elevated:hover {
+    box-shadow: var(--md-sys-elevation-level2);
+}
+
+.md-card--filled {
+    background-color: var(--md-sys-color-surface-variant);
+}
+
+.md-card--outlined {
+    border: 1px solid var(--md-sys-color-outline-variant);
+    background-color: var(--md-sys-color-surface);
+}
+
+/* 尺寸变体 */
+.md-card--small {
+    padding: var(--md-sys-spacing-padding-md);
+}
+
+.md-card--medium {
+    padding: var(--md-sys-spacing-padding-lg);
+}
+
+.md-card--large {
+    padding: var(--md-sys-spacing-padding-xl);
+}
+
+/* 可点击卡片 */
+.md-card--clickable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.md-card--clickable:hover {
+    transform: translateY(-2px);
+}
+
+.md-card--clickable:active {
+    transform: translateY(0);
+}
+
+.md-card--clickable:focus {
+    outline: 2px solid var(--md-sys-color-primary);
+    outline-offset: 2px;
+}
+
+/* 响应式设计 */
+@media (max-width: 599px) {
+    .md-card--small {
+        padding: var(--md-sys-spacing-padding-sm);
+    }
+    
+    .md-card--medium {
+        padding: var(--md-sys-spacing-padding-md);
+    }
+    
+    .md-card--large {
+        padding: var(--md-sys-spacing-padding-lg);
+    }
+}
+
+/* 卡片内容样式 */
+.md-card h1, .md-card h2, .md-card h3, .md-card h4, .md-card h5, .md-card h6 {
+    margin-top: 0;
+    margin-bottom: var(--md-sys-spacing-margin-md);
+    color: var(--md-sys-color-on-surface);
+}
+
+.md-card p {
+    margin-top: 0;
+    margin-bottom: var(--md-sys-spacing-margin-md);
+    color: var(--md-sys-color-on-surface-variant);
+}
+
+.md-card img {
+    max-width: 100%;
+    border-radius: var(--md-sys-shape-corner-small);
+    margin-bottom: var(--md-sys-spacing-margin-md);
+}
+
+.md-card ul, .md-card ol {
+    margin-top: 0;
+    margin-bottom: var(--md-sys-spacing-margin-md);
+    padding-left: var(--md-sys-spacing-padding-lg);
+}
+
+.md-card li {
+    margin-bottom: var(--md-sys-spacing-margin-xs);
+}
+</style>
