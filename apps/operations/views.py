@@ -305,12 +305,6 @@ def account_opening_detail(request, pk):
         'request': account_request
     }
     return render(request, 'operations/account_opening_request_detail.html', context)
-
-
-# 已删除：approve_account_request, reject_account_request, process_account_request
-# 这些功能已迁移至 Django Admin 的 Action 和自定义按钮实现
-
-
 @method_decorator(login_required, name='dispatch')
 class CloudComputerUserListView(ListView):
     """云电脑用户列表视图"""
