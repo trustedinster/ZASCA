@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     'apps.operations',
     'apps.dashboard',
     'apps.certificates',
-    # 'apps.bootstrap',  # 已隐藏主机引导系统
+    'apps.bootstrap',  # 主机引导系统
     'apps.audit',
     'apps.tasks',
     'plugins',
@@ -67,7 +67,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    # 'apps.bootstrap.middleware.SessionValidationMiddleware',  # 已隐藏主机引导系统的会话验证中间件
+    'apps.bootstrap.middleware.SessionValidationMiddleware',  # 主机引导系统的会话验证中间件
     'config.demo_middleware.DemoModeMiddleware',  # DEMO模式中间件
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
