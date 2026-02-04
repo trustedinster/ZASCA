@@ -67,6 +67,8 @@ INSTALLED_APPS = [
     'apps.bootstrap',  # 主机引导系统
     'apps.audit',
     'apps.tasks',
+    'apps.errors',
+    'apps.themes',
     'plugins',
 ]
 
