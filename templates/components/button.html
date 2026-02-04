@@ -1,5 +1,5 @@
 {# Material Design 3 按钮组件 #}
-{# 
+<!--{% comment %}-->
 使用示例:
 {% include 'components/button.html' with 
     variant="filled"          # filled, outlined, text, elevated, tonal
@@ -14,19 +14,11 @@
     classes="custom-class"    # 自定义CSS类（可选）
 %}
 #}
-
+<!--{% endcomment %}-->
 {% load static %}
 
 {# 设置默认值 #}
-{% with 
-    variant=variant|default:"filled"
-    size=size|default:"medium"  
-    color=color|default:"primary"
-    icon_position=icon_position|default:"start"
-    disabled=disabled|default:False
-    type=type|default:"button"
-    classes=classes|default:""
-%}
+{% with variant=variant|default:"filled" size=size|default:"medium" color=color|default:"primary" icon_position=icon_position|default:"start" disabled=disabled|default:False type=type|default:"button" classes=classes|default:"" attributes=attributes|default:"" %}
 
 <button 
     class="md-button md-button--{{ variant }} md-button--{{ size }} md-button--{{ color }} {{ classes }}{% if disabled %} md-button--disabled{% endif %}"
@@ -34,6 +26,7 @@
     {% if disabled %}disabled{% endif %}
     type="{{ type }}"
     {% if title %}title="{{ title }}"{% endif %}
+    {{ attributes|safe }}
 >
     {% if icon and icon_position == "start" %}
         <span class="md-button__icon material-icons">{{ icon }}</span>

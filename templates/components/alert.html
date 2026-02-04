@@ -1,5 +1,6 @@
 {# Material Design 3 警告框组件 #}
-{# 
+{# Material Design 3 警告框组件 #}
+<!--{% comment %}-->
 使用示例:
 {% include 'components/alert.html' with 
     type="info"               # info, success, warning, error
@@ -10,15 +11,10 @@
 %}
 警告内容
 {% endinclude %}
-#}
+<!--{% endcomment %}-->
 
 {# 设置默认值 #}
-{% with 
-    type=type|default:"info"
-    dismissible=dismissible|default:false
-    icon=icon|default:true
-    classes=classes|default:""
-%}
+{% with type=type|default:"info" dismissible=dismissible|default:False icon=icon|default:True classes=classes|default:"" %}
 
 <div class="md-alert md-alert--{{ type }} {{ classes }}" role="alert">
     {% if icon %}
@@ -40,7 +36,7 @@
             <div class="md-alert__title">{{ title }}</div>
         {% endif %}
         <div class="md-alert__message">
-            {{ content|default:block.super }}
+            {{ content }}
         </div>
     </div>
     

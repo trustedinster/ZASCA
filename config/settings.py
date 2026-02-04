@@ -9,10 +9,22 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-change-this-in-production')
+PRODUCTION_SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+if not PRODUCTION_SECRET_KEY:
+    import secrets
+    import string
+    # 生成安全的随机密钥
+    alphabet = string.ascii_letters + string.digits + string.punctuation
+    PRODUCTION_SECRET_KEY = ''.join(secrets.choice(alphabet) for _ in range(50))
+    print("警告：未设置 DJANGO_SECRET_KEY 环境变量，已生成临时密钥")
+    print("请在生产环境中设置强密钥：export DJANGO_SECRET_KEY='您的密钥'")
+SECRET_KEY = PRODUCTION_SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
+DEBUG = os.environ.get('DEBUG', '').lower() in ['true', '1', 'yes']
+
+# 环境标记：生产模式
+PRODUCTION_MODE = os.environ.get('PRODUCTION_MODE', '').lower() in ['true', '1', 'yes'] or not DEBUG
 
 # 允许的主机列表
 # 在DEBUG模式下，允许所有主机
@@ -139,7 +151,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_DIRS = [BASE_DIR / 'frontend' / 'static']
 
 # Media files
 MEDIA_URL = 'media/'

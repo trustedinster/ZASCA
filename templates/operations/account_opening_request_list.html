@@ -6,82 +6,254 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/operations.css' %}">
 <style>
-.status-badge {
-    display: inline-block;
-    padding: 0.25em 0.5em;
-    border-radius: 0.375rem;
-    font-size: 0.75em;
-    font-weight: 500;
+/* 开户申请列表MD3样式 */
+.list-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
 }
-.status-pending { background-color: #ffc107; color: #212529; }
-.status-approved { background-color: #28a745; color: white; }
-.status-rejected { background-color: #dc3545; color: white; }
-.status-processing { background-color: #17a2b8; color: white; }
-.status-completed { background-color: #20c997; color: white; }
-.status-failed { background-color: #6c757d; color: white; }
-.filter-section {
-    background: #f8f9fa;
-    padding: 1rem;
-    border-radius: 0.375rem;
-    margin-bottom: 1.5rem;
+
+.list-header {
+    margin-bottom: 2rem;
 }
-.action-buttons .btn {
-    margin-right: 0.5rem;
+
+.list-header h1 {
+    margin: 0;
+    font-size: var(--md-sys-typescale-headline-medium-font-size);
+    font-weight: var(--md-sys-typescale-headline-medium-font-weight);
+    color: var(--md-sys-color-on-surface);
+}
+
+.filter-card {
+    background: var(--md-sys-color-surface);
+    border-radius: var(--md-sys-shape-corner-medium);
+    box-shadow: var(--md-sys-elevation-1);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    align-items: end;
+}
+
+.filter-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-label {
+    font-size: var(--md-sys-typescale-label-large-font-size);
+    font-weight: var(--md-sys-typescale-label-large-font-weight);
+    color: var(--md-sys-color-on-surface-variant);
     margin-bottom: 0.5rem;
+}
+
+.md-input-wrapper {
+    margin-bottom: 0;
+}
+
+.list-card {
+    background: var(--md-sys-color-surface);
+    border-radius: var(--md-sys-shape-corner-medium);
+    box-shadow: var(--md-sys-elevation-1);
+    overflow: hidden;
+}
+
+.list-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.list-table th {
+    background: var(--md-sys-color-surface-variant);
+    color: var(--md-sys-color-on-surface-variant);
+    font-size: var(--md-sys-typescale-label-large-font-size);
+    font-weight: var(--md-sys-typescale-label-large-font-weight);
+    padding: 1rem 1.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.list-table td {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+    font-size: var(--md-sys-typescale-body-medium-font-size);
+    color: var(--md-sys-color-on-surface);
+}
+
+.list-table tr:last-child td {
+    border-bottom: none;
+}
+
+.list-table tr:hover {
+    background: var(--md-sys-color-surface-variant);
+}
+
+.status-display {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--md-sys-shape-corner-full);
+    font-size: var(--md-sys-typescale-label-medium-font-size);
+    font-weight: var(--md-sys-typescale-label-medium-font-weight);
+    text-transform: uppercase;
+}
+
+.status-pending { 
+    background-color: var(--md-sys-color-warning-container); 
+    color: var(--md-sys-color-on-warning-container); 
+}
+
+.status-approved { 
+    background-color: var(--md-sys-color-success-container); 
+    color: var(--md-sys-color-on-success-container); 
+}
+
+.status-rejected { 
+    background-color: var(--md-sys-color-error-container); 
+    color: var(--md-sys-color-on-error-container); 
+}
+
+.status-processing { 
+    background-color: var(--md-sys-color-info-container); 
+    color: var(--md-sys-color-on-info-container); 
+}
+
+.status-completed { 
+    background-color: var(--md-sys-color-primary-container); 
+    color: var(--md-sys-color-on-primary-container); 
+}
+
+.status-failed { 
+    background-color: var(--md-sys-color-inverse-surface); 
+    color: var(--md-sys-color-inverse-on-surface); 
+}
+
+.no-data {
+    text-align: center;
+    color: var(--md-sys-color-outline);
+    font-style: italic;
+    padding: 3rem;
+}
+
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+    padding: 1rem;
+}
+
+.pagination {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.page-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 1rem;
+    border-radius: var(--md-sys-shape-corner-small);
+    text-decoration: none;
+    font-size: var(--md-sys-typescale-label-large-font-size);
+    font-weight: var(--md-sys-typescale-label-large-font-weight);
+    transition: all 0.2s ease;
+}
+
+.page-button:not(.active) {
+    background: var(--md-sys-color-surface);
+    color: var(--md-sys-color-on-surface);
+    border: 1px solid var(--md-sys-color-outline);
+}
+
+.page-button:not(.active):hover {
+    background: var(--md-sys-color-surface-variant);
+    border-color: var(--md-sys-color-primary);
+}
+
+.page-button.active {
+    background: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+}
+
+.page-info {
+    margin: 0 1rem;
+    color: var(--md-sys-color-on-surface-variant);
+    font-size: var(--md-sys-typescale-body-medium-font-size);
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container operations-page">
-    <div class="page-header d-flex justify-content-between align-items-center">
+<div class="list-container">
+    <div class="list-header">
         <h1>我提交的申请</h1>
     </div>
 
     <!-- 过滤器 -->
-    <div class="filter-section">
+    <div class="filter-card">
         <form method="get" class="filter-form">
-            <div class="row g-3">
-                <div class="col-md-3">
+            <div class="filter-grid">
+                <div class="filter-item">
                     <label class="filter-label">申请状态</label>
-                    <select class="form-control" name="status">
-                        <option value="">全部</option>
-                        {% for value, label in statuses %}
-                        <option value="{{ value }}" {% if filter_form.status.value == value %}selected{% endif %}>{{ label }}</option>
-                        {% endfor %}
-                    </select>
+                    <div class="md-input-wrapper md-input-wrapper--filled">
+                        <select class="md-input" name="status">
+                            <option value="">全部</option>
+                            {% for value, label in statuses %}
+                            <option value="{{ value }}" {% if filter_form.status.value == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <label class="md-input__label">申请状态</label>
+                    </div>
                 </div>
-                <div class="col-md-3">
+                
+                <div class="filter-item">
                     <label class="filter-label">目标主机</label>
-                    <select class="form-control" name="host">
-                        <option value="">全部</option>
-                        {% for host in hosts %}
-                        <option value="{{ host.id }}" {% if filter_form.host.value|stringformat:"i" == host.id|stringformat:"i" %}selected{% endif %}>
-                            {{ host.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
+                    <div class="md-input-wrapper md-input-wrapper--filled">
+                        <select class="md-input" name="host">
+                            <option value="">全部</option>
+                            {% for host in hosts %}
+                            <option value="{{ host.id }}" {% if filter_form.host.value|stringformat:"i" == host.id|stringformat:"i" %}selected{% endif %}>
+                                {{ host.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <label class="md-input__label">目标主机</label>
+                    </div>
                 </div>
-                <div class="col-md-4">
+                
+                <div class="filter-item">
                     <label class="filter-label">搜索</label>
-                    <input type="text" 
-                           class="form-control" 
-                           name="search" 
-                           value="{{ filter_form.search.value|default:'' }}"
-                           placeholder="按用户名、姓名或邮箱搜索">
+                    <div class="md-input-wrapper md-input-wrapper--filled">
+                        <input type="text" 
+                               class="md-input" 
+                               name="search" 
+                               value="{{ filter_form.search.value|default:'' }}"
+                               placeholder="按用户名、姓名或邮箱搜索">
+                        <label class="md-input__label">搜索</label>
+                    </div>
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-outline-secondary me-2">搜索</button>
-                    <a href="{% url 'operations:account_opening_list' %}" class="btn btn-outline-secondary">重置</a>
+                
+                <div class="filter-item">
+                    <div style="display: flex; gap: 0.5rem; height: 56px; align-items: end;">
+                        {% include 'components/button.html' with type="submit" variant="outlined" text="搜索" %}
+                        {% url 'operations:account_opening_list' as account_opening_list_url %}
+                        {% include 'components/button.html' with href=account_opening_list_url variant="text" text="重置" %}
+                    </div>
                 </div>
             </div>
         </form>
     </div>
 
     <!-- 申请列表 -->
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead class="table-light">
+    <div class="list-card">
+        <table class="list-table">
+            <thead>
                 <tr>
                     <th>用户名</th>
                     <th>用户姓名</th>
@@ -99,17 +271,20 @@
                     <td>{{ request.user_fullname }}</td>
                     <td>{{ request.target_product.display_name }}</td>
                     <td>
-                        <span class="status-badge status-{{ request.status }}">{{ request.get_status_display }}</span>
+                        <span class="status-display status-{{ request.status }}">
+                            {{ request.get_status_display }}
+                        </span>
                     </td>
                     <td>{{ request.created_at|date:"Y-m-d H:i:s" }}</td>
                     <td>
-                        <a href="{% url 'operations:account_opening_detail' request.id %}" class="btn btn-sm btn-outline-primary">查看详情</a>
+                        {% url 'operations:account_opening_detail' request.id as detail_url %}
+                        {% include 'components/button.html' with href=detail_url variant="text" text="查看详情" size="small" %}
                     </td>
                 </tr>
                 {% endfor %}
                 {% else %}
                 <tr>
-                    <td colspan="6" class="text-center text-muted">暂无开户申请</td>
+                    <td colspan="6" class="no-data">暂无开户申请</td>
                 </tr>
                 {% endif %}
             </tbody>
@@ -118,25 +293,27 @@
 
     <!-- 分页 -->
     {% if is_paginated and paginator.num_pages > 1 %}
-    <nav aria-label="分页导航">
-        <ul class="pagination justify-content-center">
-            {% if page_obj.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.host %}host={{ request.GET.host }}&{% endif %}{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}page={{ page_obj.previous_page_number }}">上一页</a>
-            </li>
-            {% endif %}
+    <div class="pagination-container">
+        <nav aria-label="分页导航">
+            <div class="pagination">
+                {% if page_obj.has_previous %}
+                <a class="page-button" 
+                   href="?{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.host %}host={{ request.GET.host }}&{% endif %}{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}page={{ page_obj.previous_page_number }}">
+                    上一页
+                </a>
+                {% endif %}
 
-            <li class="page-item active">
-                <span class="page-link">{{ page_obj.number }} / {{ paginator.num_pages }}</span>
-            </li>
+                <span class="page-info">{{ page_obj.number }} / {{ paginator.num_pages }}</span>
 
-            {% if page_obj.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.host %}host={{ request.GET.host }}&{% endif %}{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}page={{ page_obj.next_page_number }}">下一页</a>
-            </li>
-            {% endif %}
-        </ul>
-    </nav>
+                {% if page_obj.has_next %}
+                <a class="page-button" 
+                   href="?{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.host %}host={{ request.GET.host }}&{% endif %}{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}page={{ page_obj.next_page_number }}">
+                    下一页
+                </a>
+                {% endif %}
+            </div>
+        </nav>
+    </div>
     {% endif %}
 </div>
 {% endblock %}

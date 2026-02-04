@@ -412,6 +412,12 @@
         }
     }
 
+    // Make functions globally accessible for manual initialization if needed
+    window.initGeetestAdapter = {
+        initOnTrigger: initOnTrigger,
+        initEmailCodeButton: initEmailCodeButton
+    };
+    
     // auto init on DOM ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {

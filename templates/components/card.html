@@ -13,12 +13,7 @@
 #}
 
 {# 设置默认值 #}
-{% with 
-    variant=variant|default:"elevated"
-    size=size|default:"medium"
-    clickable=clickable|default:False
-    classes=classes|default:""
-%}
+{% with variant=variant|default:"elevated" size=size|default:"medium" clickable=clickable|default:False classes=classes|default:"" %}
 
 <div 
     class="md-card md-card--{{ variant }} md-card--{{ size }} {{ classes }}{% if clickable %} md-card--clickable{% endif %}"

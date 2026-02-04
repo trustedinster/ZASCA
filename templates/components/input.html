@@ -1,7 +1,7 @@
 {# Material Design 3 输入框组件 #}
-{# 
+<!--{% comment %}-->
 使用示例:
-{% include 'components/input.html' with 
+{% include 'components/input.html' with
     type="text"               # text, email, password, number, tel, url, search, textarea
     name="username"           # 输入框名称
     id="username"             # 输入框ID
@@ -18,19 +18,21 @@
     size="medium"             # small, medium, large
     classes="custom-class"    # 自定义CSS类（可选）
 %}
-#}
+<!--{% endcomment %}-->
 
-{# 设置默认值 #}
-{% with 
-    type=type|default:"text"
-    variant=variant|default:"filled"
-    size=size|default:"medium"
-    required=required|default:False
-    disabled=disabled|default:False
-    classes=classes|default:""
-%}
+{% with type=type|default:"text" variant=variant|default:"filled" size=size|default:"medium" required=required|default:False disabled=disabled|default:False classes=classes|default:"" %}
 
-<div class="md-input-wrapper md-input-wrapper--{{ variant }} md-input-wrapper--{{ size }} {{ classes }}{% if error %} md-input-wrapper--error{% endif %}{% if disabled %} md-input-wrapper--disabled{% endif %}">
+<div class="md-input-wrapper md-input-wrapper--{{ variant }} md-input-wrapper--{{ size }} {{ classes }}{% if error %} md-input-wrapper--error{% endif %}{% if disabled %} md-input-wrapper--disabled{% endif %}" data-has-value="{% if value %}true{% else %}false{% endif %}" data-initialized="false">
+    
+    <label class="md-input__label" for="{{ id|default:name }}">{{ label }}{% if required %}<span class="md-input__required">*</span>{% endif %}</label>
+    
+    {% if icon %}
+        <span class="md-input__icon md-input__icon--leading material-icons" data-icon="{{ icon }}">{{ icon }}</span>
+    {% endif %}
+    
+    {% if trailing_icon %}
+        <span class="md-input__icon md-input__icon--trailing material-icons" data-icon="{{ trailing_icon }}">{{ trailing_icon }}</span>
+    {% endif %}
     
     {% if type == "textarea" %}
         <textarea
@@ -38,7 +40,6 @@
             name="{{ name }}"
             id="{{ id|default:name }}"
             {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
-            {% if value %}value="{{ value }}"{% endif %}
             {% if required %}required{% endif %}
             {% if disabled %}disabled{% endif %}
             {% if rows %}rows="{{ rows }}"{% endif %}
@@ -60,16 +61,6 @@
             {% if maxlength %}maxlength="{{ maxlength }}"{% endif %}
         >
     {% endif %}
-    
-    {% if icon %}
-        <span class="md-input__icon md-input__icon--leading material-icons">{{ icon }}</span>
-    {% endif %}
-    
-    {% if trailing_icon %}
-        <span class="md-input__icon md-input__icon--trailing material-icons">{{ trailing_icon }}</span>
-    {% endif %}
-    
-    <label class="md-input__label" for="{{ id|default:name }}">{{ label }}{% if required %}<span class="md-input__required">*</span>{% endif %}</label>
     
     {% if helper %}
         <div class="md-input__helper">{{ helper }}</div>
@@ -100,24 +91,50 @@
     font-size: var(--md-sys-typescale-body-large-size);
     color: var(--md-sys-color-on-surface);
     resize: vertical;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 2; /* 确保输入框内容在标签下方 */
 }
 
 .md-input::placeholder {
     color: transparent;
 }
 
+/* 隐藏浏览器原生密码可见性控件 */
+.md-input::-ms-reveal,
+.md-input::-ms-clear {
+    display: none;
+}
+
+/* 隐藏WebKit浏览器的密码眼图标 */
+.md-input[type="password"]::-webkit-credentials-auto-fill-button,
+.md-input[type="password"]::-webkit-caps-lock-indicator {
+    display: none !important;
+    visibility: hidden !important;
+}
+
 /* 标签样式 */
 .md-input__label {
     position: absolute;
-    top: 50%;
-    left: 0;
-    transform: translateY(-50%);
+    top: 24px;
+    left: 16px;
+    right: 16px;
     color: var(--md-sys-color-on-surface-variant);
     font-size: var(--md-sys-typescale-body-large-size);
     font-weight: var(--md-sys-typescale-weight-regular);
     pointer-events: none;
     transition: 
         all var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+    z-index: 3; /* 确保标签在最上层 */
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    line-height: 1.2;
+    transform-origin: left top;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-sizing: border-box;
 }
 
 /* 必填标记 */
@@ -132,10 +149,40 @@
     top: 50%;
     transform: translateY(-50%);
     color: var(--md-sys-color-on-surface-variant);
-    font-size: 18px;
+    font-size: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 3; /* 提高图标z-index确保可见 */
+    pointer-events: auto;
+    width: 24px;
+    height: 24px;
+    /* Material Icons字体设置 */
+    font-family: 'Material Icons', 'MaterialIcons-Regular', sans-serif;
+    font-weight: normal;
+    font-style: normal;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+    font-feature-settings: 'liga';
+    /* 添加背景确保可见 */
+    background: transparent;
+}
+
+/* SVG图标样式 */
+.md-input__icon svg {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+}
+
+/* 眼睛图标悬停效果 */
+.eye-icon:hover, .eye-off-icon:hover {
+    opacity: 0.7;
+    cursor: pointer;
 }
 
 .md-input__icon--leading {
@@ -155,19 +202,26 @@
 }
 
 .md-input-wrapper--filled .md-input {
-    padding: 24px 16px 8px;
+    padding: 20px 12px 8px 44px; /* 优化padding防止溢出 */
+    padding-top: 28px; /* 为标签留出空间 */
+    box-sizing: border-box;
 }
 
 .md-input-wrapper--filled .md-input__label {
-    left: 16px;
+    left: 48px;
+    right: 16px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-sizing: border-box;
 }
 
 .md-input-wrapper--filled .md-input__icon--leading {
-    left: 16px;
+    left: 12px;
 }
 
 .md-input-wrapper--filled .md-input__icon--trailing {
-    right: 16px;
+    right: 12px;
 }
 
 /* 轮廓式输入框 */
@@ -183,8 +237,13 @@
 
 .md-input-wrapper--outlined .md-input__label {
     left: 16px;
+    right: 16px;
     background-color: var(--md-sys-color-surface);
     padding: 0 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-sizing: border-box;
 }
 
 .md-input-wrapper--outlined .md-input__icon--leading {
@@ -216,16 +275,20 @@
     font-size: var(--md-sys-typescale-body-large-size);
 }
 
-/* 焦点状态 */
-.md-input:focus + .md-input__label,
-.md-input:not(:placeholder-shown) + .md-input__label {
+/* 焦点状态和有值状态 - 完善所有情况 */
+.md-input:focus ~ .md-input__label,
+.md-input-wrapper[data-has-value="true"] .md-input__label,
+.md-input:not(:placeholder-shown) ~ .md-input__label,
+.md-input-wrapper--filled .md-input[value]:not([value=""]) ~ .md-input__label,
+.md-input-wrapper--filled .md-input:not(:-moz-placeholder-shown) ~ .md-input__label {
     top: 8px;
-    transform: translateY(0);
     font-size: var(--md-sys-typescale-body-small-size);
     color: var(--md-sys-color-primary);
+    transform: scale(0.85); /* 缩小效果 */
 }
 
 .md-input-wrapper--filled .md-input:focus,
+.md-input-wrapper[data-has-value="true"] .md-input-wrapper--filled .md-input,
 .md-input-wrapper--filled .md-input:not(:placeholder-shown) {
     background-color: color-mix(in srgb, var(--md-sys-color-on-surface-variant) 4%, var(--md-sys-color-surface-variant));
 }
@@ -235,8 +298,8 @@
     border-width: 2px;
 }
 
-.md-input-wrapper--outlined .md-input:focus + .md-input__label {
-    border-color: var(--md-sys-color-primary);
+.md-input-wrapper--outlined .md-input:focus ~ .md-input__label {
+    color: var(--md-sys-color-primary);
 }
 
 /* 错误状态 */
@@ -283,22 +346,79 @@
     color: var(--md-sys-color-error);
 }
 
-/* 响应式设计 */
-@media (max-width: 599px) {
-    .md-input-wrapper--filled .md-input {
-        padding: 20px 12px 4px;
+</style>
+
+<script>
+(function() {
+    'use strict';
+    
+    // 初始化所有MD3输入框
+    function initMdInputs() {
+        const wrappers = document.querySelectorAll('.md-input-wrapper');
+        
+        wrappers.forEach(wrapper => {
+            if (wrapper.dataset.initialized === 'true') return;
+            
+            const input = wrapper.querySelector('.md-input');
+            if (!input) return;
+            
+            // 检查初始值
+            function checkValue() {
+                const hasValue = input.value && input.value.trim() !== '';
+                wrapper.dataset.hasValue = hasValue;
+                
+                // 触发重新计算样式
+                if (hasValue) {
+                    wrapper.classList.add('md-input-wrapper--has-value');
+                } else {
+                    wrapper.classList.remove('md-input-wrapper--has-value');
+                }
+            }
+            
+            // 监听输入事件
+            input.addEventListener('input', checkValue);
+            input.addEventListener('focus', checkValue);
+            input.addEventListener('blur', checkValue);
+            
+            // 初始化检查
+            setTimeout(checkValue, 100);
+            
+            // 标记为已初始化
+            wrapper.dataset.initialized = 'true';
+        });
     }
     
-    .md-input-wrapper--filled .md-input__label {
-        left: 12px;
+    // 页面加载完成后初始化
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initMdInputs);
+    } else {
+        initMdInputs();
     }
     
-    .md-input-wrapper--outlined .md-input {
-        padding: 12px;
-    }
+    // 支持动态添加的内容
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        if (node.classList && node.classList.contains('md-input-wrapper')) {
+                            initMdInputs();
+                        } else {
+                            const inputs = node.querySelectorAll && node.querySelectorAll('.md-input-wrapper');
+                            if (inputs.length > 0) {
+                                initMdInputs();
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    });
     
-    .md-input-wrapper--outlined .md-input__label {
-        left: 12px;
-    }
-}
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+})();
+</script>
 </style>

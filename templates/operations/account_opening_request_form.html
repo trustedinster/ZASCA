@@ -5,90 +5,200 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/operations.css' %}">
+<style>
+/* 开户申请表单MD3样式 */
+.application-form-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.application-card {
+    background: var(--md-sys-color-surface);
+    border-radius: var(--md-sys-shape-corner-medium);
+    box-shadow: var(--md-sys-elevation-1);
+    overflow: hidden;
+}
+
+.application-card-header {
+    background: var(--md-sys-color-primary-container);
+    color: var(--md-sys-color-on-primary-container);
+    padding: 1.5rem 2rem;
+}
+
+.application-card-header h2 {
+    margin: 0;
+    font-size: var(--md-sys-typescale-headline-small-font-size);
+    font-weight: var(--md-sys-typescale-headline-small-font-weight);
+}
+
+.application-card-body {
+    padding: 2rem;
+}
+
+.form-section {
+    margin-bottom: 2rem;
+}
+
+.form-section-title {
+    font-size: var(--md-sys-typescale-title-medium-font-size);
+    font-weight: var(--md-sys-typescale-title-medium-font-weight);
+    color: var(--md-sys-color-on-surface);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.form-row {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-column {
+    flex: 1;
+}
+
+.md-input-wrapper {
+    margin-bottom: 1.5rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.readonly-field {
+    background: var(--md-sys-color-surface-variant) !important;
+    color: var(--md-sys-color-on-surface-variant) !important;
+}
+
+.target-product-info {
+    background: var(--md-sys-color-secondary-container);
+    color: var(--md-sys-color-on-secondary-container);
+    padding: 1rem;
+    border-radius: var(--md-sys-shape-corner-small);
+    margin-top: 1rem;
+}
+
+.target-product-info strong {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.hidden-target-product {
+    display: none;
+}
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="container operations-page">
-    <div class="page-header">
-        <h1>提交开户申请</h1>
-    </div>
-
+<div class="application-form-container">
     {% if messages %}
-    <div class="messages">
         {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+            {% include 'components/alert.html' with message=message.tags content=message %}
         {% endfor %}
-    </div>
     {% endif %}
 
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title">申请信息</h5>
+    <div class="application-card">
+        <div class="application-card-header">
+            <h2>提交开户申请</h2>
+        </div>
+        
+        <div class="application-card-body">
             <form id="account-opening-form" method="post">
                 {% csrf_token %}
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label">联系邮箱</label>
-                            <input type="email" class="form-control" value="{{ request.user.email }}" readonly>
-                            <div class="form-text">使用当前账户的注册邮箱，不可修改</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.username.id_for_label }}" class="form-label">主机连接用户名 *</label>
-                            {{ form.username }}
-                            {% if form.username.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.username.errors %}{{ error }}{% endfor %}
+                
+                <div class="form-section">
+                    <h3 class="form-section-title">基本信息</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-column">
+                            <div class="md-input-wrapper md-input-wrapper--filled">
+                                <input type="email" 
+                                       class="md-input readonly-field" 
+                                       value="{{ request.user.email }}" 
+                                       readonly>
+                                <label class="md-input__label">联系邮箱</label>
+                                <span class="md-input__supporting-text">使用当前账户的注册邮箱，不可修改</span>
                             </div>
-                            {% endif %}
-                            <div class="form-text">将在云电脑主机上创建的连接用户名</div>
                         </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.user_fullname.id_for_label }}" class="form-label">主机显示用户名 *</label>
-                            {{ form.user_fullname }}
-                            {% if form.user_fullname.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.user_fullname.errors %}{{ error }}{% endfor %}
-                            </div>
-                            {% endif %}
-                            <div class="form-text">用于在系统中显示的用户名</div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="{{ form.user_description.id_for_label }}" class="form-label">申请理由 *</label>
-                            {{ form.user_description }}
-                            {% if form.user_description.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.user_description.errors %}{{ error }}{% endfor %}
-                            </div>
-                            {% endif %}
-                            <div class="form-text">请说明申请云电脑主机的用途和理由</div>
-                        </div>
-
-                        <!-- 隐藏的目标产品字段，通过URL参数传入 -->
-                        <div class="target-product-display">
-                            <strong>目标产品:</strong> 
-                            {% if form.target_product.field.queryset.first %}
-                                {{ form.target_product.field.queryset.first.display_name }}
-                            {% else %}
-                                未指定
-                            {% endif %}
-                        </div>
-                        {{ form.target_product }}
                     </div>
                 </div>
 
-                <div class="mt-4">
-                    <button type="submit" class="btn btn-primary btn-lg">提交申请并确认</button>
-                    <a href="{% url 'operations:account_opening_list' %}" class="btn btn-secondary btn-lg">取消</a>
+                <div class="form-section">
+                    <h3 class="form-section-title">用户信息</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-column">
+                            <div class="md-input-wrapper md-input-wrapper--filled {% if form.username.errors %}md-input-wrapper--error{% endif %}">
+                                {{ form.username }}
+                                <label class="md-input__label" for="{{ form.username.id_for_label }}">主机连接用户名 *</label>
+                                {% if form.username.errors %}
+                                    <span class="md-input__error-text">
+                                        {% for error in form.username.errors %}{{ error }}{% endfor %}
+                                    </span>
+                                {% else %}
+                                    <span class="md-input__supporting-text">将在云电脑主机上创建的连接用户名</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="form-column">
+                            <div class="md-input-wrapper md-input-wrapper--filled {% if form.user_fullname.errors %}md-input-wrapper--error{% endif %}">
+                                {{ form.user_fullname }}
+                                <label class="md-input__label" for="{{ form.user_fullname.id_for_label }}">主机显示用户名 *</label>
+                                {% if form.user_fullname.errors %}
+                                    <span class="md-input__error-text">
+                                        {% for error in form.user_fullname.errors %}{{ error }}{% endfor %}
+                                    </span>
+                                {% else %}
+                                    <span class="md-input__supporting-text">用于在系统中显示的用户名</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3 class="form-section-title">申请详情</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-column">
+                            <div class="md-input-wrapper md-input-wrapper--filled md-input-wrapper--textarea {% if form.user_description.errors %}md-input-wrapper--error{% endif %}">
+                                {{ form.user_description }}
+                                <label class="md-input__label" for="{{ form.user_description.id_for_label }}">申请理由 *</label>
+                                {% if form.user_description.errors %}
+                                    <span class="md-input__error-text">
+                                        {% for error in form.user_description.errors %}{{ error }}{% endfor %}
+                                    </span>
+                                {% else %}
+                                    <span class="md-input__supporting-text">请说明申请云电脑主机的用途和理由</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="target-product-info">
+                    <strong>目标产品:</strong>
+                    {% if form.target_product.field.queryset.first %}
+                        {{ form.target_product.field.queryset.first.display_name }}
+                    {% else %}
+                        未指定
+                    {% endif %}
+                </div>
+                
+                {{ form.target_product }}
+
+                <div class="form-actions">
+                    {% include 'components/button.html' with type="submit" variant="filled" text="提交申请并确认" size="large" %}
+                    {% url 'operations:account_opening_list' as account_opening_list_url %}
+                    {% include 'components/button.html' with href=account_opening_list_url variant="outlined" text="取消" size="large" %}
                 </div>
             </form>
         </div>

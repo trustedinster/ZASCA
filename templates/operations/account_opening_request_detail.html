@@ -5,159 +5,277 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/operations.css' %}">
+<style>
+/* 开户申请详情MD3样式 */
+.detail-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.detail-header h1 {
+    margin: 0;
+    font-size: var(--md-sys-typescale-headline-medium-font-size);
+    font-weight: var(--md-sys-typescale-headline-medium-font-weight);
+    color: var(--md-sys-color-on-surface);
+}
+
+.detail-card {
+    background: var(--md-sys-color-surface);
+    border-radius: var(--md-sys-shape-corner-medium);
+    box-shadow: var(--md-sys-elevation-1);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.detail-card-header {
+    background: var(--md-sys-color-surface-variant);
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.detail-card-header h2 {
+    margin: 0;
+    font-size: var(--md-sys-typescale-title-large-font-size);
+    font-weight: var(--md-sys-typescale-title-large-font-weight);
+    color: var(--md-sys-color-on-surface-variant);
+}
+
+.detail-card-body {
+    padding: 1.5rem;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.detail-item {
+    margin-bottom: 1.25rem;
+}
+
+.detail-label {
+    font-size: var(--md-sys-typescale-label-large-font-size);
+    font-weight: var(--md-sys-typescale-label-large-font-weight);
+    color: var(--md-sys-color-on-surface-variant);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.detail-value {
+    font-size: var(--md-sys-typescale-body-large-font-size);
+    color: var(--md-sys-color-on-surface);
+    padding: 0.75rem;
+    background: var(--md-sys-color-surface-variant);
+    border-radius: var(--md-sys-shape-corner-small);
+    border-left: 3px solid var(--md-sys-color-primary);
+}
+
+.status-display {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: var(--md-sys-shape-corner-full);
+    font-size: var(--md-sys-typescale-label-large-font-size);
+    font-weight: var(--md-sys-typescale-label-large-font-weight);
+    text-transform: uppercase;
+}
+
+.status-pending { 
+    background-color: var(--md-sys-color-warning-container); 
+    color: var(--md-sys-color-on-warning-container); 
+}
+
+.status-approved { 
+    background-color: var(--md-sys-color-success-container); 
+    color: var(--md-sys-color-on-success-container); 
+}
+
+.status-rejected { 
+    background-color: var(--md-sys-color-error-container); 
+    color: var(--md-sys-color-on-error-container); 
+}
+
+.status-processing { 
+    background-color: var(--md-sys-color-info-container); 
+    color: var(--md-sys-color-on-info-container); 
+}
+
+.status-completed { 
+    background-color: var(--md-sys-color-primary-container); 
+    color: var(--md-sys-color-on-primary-container); 
+}
+
+.status-failed { 
+    background-color: var(--md-sys-color-inverse-surface); 
+    color: var(--md-sys-color-inverse-on-surface); 
+}
+
+.text-danger {
+    color: var(--md-sys-color-error) !important;
+}
+
+.detail-footer {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.empty-value {
+    color: var(--md-sys-color-outline) !important;
+    font-style: italic;
+}
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="container operations-page">
-    <div class="page-header d-flex justify-content-between align-items-center">
-        <h1>申请详情</h1>
-        <a href="{% url 'operations:account_opening_list' %}" class="btn btn-secondary">返回列表</a>
-    </div>
-
+<div class="detail-container">
     {% if messages %}
-    <div class="messages">
         {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+            {% include 'components/alert.html' with message=message.tags content=message %}
         {% endfor %}
-    </div>
     {% endif %}
 
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title">申请信息</h5>
-            
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">申请人</label>
-                        <div class="form-control-plaintext">{{ request.applicant.username }}</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">联系邮箱</label>
-                        <div class="form-control-plaintext">{{ request.applicant.email }}</div>
-                    </div>
-                    
+    <div class="detail-header">
+        <h1>申请详情</h1>
+        {% url 'operations:account_opening_list' as account_opening_list_url %}
+        {% include 'components/button.html' with href=account_opening_list_url variant="outlined" text="返回列表" icon="arrow_back" %}
+    </div>
 
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">主机连接用户名</label>
-                        <div class="form-control-plaintext">{{ request.username }}</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">主机显示用户名</label>
-                        <div class="form-control-plaintext">{{ request.user_fullname }}</div>
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <h2>申请信息</h2>
+        </div>
+        <div class="detail-card-body">
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <span class="detail-label">申请人</span>
+                    <div class="detail-value">{{ request.applicant.username }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <span class="detail-label">联系邮箱</span>
+                    <div class="detail-value">{{ request.applicant.email }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <span class="detail-label">主机连接用户名</span>
+                    <div class="detail-value">{{ request.username }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <span class="detail-label">主机显示用户名</span>
+                    <div class="detail-value">{{ request.user_fullname }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <span class="detail-label">用户邮箱</span>
+                    <div class="detail-value">{{ request.user_email }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <span class="detail-label">用户描述</span>
+                    <div class="detail-value {% if not request.user_description %}empty-value{% endif %}">
+                        {{ request.user_description|default:"暂无描述" }}
                     </div>
                 </div>
                 
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">用户邮箱</label>
-                        <div class="form-control-plaintext">{{ request.user_email }}</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">用户描述</label>
-                        <div class="form-control-plaintext">{{ request.user_description|default:"-" }}</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">目标产品</label>
-                        <div class="form-control-plaintext">{{ request.target_product.display_name }}</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">申请理由</label>
-                        <div class="form-control-plaintext">{{ request.user_description }}</div>
-                    </div>
+                <div class="detail-item">
+                    <span class="detail-label">目标产品</span>
+                    <div class="detail-value">{{ request.target_product.display_name }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <span class="detail-label">申请理由</span>
+                    <div class="detail-value">{{ request.user_description }}</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card mt-4">
-        <div class="card-body">
-            <h5 class="card-title">审核信息</h5>
-            
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">申请状态</label>
-                        <div>
-                            <span class="status-badge status-{{ request.status }}">{{ request.get_status_display }}</span>
-                        </div>
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <h2>审核信息</h2>
+        </div>
+        <div class="detail-card-body">
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <span class="detail-label">申请状态</span>
+                    <div class="detail-value">
+                        <span class="status-display status-{{ request.status }}">
+                            {{ request.get_status_display }}
+                        </span>
                     </div>
-                    
-                    {% if request.approved_by %}
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">审核人</label>
-                        <div class="form-control-plaintext">{{ request.approved_by.username }}</div>
-                    </div>
-                    {% endif %}
-                    
-                    {% if request.approval_date %}
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">审核时间</label>
-                        <div class="form-control-plaintext">{{ request.approval_date|date:"Y-m-d H:i:s" }}</div>
-                    </div>
-                    {% endif %}
                 </div>
                 
-                <div class="col-md-6">
-                    {% if request.approval_notes %}
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">审核备注</label>
-                        <div class="form-control-plaintext">{{ request.approval_notes }}</div>
-                    </div>
-                    {% endif %}
-                    
-                    {% if request.status == 'rejected' %}
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-danger">拒绝原因</label>
-                        <div class="form-control-plaintext text-danger">
-                            {% if request.approval_notes %}
-                                {{ request.approval_notes }}
-                            {% else %}
-                                未提供具体原因
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    {% if request.result_message %}
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">处理结果</label>
-                        <div class="form-control-plaintext">{{ request.result_message }}</div>
-                    </div>
-                    {% endif %}
+                {% if request.approved_by %}
+                <div class="detail-item">
+                    <span class="detail-label">审核人</span>
+                    <div class="detail-value">{{ request.approved_by.username }}</div>
                 </div>
+                {% endif %}
+                
+                {% if request.approval_date %}
+                <div class="detail-item">
+                    <span class="detail-label">审核时间</span>
+                    <div class="detail-value">{{ request.approval_date|date:"Y-m-d H:i:s" }}</div>
+                </div>
+                {% endif %}
+                
+                {% if request.approval_notes %}
+                <div class="detail-item">
+                    <span class="detail-label">审核备注</span>
+                    <div class="detail-value">{{ request.approval_notes }}</div>
+                </div>
+                {% endif %}
+                
+                {% if request.status == 'rejected' %}
+                <div class="detail-item">
+                    <span class="detail-label text-danger">拒绝原因</span>
+                    <div class="detail-value text-danger">
+                        {% if request.approval_notes %}
+                            {{ request.approval_notes }}
+                        {% else %}
+                            未提供具体原因
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if request.result_message %}
+                <div class="detail-item">
+                    <span class="detail-label">处理结果</span>
+                    <div class="detail-value">{{ request.result_message }}</div>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
 
     {% if request.status == 'completed' %}
-    <div class="card mt-4">
-        <div class="card-body">
-            <h5 class="card-title">账户信息</h5>
-            
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">云电脑用户ID</label>
-                        <div class="form-control-plaintext">{{ request.cloud_user_id }}</div>
-                    </div>
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <h2>账户信息</h2>
+        </div>
+        <div class="detail-card-body">
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <span class="detail-label">云电脑用户ID</span>
+                    <div class="detail-value">{{ request.cloud_user_id }}</div>
                 </div>
                 
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">初始密码</label>
-                        <div class="form-control-plaintext">
-                            <em>出于安全考虑，密码不在此显示</em>
-                        </div>
+                <div class="detail-item">
+                    <span class="detail-label">初始密码</span>
+                    <div class="detail-value empty-value">
+                        出于安全考虑，密码不在此显示
                     </div>
                 </div>
             </div>
@@ -165,30 +283,28 @@
     </div>
     {% endif %}
 
-    <div class="card mt-4">
-        <div class="card-body">
-            <h5 class="card-title">时间信息</h5>
-            
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">创建时间</label>
-                        <div class="form-control-plaintext">{{ request.created_at|date:"Y-m-d H:i:s" }}</div>
-                    </div>
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <h2>时间信息</h2>
+        </div>
+        <div class="detail-card-body">
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <span class="detail-label">创建时间</span>
+                    <div class="detail-value">{{ request.created_at|date:"Y-m-d H:i:s" }}</div>
                 </div>
                 
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">更新时间</label>
-                        <div class="form-control-plaintext">{{ request.updated_at|date:"Y-m-d H:i:s" }}</div>
-                    </div>
+                <div class="detail-item">
+                    <span class="detail-label">更新时间</span>
+                    <div class="detail-value">{{ request.updated_at|date:"Y-m-d H:i:s" }}</div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="mt-4 text-center">
-        <a href="{% url 'operations:account_opening_list' %}" class="btn btn-secondary me-2">返回列表</a>
+    <div class="detail-footer">
+        {% url 'operations:account_opening_list' as account_opening_list_url %}
+        {% include 'components/button.html' with href=account_opening_list_url variant="outlined" text="返回列表" icon="arrow_back" %}
     </div>
 </div>
 {% endblock %}
