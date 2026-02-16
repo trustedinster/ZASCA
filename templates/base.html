@@ -9,62 +9,329 @@
 
     <!-- CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link rel="stylesheet" href="{% static 'css/theme.css' %}">
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
     {% block extra_css %}{% endblock %}
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/static/img/favicon.png">
+    
+    <style>
+        /* MD3导航栏样式 */
+        .md-navbar {
+            background-color: var(--md-sys-color-surface);
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+            box-shadow: var(--md-sys-elevation-level1);
+            padding: 0 var(--md-sys-spacing-padding-lg);
+        }
+        
+        .md-navbar-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .md-navbar-brand {
+            font-size: var(--md-sys-typescale-title-large-size);
+            font-weight: var(--md-sys-typescale-weight-bold);
+            color: var(--md-sys-color-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+        
+        .md-navbar-brand:hover {
+            color: var(--md-sys-color-primary);
+            text-decoration: none;
+        }
+        
+        .md-navbar-nav {
+            display: flex;
+            align-items: center;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            gap: var(--md-sys-spacing-padding-md);
+        }
+        
+        .md-nav-item {
+            position: relative;
+        }
+        
+        .md-nav-link {
+            display: flex;
+            align-items: center;
+            padding: var(--md-sys-spacing-padding-sm) var(--md-sys-spacing-padding-md);
+            border-radius: var(--md-sys-shape-corner-full);
+            color: var(--md-sys-color-on-surface-variant);
+            text-decoration: none;
+            font-size: var(--md-sys-typescale-label-large-size);
+            font-weight: var(--md-sys-typescale-weight-medium);
+            transition: all var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+        }
+        
+        .md-nav-link:hover {
+            background-color: var(--md-sys-color-surface-variant);
+            color: var(--md-sys-color-on-surface);
+            text-decoration: none;
+        }
+        
+        .md-nav-link.active {
+            background-color: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
+        }
+        
+        .md-user-menu {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        .md-user-button {
+            display: flex;
+            align-items: center;
+            padding: var(--md-sys-spacing-padding-sm) var(--md-sys-spacing-padding-md);
+            border-radius: var(--md-sys-shape-corner-full);
+            background: transparent;
+            border: none;
+            color: var(--md-sys-color-on-surface);
+            font-size: var(--md-sys-typescale-label-large-size);
+            font-weight: var(--md-sys-typescale-weight-medium);
+            cursor: pointer;
+            transition: all var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+        }
+        
+        .md-user-button:hover {
+            background-color: var(--md-sys-color-surface-variant);
+        }
+        
+        .md-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--md-sys-color-surface);
+            border-radius: var(--md-sys-shape-corner-medium);
+            box-shadow: var(--md-sys-elevation-level2);
+            min-width: 200px;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .md-dropdown-menu.show {
+            display: block;
+        }
+        
+        .md-dropdown-item {
+            display: block;
+            padding: var(--md-sys-spacing-padding-md) var(--md-sys-spacing-padding-lg);
+            color: var(--md-sys-color-on-surface);
+            text-decoration: none;
+            font-size: var(--md-sys-typescale-body-large-size);
+            transition: background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+        }
+        
+        .md-dropdown-item:hover {
+            background-color: var(--md-sys-color-surface-variant);
+            text-decoration: none;
+            color: var(--md-sys-color-on-surface);
+        }
+        
+        .md-dropdown-divider {
+            height: 1px;
+            background-color: var(--md-sys-color-outline-variant);
+            margin: var(--md-sys-spacing-margin-xs) 0;
+        }
+        
+        .md-navbar-toggler {
+            display: none;
+            background: transparent;
+            border: none;
+            color: var(--md-sys-color-on-surface);
+            font-size: 24px;
+            cursor: pointer;
+            padding: var(--md-sys-spacing-padding-sm);
+            border-radius: var(--md-sys-shape-corner-medium);
+        }
+        
+        .md-navbar-toggler:hover {
+            background-color: var(--md-sys-color-surface-variant);
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .md-navbar-container {
+                padding: 0 var(--md-sys-spacing-padding-md);
+            }
+            
+            .md-navbar-nav {
+                display: none;
+                position: absolute;
+                top: 64px;
+                left: 0;
+                right: 0;
+                background: var(--md-sys-color-surface);
+                flex-direction: column;
+                padding: var(--md-sys-spacing-padding-md);
+                box-shadow: var(--md-sys-elevation-level2);
+                z-index: 999;
+            }
+            
+            .md-navbar-nav.mobile-show {
+                display: flex;
+            }
+            
+            .md-navbar-toggler {
+                display: block;
+            }
+            
+            /* 隐藏桌面端用户菜单 */
+            .md-user-menu {
+                display: none;
+            }
+            
+            /* 显示移动端菜单项 */
+            .mobile-user-item,
+            .mobile-admin-item,
+            .mobile-logout-item,
+            .mobile-login-item,
+            .mobile-register-item {
+                display: block;
+            }
+            
+            /* 移动端菜单项样式调整 */
+            .md-nav-item {
+                width: 100%;
+                margin-bottom: var(--md-sys-spacing-margin-xs);
+            }
+            
+            .md-nav-link {
+                width: 100%;
+                justify-content: flex-start;
+                padding: var(--md-sys-spacing-padding-md) var(--md-sys-spacing-padding-lg);
+                border-radius: var(--md-sys-shape-corner-medium);
+            }
+        }
+        
+        /* 桌面端隐藏移动端专用菜单项 */
+        @media (min-width: 769px) {
+            .mobile-user-item,
+            .mobile-admin-item,
+            .mobile-logout-item,
+            .mobile-login-item,
+            .mobile-register-item {
+                display: none;
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- 导航栏 -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{% url 'dashboard:index' %}">ZASCA</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
+    <!-- MD3导航栏 -->
+    <nav class="md-navbar">
+        <div class="md-navbar-container">
+            <a class="md-navbar-brand" href="{% url 'dashboard:index' %}">ZASCA</a>
+            
+            <button class="md-navbar-toggler" id="navbarToggle">
+                <i class="material-icons">menu</i>
             </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'dashboard:index' %}">云电脑列表</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'operations:account_opening_list' %}">我提交的申请</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'operations:my_cloud_computers' %}">我拥有的云电脑</a>
-                    </li>
-                    <!-- 移除操作记录链接，因为相关页面已被删除 -->
-                </ul>
-                <ul class="navbar-nav">
-                    {% if user.is_authenticated %}
-                    {% if user.is_staff or user.is_superuser %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="/admin/">
-                            后台管理
-                        </a>
-                    </li>
-                    {% endif %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+            
+            <ul class="md-navbar-nav" id="navbarNav">
+                <li class="md-nav-item">
+                    <a class="md-nav-link" href="{% url 'dashboard:index' %}">
+                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">computer</i>
+                        云电脑列表
+                    </a>
+                </li>
+                <li class="md-nav-item">
+                    <a class="md-nav-link" href="{% url 'operations:account_opening_list' %}">
+                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">description</i>
+                        我提交的申请
+                    </a>
+                </li>
+                <li class="md-nav-item">
+                    <a class="md-nav-link" href="{% url 'operations:my_cloud_computers' %}">
+                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">desktop_windows</i>
+                        我拥有的云电脑
+                    </a>
+                </li>
+                
+                <!-- 移动端用户菜单项 -->
+                {% if user.is_authenticated %}
+                <li class="md-nav-item mobile-user-item">
+                    <a class="md-nav-link" href="{% url 'accounts:profile' %}">
+                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">account_circle</i>
+                        个人资料
+                    </a>
+                </li>
+                {% if user.is_staff or user.is_superuser %}
+                <li class="md-nav-item mobile-admin-item">
+                    <a class="md-nav-link" href="/admin/">
+                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">admin_panel_settings</i>
+                        后台管理
+                    </a>
+                </li>
+                {% endif %}
+                <li class="md-nav-item mobile-logout-item">
+                    <a class="md-nav-link" href="{% url 'accounts:logout' %}">
+                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">logout</i>
+                        退出登录
+                    </a>
+                </li>
+                {% else %}
+                <li class="md-nav-item mobile-login-item">
+                    <a class="md-nav-link" href="{% url 'accounts:login' %}">
+                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">login</i>
+                        登录
+                    </a>
+                </li>
+                <li class="md-nav-item mobile-register-item">
+                    <a class="md-nav-link" href="{% url 'accounts:register' %}">
+                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">person_add</i>
+                        注册
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+            
+            <div class="md-user-menu">
+                {% if user.is_authenticated %}
+                    <div class="md-user-dropdown">
+                        <button class="md-user-button" id="userDropdown">
+                            <i class="material-icons" style="font-size: 18px; margin-right: 8px;">person</i>
                             {{ user.username }}
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">个人资料</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">退出登录</a></li>
-                        </ul>
-                    </li>
-                    {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'accounts:login' %}">登录</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'accounts:register' %}">注册</a>
-                    </li>
-                    {% endif %}
-                </ul>
+                            <i class="material-icons" style="font-size: 18px; margin-left: 8px;">arrow_drop_down</i>
+                        </button>
+                        <div class="md-dropdown-menu" id="userDropdownMenu">
+                            <a class="md-dropdown-item" href="{% url 'accounts:profile' %}">
+                                <i class="material-icons" style="font-size: 18px; margin-right: 12px;">account_circle</i>
+                                个人资料
+                            </a>
+                            {% if user.is_staff or user.is_superuser %}
+                            <a class="md-dropdown-item" href="/admin/">
+                                <i class="material-icons" style="font-size: 18px; margin-right: 12px;">admin_panel_settings</i>
+                                后台管理
+                            </a>
+                            {% endif %}
+                            <div class="md-dropdown-divider"></div>
+                            <a class="md-dropdown-item" href="{% url 'accounts:logout' %}">
+                                <i class="material-icons" style="font-size: 18px; margin-right: 12px;">logout</i>
+                                退出登录
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <a class="md-nav-link" href="{% url 'accounts:login' %}" style="margin-right: var(--md-sys-spacing-margin-sm);">
+                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">login</i>
+                        登录
+                    </a>
+                    <a class="md-nav-link" href="{% url 'accounts:register' %}">
+                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">person_add</i>
+                        注册
+                    </a>
+                {% endif %}
             </div>
         </div>
     </nav>
@@ -97,5 +364,46 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'js/base.js' %}"></script>
     {% block extra_js %}{% endblock %}
+    
+    <script>
+        // MD3导航栏交互逻辑
+        document.addEventListener('DOMContentLoaded', function() {
+            // 移动端菜单切换
+            const navbarToggle = document.getElementById('navbarToggle');
+            const navbarNav = document.getElementById('navbarNav');
+            
+            if (navbarToggle && navbarNav) {
+                navbarToggle.addEventListener('click', function() {
+                    navbarNav.classList.toggle('mobile-show');
+                });
+            }
+            
+            // 用户下拉菜单
+            const userDropdown = document.getElementById('userDropdown');
+            const userDropdownMenu = document.getElementById('userDropdownMenu');
+            
+            if (userDropdown && userDropdownMenu) {
+                userDropdown.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    userDropdownMenu.classList.toggle('show');
+                });
+                
+                // 点击外部关闭下拉菜单
+                document.addEventListener('click', function() {
+                    userDropdownMenu.classList.remove('show');
+                });
+            }
+            
+            // 活动链接高亮
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.md-nav-link');
+            
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
 </body>
 </html>

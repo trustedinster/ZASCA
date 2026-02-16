@@ -49,6 +49,16 @@
   --md-sys-color-inverse-on-surface: #F4EFF4;
   --md-sys-color-inverse-primary: #D0BCFF;
   
+  /* 容器颜色 */
+  --md-sys-color-warning-container: #FFDDB3;
+  --md-sys-color-on-warning-container: #241A00;
+  --md-sys-color-success-container: #B4F1B4;
+  --md-sys-color-on-success-container: #002200;
+  --md-sys-color-info-container: #D3E4FF;
+  --md-sys-color-on-info-container: #001B3D;
+  --md-sys-color-error-container: #F9DEDC;
+  --md-sys-color-on-error-container: #410E0B;
+  
   /* ==================== 形状系统 ==================== */
   
   /* 圆角 (Shape) */
@@ -58,6 +68,7 @@
   --md-sys-shape-corner-medium: 12px;
   --md-sys-shape-corner-large: 16px;
   --md-sys-shape-corner-extra-large: 28px;
+  --md-sys-shape-corner-full: 9999px;
   
   /* ==================== 排版系统 ==================== */
   
@@ -82,10 +93,28 @@
   --md-sys-typescale-label-medium-size: 12px;
   --md-sys-typescale-label-small-size: 11px;
   
+  /* 兼容性别名 */
+  --md-sys-typescale-headline-large-font-size: var(--md-sys-typescale-headline-large-size);
+  --md-sys-typescale-headline-medium-font-size: var(--md-sys-typescale-headline-medium-size);
+  --md-sys-typescale-title-large-font-size: var(--md-sys-typescale-title-large-size);
+  --md-sys-typescale-label-large-font-size: var(--md-sys-typescale-label-large-size);
+  --md-sys-typescale-label-medium-font-size: var(--md-sys-typescale-label-medium-size);
+  --md-sys-typescale-body-large-font-size: var(--md-sys-typescale-body-large-size);
+  --md-sys-typescale-body-medium-font-size: var(--md-sys-typescale-body-medium-size);
+  --md-sys-typescale-title-medium-font-size: var(--md-sys-typescale-title-medium-size);
+  
   /* 字体粗细 (Typography - Weight) */
   --md-sys-typescale-weight-regular: 400;
   --md-sys-typescale-weight-medium: 500;
   --md-sys-typescale-weight-bold: 700;
+  
+  /* 兼容性别名 */
+  --md-sys-typescale-headline-large-font-weight: var(--md-sys-typescale-weight-bold);
+  --md-sys-typescale-headline-medium-font-weight: var(--md-sys-typescale-weight-bold);
+  --md-sys-typescale-title-large-font-weight: var(--md-sys-typescale-weight-medium);
+  --md-sys-typescale-label-large-font-weight: var(--md-sys-typescale-weight-medium);
+  --md-sys-typescale-title-medium-font-weight: var(--md-sys-typescale-weight-medium);
+  --md-sys-typescale-body-large-font-weight: var(--md-sys-typescale-weight-regular);
   
   /* 行高 (Typography - Line Height) */
   --md-sys-typescale-line-height-default: 1.5;
@@ -128,6 +157,9 @@
   --md-sys-elevation-level3: 0px 5px 5px -3px rgba(0, 0, 0, 0.20), 0px 8px 10px 1px rgba(0, 0, 0, 0.14), 0px 3px 14px 2px rgba(0, 0, 0, 0.12);
   --md-sys-elevation-level4: 0px 5px 5px -3px rgba(0, 0, 0, 0.20), 0px 8px 10px 1px rgba(0, 0, 0, 0.14), 0px 3px 14px 2px rgba(0, 0, 0, 0.12);
   --md-sys-elevation-level5: 0px 8px 10px -6px rgba(0, 0, 0, 0.20), 0px 16px 24px 2px rgba(0, 0, 0, 0.14), 0px 6px 30px 5px rgba(0, 0, 0, 0.12);
+  
+  /* 兼容性别名 */
+  --md-sys-elevation-1: var(--md-sys-elevation-level1);
   
   /* ==================== 过渡动画 ==================== */
   

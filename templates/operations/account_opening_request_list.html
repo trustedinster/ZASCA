@@ -13,15 +13,36 @@
     padding: 2rem;
 }
 
+@media (max-width: 768px) {
+    .list-container {
+        padding: 1rem;
+    }
+    
+    .list-header h1 {
+        font-size: var(--md-sys-typescale-headline-medium-size);
+    }
+}
+
+@media (max-width: 768px) {
+    .list-container {
+        padding: 1rem;
+    }
+    
+    .list-header h1 {
+        font-size: var(--md-sys-typescale-headline-medium-size);
+    }
+}
+
 .list-header {
     margin-bottom: 2rem;
 }
 
 .list-header h1 {
     margin: 0;
-    font-size: var(--md-sys-typescale-headline-medium-font-size);
-    font-weight: var(--md-sys-typescale-headline-medium-font-weight);
+    font-size: var(--md-sys-typescale-headline-large-size);
+    font-weight: var(--md-sys-typescale-weight-bold);
     color: var(--md-sys-color-on-surface);
+    line-height: var(--md-sys-typescale-line-height-condensed);
 }
 
 .filter-card {
@@ -32,16 +53,60 @@
     margin-bottom: 2rem;
 }
 
+@media (max-width: 768px) {
+    .filter-card {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .filter-card {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+}
+
 .filter-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
     align-items: end;
+}
+
+@media (max-width: 768px) {
+    .filter-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .filter-item {
+        min-width: unset;
+    }
+    
+    .md-input-wrapper--filled .md-input {
+        min-height: 48px;
+        padding: 24px 12px 8px;
+    }
+    
+    .md-input__label {
+        top: 20px;
+        left: 12px;
+        font-size: var(--md-sys-typescale-body-medium-size);
+    }
+    
+    .md-input:focus ~ .md-input__label,
+    .md-input:not(:placeholder-shown) ~ .md-input__label,
+    .md-input[value]:not([value=""]) ~ .md-input__label {
+        top: 6px;
+        font-size: var(--md-sys-typescale-body-small-size);
+    }
 }
 
 .filter-item {
     display: flex;
     flex-direction: column;
+    min-width: 280px;
 }
 
 .filter-label {
@@ -53,6 +118,146 @@
 
 .md-input-wrapper {
     margin-bottom: 0;
+    position: relative;
+}
+
+/* MD3输入框和下拉框基础样式 */
+.md-input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: var(--md-sys-typescale-body-large-size);
+    color: var(--md-sys-color-on-surface);
+    padding: 20px 16px 8px;
+    box-sizing: border-box;
+    border-radius: var(--md-sys-shape-corner-extra-large) var(--md-sys-shape-corner-extra-large) 0 0;
+}
+
+.md-input:focus {
+    outline: none;
+}
+
+/* 填充式输入框样式 */
+.md-input-wrapper--filled {
+    background-color: var(--md-sys-color-surface-variant);
+    border-radius: var(--md-sys-shape-corner-extra-large);
+    position: relative;
+}
+
+.md-input-wrapper--filled .md-input {
+    padding: 28px 16px 12px;
+    min-height: 56px;
+    line-height: 1.5;
+}
+
+/* 标签样式 */
+.md-input__label {
+    position: absolute;
+    top: 24px;
+    left: 16px;
+    color: var(--md-sys-color-on-surface-variant);
+    font-size: var(--md-sys-typescale-body-large-size);
+    font-weight: var(--md-sys-typescale-weight-regular);
+    pointer-events: none;
+    transition: all var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+    z-index: 3;
+}
+
+/* 标签聚焦和有值状态 */
+.md-input:focus ~ .md-input__label,
+.md-input:not(:placeholder-shown) ~ .md-input__label,
+.md-input[value]:not([value=""]) ~ .md-input__label,
+.md-input-wrapper--filled .md-input:focus ~ .md-input__label,
+.md-input-wrapper--filled .md-input:not(:placeholder-shown) ~ .md-input__label,
+.md-input-wrapper--filled .md-input[value]:not([value=""]) ~ .md-input__label {
+    top: 8px;
+    font-size: var(--md-sys-typescale-body-small-size);
+    color: var(--md-sys-color-primary);
+}
+
+/* 下拉框特殊样式 */
+.md-input-wrapper--filled select.md-input {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 16px;
+    padding-right: 40px;
+    cursor: pointer;
+    min-height: 56px;
+    line-height: 1.5;
+}
+
+/* 下拉框聚焦状态 */
+.md-input-wrapper--filled select.md-input:focus {
+    background-color: var(--md-sys-color-surface);
+    border-bottom: 2px solid var(--md-sys-color-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 下拉框悬停状态 */
+.md-input-wrapper--filled select.md-input:hover {
+    background-color: var(--md-sys-color-surface);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* 下拉框选项样式 */
+.md-input-wrapper--filled select.md-input option {
+    background: var(--md-sys-color-surface);
+    color: var(--md-sys-color-on-surface);
+    padding: 12px 16px;
+    font-size: var(--md-sys-typescale-body-medium-size);
+}
+
+.md-input-wrapper--filled select.md-input option:hover {
+    background: var(--md-sys-color-primary-container);
+    color: var(--md-sys-color-on-primary-container);
+    cursor: pointer;
+}
+
+.md-input-wrapper--filled select.md-input option:checked {
+    background: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+    .md-input-wrapper--filled select.md-input {
+        min-height: 48px;
+        padding: 24px 36px 8px 12px;
+        font-size: var(--md-sys-typescale-body-medium-size);
+    }
+    
+    .md-input-wrapper--filled select.md-input option {
+        padding: 10px 12px;
+        font-size: var(--md-sys-typescale-body-small-size);
+    }
+}
+
+/* 辅助文本样式 */
+.md-input__helper {
+    margin-top: 4px;
+    margin-left: 16px;
+    font-size: var(--md-sys-typescale-body-small-size);
+    color: var(--md-sys-color-on-surface-variant);
+    line-height: var(--md-sys-typescale-line-height-default);
+}
+
+.md-input__error {
+    margin-top: 4px;
+    margin-left: 16px;
+    font-size: var(--md-sys-typescale-body-small-size);
+    color: var(--md-sys-color-error);
+    line-height: var(--md-sys-typescale-line-height-default);
+}
+
+/* 填充式输入框的辅助文本 */
+.md-input-wrapper--filled .md-input__helper,
+.md-input-wrapper--filled .md-input__error {
+    margin-left: 16px;
+    padding-left: 2px;
 }
 
 .list-card {
@@ -60,6 +265,24 @@
     border-radius: var(--md-sys-shape-corner-medium);
     box-shadow: var(--md-sys-elevation-1);
     overflow: hidden;
+}
+
+/* 移动端表格滚动支持 */
+@media (max-width: 768px) {
+    .list-card {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .list-table {
+        min-width: 600px; /* 确保表格有足够的宽度 */
+        white-space: nowrap;
+    }
+    
+    .list-table th,
+    .list-table td {
+        white-space: nowrap;
+    }
 }
 
 .list-table {
@@ -97,7 +320,7 @@
     padding: 0.25rem 0.75rem;
     border-radius: var(--md-sys-shape-corner-full);
     font-size: var(--md-sys-typescale-label-medium-font-size);
-    font-weight: var(--md-sys-typescale-label-medium-font-weight);
+    font-weight: var(--md-sys-typescale-weight-medium);
     text-transform: uppercase;
 }
 
@@ -186,6 +409,123 @@
     color: var(--md-sys-color-on-surface-variant);
     font-size: var(--md-sys-typescale-body-medium-font-size);
 }
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+    .md-input-wrapper--filled .md-input {
+        min-height: 48px;
+        padding: 24px 12px 8px;
+    }
+    
+    .md-input__label {
+        top: 20px;
+        left: 12px;
+        font-size: var(--md-sys-typescale-body-medium-size);
+    }
+    
+    .md-input:focus ~ .md-input__label,
+    .md-input:not(:placeholder-shown) ~ .md-input__label,
+    .md-input[value]:not([value=""]) ~ .md-input__label,
+    .md-input-wrapper--filled .md-input:focus ~ .md-input__label,
+    .md-input-wrapper--filled .md-input:not(:placeholder-shown) ~ .md-input__label,
+    .md-input-wrapper--filled .md-input[value]:not([value=""]) ~ .md-input__label {
+        top: 6px;
+        font-size: var(--md-sys-typescale-body-small-size);
+    }
+    
+    .md-input-wrapper--filled select.md-input {
+        min-height: 48px;
+        padding: 24px 36px 8px 12px;
+        font-size: var(--md-sys-typescale-body-medium-size);
+    }
+    
+    .md-input-wrapper--filled select.md-input option {
+        padding: 10px 12px;
+        font-size: var(--md-sys-typescale-body-small-size);
+    }
+    
+    .list-container {
+        padding: 1rem;
+    }
+    
+    .list-header h1 {
+        font-size: var(--md-sys-typescale-headline-medium-size);
+    }
+    
+    .list-table {
+        font-size: var(--md-sys-typescale-body-small-size);
+        min-width: 600px;
+    }
+    
+    .list-table th,
+    .list-table td {
+        padding: 0.75rem 1rem;
+        white-space: nowrap;
+    }
+    
+    .filter-card {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-label {
+        font-size: var(--md-sys-typescale-label-medium-font-size);
+        margin-bottom: 0.25rem;
+    }
+}
+}
+
+/* JavaScript for mobile scroll handling */
+(function() {
+    function initMobileScroll() {
+        const tableContainer = document.querySelector('.list-card');
+        
+        if (tableContainer && window.innerWidth <= 768) {
+            // 添加滚动提示元素
+            const hint = document.createElement('div');
+            hint.className = 'mobile-scroll-hint';
+            hint.textContent = '左右滑动查看更多信息';
+            tableContainer.parentNode.insertBefore(hint, tableContainer.nextSibling);
+            
+            // 更新滚动状态
+            function updateScrollState() {
+                const { scrollLeft, scrollWidth, clientWidth } = tableContainer;
+                const maxScroll = scrollWidth - clientWidth;
+                
+                if (scrollLeft === 0) {
+                    tableContainer.setAttribute('scroll-position', 'start');
+                } else if (scrollLeft >= maxScroll - 1) {
+                    tableContainer.setAttribute('scroll-position', 'end');
+                } else {
+                    tableContainer.setAttribute('scroll-position', 'middle');
+                }
+            }
+            
+            // 初始化状态
+            updateScrollState();
+            
+            // 监听滚动事件
+            tableContainer.addEventListener('scroll', updateScrollState);
+            
+            // 监听窗口大小变化
+            window.addEventListener('resize', function() {
+                if (window.innerWidth <= 768) {
+                    updateScrollState();
+                } else {
+                    tableContainer.removeAttribute('scroll-position');
+                }
+            });
+        }
+    }
+    
+    // 页面加载完成后初始化
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initMobileScroll);
+    } else {
+        initMobileScroll();
+    }
+})();
 </style>
 {% endblock %}
 
@@ -234,8 +574,8 @@
                                class="md-input" 
                                name="search" 
                                value="{{ filter_form.search.value|default:'' }}"
-                               placeholder="按用户名、姓名或邮箱搜索">
-                        <label class="md-input__label">搜索</label>
+                               placeholder="">
+                        <label class="md-input__label">按用户名、姓名或邮箱搜索</label>
                     </div>
                 </div>
                 

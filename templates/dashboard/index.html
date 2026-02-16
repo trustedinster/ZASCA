@@ -6,136 +6,305 @@
 
 {% block extra_css %}
 <style>
-.stat-card {
-    border-left: 4px solid #0d6efd;
-    transition: transform 0.2s;
-}
-.stat-card:hover {
-    transform: translateY(-2px);
-}
-.stat-card.account-opening {
-    border-left-color: #28a745;
-}
-.stat-card.requests {
-    border-left-color: #ffc107;
-}
-.stat-card.users {
-    border-left-color: #17a2b8;
-}
-.stat-number {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #495057;
-}
-.quick-action-card {
-    border: 1px solid #dee2e6;
-    border-radius: 0.375rem;
-    transition: all 0.2s;
-}
-.quick-action-card:hover {
-    border-color: #0d6efd;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    text-decoration: none;
-}
-.recent-requests-table {
-    font-size: 0.9rem;
+/* 仪表盘MD3样式 */
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
 }
 
-/* 电脑展示样式 */
+.page-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    font-size: var(--md-sys-typescale-headline-large-size);
+    font-weight: var(--md-sys-typescale-weight-bold);
+    color: var(--md-sys-color-on-surface);
+    margin-bottom: var(--md-sys-spacing-margin-md);
+    line-height: var(--md-sys-typescale-line-height-condensed);
+}
+
+.page-subtitle {
+    font-size: var(--md-sys-typescale-body-large-size);
+    color: var(--md-sys-color-on-surface-variant);
+    margin-bottom: var(--md-sys-spacing-margin-xl);
+}
+
+/* 产品网格布局 */
 .computer-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
-    margin-top: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: var(--md-sys-spacing-padding-lg);
+    margin-top: var(--md-sys-spacing-margin-lg);
 }
 
+/* MD3产品卡片 */
 .computer-card {
-    border: 1px solid #dee2e6;
-    border-radius: 0.375rem;
+    background: var(--md-sys-color-surface);
+    border-radius: var(--md-sys-shape-corner-large);
     overflow: hidden;
-    transition: all 0.3s ease;
-    background: white;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: 
+        box-shadow var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+        transform var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+    box-shadow: var(--md-sys-elevation-level1);
 }
 
 .computer-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-    border-color: #0d6efd;
+    transform: translateY(-4px);
+    box-shadow: var(--md-sys-elevation-level3);
 }
 
 .computer-card-header {
-    padding: 1rem;
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
+    padding: var(--md-sys-spacing-padding-lg);
+    background: var(--md-sys-color-primary-container);
+    color: var(--md-sys-color-on-primary-container);
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
 }
 
-.computer-card-body {
-    padding: 1rem;
+.computer-card-header h5 {
+    font-size: var(--md-sys-typescale-title-large-size);
+    font-weight: var(--md-sys-typescale-weight-medium);
+    margin: 0;
+    color: var(--md-sys-color-on-primary-container);
+    display: flex;
+    align-items: center;
 }
 
+/* 状态指示器 */
 .status-indicator {
     display: inline-block;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    margin-right: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: var(--md-sys-shape-corner-full);
+    margin-right: var(--md-sys-spacing-margin-sm);
 }
 
 .status-online {
-    background-color: #28a745;
+    background-color: var(--md-sys-color-success);
 }
 
 .status-offline {
-    background-color: #dc3545;
+    background-color: var(--md-sys-color-error);
 }
 
 .status-error {
-    background-color: #ffc107;
+    background-color: var(--md-sys-color-warning);
 }
 
 .status-unknown {
-    background-color: #6c757d;
+    background-color: var(--md-sys-color-outline);
 }
 
-.apply-section {
-    margin-top: 3rem;
-    padding: 2rem;
-    background-color: #f8f9fa;
-    border-radius: 0.5rem;
-    border: 1px solid #dee2e6;
+/* 卡片主体 */
+.computer-card-body {
+    padding: var(--md-sys-spacing-padding-lg);
 }
 
+.info-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--md-sys-spacing-margin-lg) 0;
+}
+
+.info-list li {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--md-sys-spacing-margin-sm);
+    font-size: var(--md-sys-typescale-body-medium-size);
+}
+
+.info-list li:last-child {
+    margin-bottom: 0;
+}
+
+.info-label {
+    font-weight: var(--md-sys-typescale-weight-medium);
+    color: var(--md-sys-color-on-surface-variant);
+}
+
+.info-value {
+    color: var(--md-sys-color-on-surface);
+}
+
+.status-text {
+    font-weight: var(--md-sys-typescale-weight-medium);
+}
+
+.status-text.online {
+    color: var(--md-sys-color-success);
+}
+
+.status-text.offline {
+    color: var(--md-sys-color-error);
+}
+
+.status-text.error {
+    color: var(--md-sys-color-warning);
+}
+
+.status-text.unknown {
+    color: var(--md-sys-color-outline);
+}
+
+/* Markdown内容样式 */
 .markdown-content {
-    padding: 10px 0;
-    border-top: 1px solid #eee;
-    margin-top: 10px;
+    padding: var(--md-sys-spacing-padding-md) 0;
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+    margin-top: var(--md-sys-spacing-margin-md);
+    color: var(--md-sys-color-on-surface);
 }
+
 .markdown-content h1,
 .markdown-content h2,
 .markdown-content h3 {
-    margin-top: 10px;
-    margin-bottom: 10px;
+    margin-top: var(--md-sys-spacing-margin-sm);
+    margin-bottom: var(--md-sys-spacing-margin-sm);
+    color: var(--md-sys-color-on-surface);
 }
+
 .markdown-content p {
-    margin-bottom: 10px;
+    margin-bottom: var(--md-sys-spacing-margin-sm);
+    line-height: var(--md-sys-typescale-line-height-default);
 }
+
 .markdown-content ul,
 .markdown-content ol {
-    margin-bottom: 10px;
+    margin-bottom: var(--md-sys-spacing-margin-sm);
+    padding-left: var(--md-sys-spacing-padding-lg);
 }
+
 .markdown-content pre {
-    background-color: #f4f4f4;
-    padding: 10px;
-    border-radius: 4px;
+    background-color: var(--md-sys-color-surface-variant);
+    padding: var(--md-sys-spacing-padding-md);
+    border-radius: var(--md-sys-shape-corner-medium);
     overflow-x: auto;
-    font-size: 0.9em;
+    font-size: var(--md-sys-typescale-body-small-size);
+    margin: var(--md-sys-spacing-margin-sm) 0;
 }
+
 .markdown-content code {
-    background-color: #f4f4f4;
-    padding: 2px 4px;
-    border-radius: 3px;
-    font-size: 0.9em;
+    background-color: var(--md-sys-color-surface-variant);
+    padding: var(--md-sys-spacing-padding-xs) var(--md-sys-spacing-padding-sm);
+    border-radius: var(--md-sys-shape-corner-small);
+    font-size: var(--md-sys-typescale-body-small-size);
+}
+
+/* 操作按钮区域 */
+.card-actions {
+    margin-top: var(--md-sys-spacing-margin-lg);
+    text-align: center;
+    padding-top: var(--md-sys-spacing-padding-md);
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+}
+
+/* 空状态 */
+.empty-state {
+    text-align: center;
+    padding: var(--md-sys-spacing-padding-xxl);
+    grid-column: 1 / -1;
+}
+
+.empty-icon {
+    font-size: 48px;
+    color: var(--md-sys-color-outline);
+    margin-bottom: var(--md-sys-spacing-margin-lg);
+}
+
+.empty-title {
+    font-size: var(--md-sys-typescale-headline-small-size);
+    color: var(--md-sys-color-on-surface-variant);
+    margin-bottom: var(--md-sys-spacing-margin-md);
+}
+
+.empty-description {
+    font-size: var(--md-sys-typescale-body-large-size);
+    color: var(--md-sys-color-on-surface-variant);
+    margin-bottom: var(--md-sys-spacing-margin-lg);
+}
+
+/* MD3 按钮样式 */
+.md-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border: none;
+    border-radius: var(--md-sys-shape-corner-full);
+    cursor: pointer;
+    font-family: inherit;
+    text-decoration: none;
+    transition: 
+        background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+        color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+        box-shadow var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
+        transform var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+    overflow: hidden;
+    user-select: none;
+}
+
+.md-button__label {
+    position: relative;
+    z-index: 1;
+    font-weight: var(--md-sys-typescale-weight-medium);
+    display: flex;
+    align-items: center;
+}
+
+.md-button--medium {
+    height: 40px;
+    padding: 0 var(--md-sys-spacing-padding-lg);
+    font-size: var(--md-sys-typescale-label-large-size);
+}
+
+.md-button--filled {
+    background-color: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+    box-shadow: var(--md-sys-elevation-level1);
+}
+
+.md-button--filled:hover {
+    background-color: var(--md-sys-color-primary);
+    box-shadow: var(--md-sys-elevation-level2);
+    transform: translateY(-2px);
+}
+
+.md-button--filled:active {
+    transform: translateY(0);
+    box-shadow: var(--md-sys-elevation-level1);
+}
+
+/* 按钮焦点状态 */
+.md-button--filled:focus {
+    outline: 2px solid var(--md-sys-color-primary);
+    outline-offset: 2px;
+}
+
+/* 按钮禁用状态 */
+.md-button--filled:disabled {
+    background-color: var(--md-sys-color-on-surface);
+    color: var(--md-sys-color-surface);
+    opacity: 0.38;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 1rem;
+    }
+    
+    .computer-grid {
+        grid-template-columns: 1fr;
+        gap: var(--md-sys-spacing-padding-md);
+    }
+    
+    .page-header h1 {
+        font-size: var(--md-sys-typescale-headline-medium-size);
+    }
 }
 </style>
 {% endblock %}
@@ -180,9 +349,12 @@
                             {{ product.display_description|markdown_filter }}
                         </div>
                         {% endif %}
-                        <div class="mt-3 text-center">
-                            <a href="{% url 'operations:account_opening_create' %}?target_product={{ product.id }}" class="btn btn-sm btn-primary">
-                                <i class="fas fa-cloud"></i> 立即申请
+                        <div class="card-actions">
+                            <a href="{% url 'operations:account_opening_create' %}?target_product={{ product.id }}" class="md-button md-button--filled md-button--medium">
+                                <span class="md-button__label">
+                                    <i class="material-icons" style="font-size: 18px; margin-right: 8px;">cloud</i>
+                                    立即申请
+                                </span>
                             </a>
                         </div>
                     </div>

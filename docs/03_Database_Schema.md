@@ -387,16 +387,16 @@ CREATE TRIGGER update_hosts_host_updated_at
 ### 6.1 性能关键索引
 ```sql
 -- 复合索引优化常用查询
-CREATE INDEX idx_hosts_host_status_online ON hosts_host(status, is_online);
+CREATE INDEX idx_operations_product_is_available ON operations_product(is_available);
 CREATE INDEX idx_operations_aor_status_created ON operations_accountopeningrequest(status, created_at);
 CREATE INDEX idx_audit_log_timestamp_severity ON audit_auditlog(timestamp, severity);
 
 -- 全文搜索索引
-CREATE INDEX idx_hosts_host_search ON hosts_host 
-USING gin(to_tsvector('chinese_zh', hostname || ' ' || description));
+CREATE INDEX idx_operations_product_search ON operations_product 
+USING gin(to_tsvector('chinese_zh', name || ' ' || description));
 
 -- JSONB 字段索引
-CREATE INDEX idx_hosts_host_metadata ON hosts_host USING gin(metadata);
+CREATE INDEX idx_operations_product_metadata ON operations_product USING gin(metadata);
 CREATE INDEX idx_operations_aor_metadata ON operations_accountopeningrequest USING gin(metadata);
 ```
 

@@ -244,9 +244,13 @@ class AccountOpeningRequestListView(ListView):
         """获取查询集"""
         queryset = AccountOpeningRequest.objects.all()
 
-        # 如果不是管理员，则只显示自己的申请
-        if not (self.request.user.is_staff or self.request.user.is_superuser):
-            queryset = queryset.filter(applicant=self.request.user)
+        # 如果用户已认证且不是管理员，则只显示自己的申请
+        if self.request.user.is_authenticated:
+            if not (self.request.user.is_staff or self.request.user.is_superuser):
+                queryset = queryset.filter(applicant=self.request.user)
+        else:
+            # 未认证用户不显示任何申请
+            queryset = queryset.none()
 
         # 应用过滤条件
         form = AccountOpeningRequestFilterForm(self.request.GET)
@@ -281,12 +285,14 @@ class AccountOpeningRequestListView(ListView):
         context['statuses'] = AccountOpeningRequest._meta.get_field('status').choices
         
         # 如果是管理员，显示所有主机；否则只显示与用户申请相关的产品的主机
-        if self.request.user.is_staff or self.request.user.is_superuser:
+        if self.request.user.is_authenticated and (self.request.user.is_staff or self.request.user.is_superuser):
             context['hosts'] = Host.objects.all()
-        else:
+        elif self.request.user.is_authenticated:
             context['hosts'] = Host.objects.filter(
                 product__accountopeningrequest__applicant=self.request.user
             ).distinct()
+        else:
+            context['hosts'] = Host.objects.none()
         
         return context
 

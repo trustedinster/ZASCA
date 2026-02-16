@@ -13,6 +13,36 @@
     padding: 2rem;
 }
 
+/* 移动端优化 */
+@media (max-width: 768px) {
+    .detail-container {
+        padding: 1rem;
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .detail-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    
+    .detail-header h1 {
+        font-size: var(--md-sys-typescale-headline-medium-size);
+    }
+    
+    /* 确保所有内容都不会溢出 */
+    .detail-card,
+    .detail-card-body,
+    .detail-grid,
+    .detail-item,
+    .detail-value,
+    .detail-label {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+}
+
 .detail-header {
     display: flex;
     justify-content: space-between;
@@ -22,9 +52,10 @@
 
 .detail-header h1 {
     margin: 0;
-    font-size: var(--md-sys-typescale-headline-medium-font-size);
-    font-weight: var(--md-sys-typescale-headline-medium-font-weight);
+    font-size: var(--md-sys-typescale-headline-large-size);
+    font-weight: var(--md-sys-typescale-weight-bold);
     color: var(--md-sys-color-on-surface);
+    line-height: var(--md-sys-typescale-line-height-condensed);
 }
 
 .detail-card {
@@ -41,15 +72,32 @@
     border-bottom: 1px solid var(--md-sys-color-outline-variant);
 }
 
+@media (max-width: 768px) {
+    .detail-card-header {
+        padding: 1rem;
+    }
+    
+    .detail-card-header h2 {
+        font-size: var(--md-sys-typescale-title-medium-size);
+    }
+}
+
 .detail-card-header h2 {
     margin: 0;
-    font-size: var(--md-sys-typescale-title-large-font-size);
-    font-weight: var(--md-sys-typescale-title-large-font-weight);
+    font-size: var(--md-sys-typescale-title-large-size);
+    font-weight: var(--md-sys-typescale-weight-medium);
     color: var(--md-sys-color-on-surface-variant);
+    line-height: var(--md-sys-typescale-line-height-default);
 }
 
 .detail-card-body {
-    padding: 1.5rem;
+    padding: 1.5rem 2rem;
+}
+
+@media (max-width: 768px) {
+    .detail-card-body {
+        padding: 1rem;
+    }
 }
 
 .detail-grid {
@@ -58,34 +106,90 @@
     gap: 1.5rem;
 }
 
+@media (max-width: 768px) {
+    .detail-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
 .detail-item {
     margin-bottom: 1.25rem;
 }
 
 .detail-label {
-    font-size: var(--md-sys-typescale-label-large-font-size);
-    font-weight: var(--md-sys-typescale-label-large-font-weight);
+    font-size: var(--md-sys-typescale-label-large-size);
+    font-weight: var(--md-sys-typescale-weight-medium);
     color: var(--md-sys-color-on-surface-variant);
     margin-bottom: 0.5rem;
     display: block;
+    line-height: var(--md-sys-typescale-line-height-default);
+}
+
+@media (max-width: 768px) {
+    .detail-label {
+        font-size: var(--md-sys-typescale-label-medium-size);
+        margin-bottom: 0.3rem;
+    }
 }
 
 .detail-value {
-    font-size: var(--md-sys-typescale-body-large-font-size);
+    font-size: var(--md-sys-typescale-body-large-size);
+    font-weight: var(--md-sys-typescale-weight-regular);
     color: var(--md-sys-color-on-surface);
     padding: 0.75rem;
     background: var(--md-sys-color-surface-variant);
     border-radius: var(--md-sys-shape-corner-small);
     border-left: 3px solid var(--md-sys-color-primary);
+    line-height: var(--md-sys-typescale-line-height-default);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+@media (max-width: 768px) {
+    .detail-value {
+        padding: 0.6rem;
+        font-size: var(--md-sys-typescale-body-medium-size);
+        /* 确保在小屏幕上完整显示 */
+        min-width: 0;
+        max-width: 100%;
+        /* 处理长文本 */
+        word-break: break-word;
+        hyphens: auto;
+        /* 确保不会溢出容器 */
+        box-sizing: border-box;
+    }
+}
+
+/* 极小屏幕优化 */
+@media (max-width: 480px) {
+    .detail-container {
+        padding: 0.5rem;
+    }
+    
+    .detail-card-body {
+        padding: 0.75rem;
+    }
+    
+    .detail-value {
+        padding: 0.5rem;
+        font-size: var(--md-sys-typescale-body-small-size);
+    }
+    
+    .detail-label {
+        font-size: var(--md-sys-typescale-label-small-size);
+    }
 }
 
 .status-display {
     display: inline-block;
     padding: 0.5rem 1rem;
     border-radius: var(--md-sys-shape-corner-full);
-    font-size: var(--md-sys-typescale-label-large-font-size);
-    font-weight: var(--md-sys-typescale-label-large-font-weight);
+    font-size: var(--md-sys-typescale-label-large-size);
+    font-weight: var(--md-sys-typescale-weight-medium);
     text-transform: uppercase;
+    line-height: var(--md-sys-typescale-line-height-condensed);
+    letter-spacing: 0.1em;
 }
 
 .status-pending { 

@@ -527,8 +527,8 @@ class ZASCAClient:
 
 # 使用示例
 client = ZASCAClient('http://localhost:8000', 'admin', 'password')
-hosts = client.get_hosts(status='active')
-print(f"活跃主机数量: {len(hosts['results'])}")
+products = client.get_products(is_available=True)
+print(f"可用产品数量: {len(products['results'])}")
 ```
 
 ### 10.2 cURL 示例

@@ -236,11 +236,15 @@ class HostAdmin(admin.ModelAdmin):
         """
         # 如果提供了新密码，则使用setter更新加密存储
         # 注意：这里再次处理密码是为了确保即使在Admin中也能正确加密存储
-        if form.cleaned_data.get('password'):
+        if form and form.cleaned_data.get('password'):
             obj.password = form.cleaned_data['password']
         
         # 调用父类方法保存模型
         super().save_model(request, obj, form, change)
+        
+        # 【关键】保存时自动赋权（防止创建者忘了把自己加进去）
+        if not change:
+            obj.administrators.add(request.user)
         
         # 测试连接
         # 对于新主机，执行连接测试
@@ -272,6 +276,15 @@ class HostAdmin(admin.ModelAdmin):
         # 删除主机本身
         super().delete_model(request, obj)
 
+    def get_queryset(self, request):
+        """
+        列表页只看自己能管理的
+        """
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(administrators=request.user)
+    
     def delete_queryset(self, request, queryset):
         """
         重写delete_queryset方法，处理批量删除时的外键约束问题

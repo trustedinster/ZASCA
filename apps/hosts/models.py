@@ -39,6 +39,15 @@ class Host(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='offline', verbose_name='状态')
     description = models.TextField(blank=True, verbose_name='描述')
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='创建者')
+    
+    # 管理员列表 - 核心字段用于数据隔离
+    administrators = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        verbose_name="授权管理员",
+        related_name='managed_hosts'
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
 
@@ -75,18 +84,12 @@ class Host(models.Model):
 
     def save(self, *args, **kwargs):
         """
-        重写save方法，在保存主机时自动测试连接状态
+        重写save方法
+        注意：连接测试由Admin的save_model处理，避免循环调用
         """
-        # 获取是否是更新操作的标志
-        is_new = self.pk is None
-        
         # 先调用父类的save方法保存数据
         super().save(*args, **kwargs)
-        
-        # 只有在新建主机或显式需要测试连接时才测试连接状态
-        # 避免在连接测试过程中再次触发save导致循环调用
-        if is_new:
-            self.test_connection()
+        # 暂时禁用自动连接测试，由Admin处理
     
     def get_connection_client(self):
         """

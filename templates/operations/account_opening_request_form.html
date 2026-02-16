@@ -13,6 +13,88 @@
     padding: 2rem;
 }
 
+/* 移动端优化 */
+@media (max-width: 768px) {
+    .application-form-container {
+        padding: 1rem;
+    }
+    
+    .application-card-header {
+        padding: 1rem;
+    }
+    
+    .application-card-header h2 {
+        font-size: var(--md-sys-typescale-headline-small-size);
+    }
+    
+    .application-card-body {
+        padding: 1rem;
+    }
+}
+
+/* 极小屏幕优化 */
+@media (max-width: 480px) {
+    .application-form-container {
+        padding: 0.5rem;
+    }
+    
+    .application-card-body {
+        padding: 0.75rem;
+    }
+    
+    .md-input-wrapper--filled .md-input {
+        padding: 20px 10px 6px;
+        font-size: var(--md-sys-typescale-body-small-size);
+        min-height: 48px;
+    }
+    
+    .md-input__label {
+        top: 16px;
+        left: 10px;
+        font-size: var(--md-sys-typescale-body-small-size);
+    }
+    
+    .md-input:focus ~ .md-input__label,
+    .md-input:not(:placeholder-shown) ~ .md-input__label,
+    .md-input[value]:not([value=""]) ~ .md-input__label {
+        top: 4px;
+        font-size: var(--md-sys-typescale-body-smallest-size);
+    }
+    
+    .form-section-title {
+        font-size: var(--md-sys-typescale-title-small-size);
+    }
+    
+    .md-input__helper,
+    .md-input__error,
+    .md-input__supporting-text {
+        font-size: var(--md-sys-typescale-body-smallest-size);
+        margin-left: 10px;
+    }
+}
+
+/* 确保所有表单元素在移动端正确显示 */
+@media (max-width: 768px) {
+    .md-input,
+    .md-input-wrapper,
+    .form-column,
+    .form-row {
+        max-width: 100% !important;
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+    
+    .form-row {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .form-column {
+        min-width: 0;
+    }
+}
+
 .application-card {
     background: var(--md-sys-color-surface);
     border-radius: var(--md-sys-shape-corner-medium);
@@ -28,8 +110,9 @@
 
 .application-card-header h2 {
     margin: 0;
-    font-size: var(--md-sys-typescale-headline-small-font-size);
-    font-weight: var(--md-sys-typescale-headline-small-font-weight);
+    font-size: var(--md-sys-typescale-headline-medium-size);
+    font-weight: var(--md-sys-typescale-weight-bold);
+    line-height: var(--md-sys-typescale-line-height-condensed);
 }
 
 .application-card-body {
@@ -41,18 +124,33 @@
 }
 
 .form-section-title {
-    font-size: var(--md-sys-typescale-title-medium-font-size);
-    font-weight: var(--md-sys-typescale-title-medium-font-weight);
+    font-size: var(--md-sys-typescale-title-large-size);
+    font-weight: var(--md-sys-typescale-weight-medium);
     color: var(--md-sys-color-on-surface);
     margin-bottom: 1.5rem;
     padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--md-sys-color-outline-variant);
+    line-height: var(--md-sys-typescale-line-height-default);
+}
+
+@media (max-width: 768px) {
+    .form-section-title {
+        font-size: var(--md-sys-typescale-title-medium-size);
+        margin-bottom: 1rem;
+    }
 }
 
 .form-row {
     display: flex;
     gap: 1.5rem;
     margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        flex-direction: column;
+        gap: 1rem;
+    }
 }
 
 .form-column {
@@ -63,6 +161,142 @@
     margin-bottom: 1.5rem;
 }
 
+/* 确保MD3输入框样式正确应用 */
+.md-input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: var(--md-sys-typescale-body-large-size);
+    color: var(--md-sys-color-on-surface);
+    padding: 20px 16px 8px;
+    box-sizing: border-box;
+    border-radius: var(--md-sys-shape-corner-extra-large) var(--md-sys-shape-corner-extra-large) 0 0;
+}
+
+.md-input:focus {
+    outline: none;
+}
+
+.md-input__label {
+    position: absolute;
+    top: 24px;
+    left: 16px;
+    color: var(--md-sys-color-on-surface-variant);
+    font-size: var(--md-sys-typescale-body-large-size);
+    font-weight: var(--md-sys-typescale-weight-regular);
+    pointer-events: none;
+    transition: all var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+    z-index: 3;
+}
+
+@media (max-width: 768px) {
+    .md-input__label {
+        top: 20px;
+        left: 12px;
+        font-size: var(--md-sys-typescale-body-medium-size);
+    }
+    
+    .md-input:focus ~ .md-input__label,
+    .md-input:not(:placeholder-shown) ~ .md-input__label,
+    .md-input[value]:not([value=""]) ~ .md-input__label {
+        top: 6px;
+        font-size: var(--md-sys-typescale-body-small-size);
+    }
+}
+
+.md-input:focus ~ .md-input__label,
+.md-input:not(:placeholder-shown) ~ .md-input__label,
+.md-input[value]:not([value=""]) ~ .md-input__label {
+    top: 8px;
+    font-size: var(--md-sys-typescale-body-small-size);
+    color: var(--md-sys-color-primary);
+}
+
+.md-input-wrapper--filled {
+    background-color: var(--md-sys-color-surface-variant);
+    border-radius: var(--md-sys-shape-corner-extra-large);
+    position: relative;
+}
+
+.md-input-wrapper--filled .md-input {
+    padding: 28px 16px 12px;
+}
+
+@media (max-width: 768px) {
+    .md-input-wrapper--filled .md-input {
+        padding: 24px 12px 8px;
+        min-height: 56px;
+        font-size: var(--md-sys-typescale-body-medium-size);
+    }
+}
+
+.md-input-wrapper--filled .md-input__label {
+    left: 16px;
+}
+
+@media (max-width: 768px) {
+    .md-input-wrapper--filled .md-input__label {
+        left: 12px;
+    }
+}
+
+/* 调整辅助文本位置，避免与圆角背景冲突 */
+.md-input-wrapper--filled .md-input__helper,
+.md-input-wrapper--filled .md-input__error,
+.md-input-wrapper--filled .md-input__supporting-text {
+    margin-left: 16px;
+    padding-left: 2px;
+}
+
+@media (max-width: 768px) {
+    .md-input-wrapper--filled .md-input__helper,
+    .md-input-wrapper--filled .md-input__error,
+    .md-input-wrapper--filled .md-input__supporting-text {
+        margin-left: 12px;
+        font-size: var(--md-sys-typescale-body-small-size);
+    }
+}
+
+.md-input--textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.md-input__helper {
+    margin-top: 4px;
+    margin-left: 16px;
+    font-size: var(--md-sys-typescale-body-small-size);
+    color: var(--md-sys-color-on-surface-variant);
+    line-height: var(--md-sys-typescale-line-height-default);
+}
+
+.md-input__error {
+    margin-top: 4px;
+    margin-left: 16px;
+    font-size: var(--md-sys-typescale-body-small-size);
+    color: var(--md-sys-color-error);
+    line-height: var(--md-sys-typescale-line-height-default);
+}
+
+.md-input__supporting-text {
+    margin-top: 4px;
+    margin-left: 16px;
+    padding-left: 2px;
+    font-size: var(--md-sys-typescale-body-small-size);
+    color: var(--md-sys-color-on-surface-variant);
+    line-height: var(--md-sys-typescale-line-height-default);
+}
+
+.md-input-wrapper--error .md-input {
+    border-color: var(--md-sys-color-error);
+}
+
+.md-input-wrapper--error .md-input__label {
+    color: var(--md-sys-color-error);
+}
+
 .form-actions {
     display: flex;
     gap: 1rem;
@@ -70,6 +304,15 @@
     margin-top: 2rem;
     padding-top: 1.5rem;
     border-top: 1px solid var(--md-sys-color-outline-variant);
+}
+
+@media (max-width: 768px) {
+    .form-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+    }
 }
 
 .readonly-field {
@@ -83,6 +326,13 @@
     padding: 1rem;
     border-radius: var(--md-sys-shape-corner-small);
     margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+    .target-product-info {
+        padding: 0.75rem;
+        font-size: var(--md-sys-typescale-body-medium-size);
+    }
 }
 
 .target-product-info strong {
@@ -121,9 +371,11 @@
                             <div class="md-input-wrapper md-input-wrapper--filled">
                                 <input type="email" 
                                        class="md-input readonly-field" 
+                                       id="user-email"
+                                       name="user_email"
                                        value="{{ request.user.email }}" 
                                        readonly>
-                                <label class="md-input__label">联系邮箱</label>
+                                <label class="md-input__label" for="user-email">联系邮箱</label>
                                 <span class="md-input__supporting-text">使用当前账户的注册邮箱，不可修改</span>
                             </div>
                         </div>
@@ -136,28 +388,40 @@
                     <div class="form-row">
                         <div class="form-column">
                             <div class="md-input-wrapper md-input-wrapper--filled {% if form.username.errors %}md-input-wrapper--error{% endif %}">
-                                {{ form.username }}
+                                <input type="text"
+                                       class="md-input {% if form.username.errors %}md-input--error{% endif %}"
+                                       id="{{ form.username.id_for_label }}"
+                                       name="{{ form.username.name }}"
+                                       value="{{ form.username.value|default:'' }}"
+                                       {% if form.username.field.required %}required{% endif %}
+                                       maxlength="{{ form.username.field.max_length|default:150 }}">
                                 <label class="md-input__label" for="{{ form.username.id_for_label }}">主机连接用户名 *</label>
                                 {% if form.username.errors %}
-                                    <span class="md-input__error-text">
+                                    <div class="md-input__error">
                                         {% for error in form.username.errors %}{{ error }}{% endfor %}
-                                    </span>
+                                    </div>
                                 {% else %}
-                                    <span class="md-input__supporting-text">将在云电脑主机上创建的连接用户名</span>
+                                    <div class="md-input__helper">将在云电脑主机上创建的连接用户名</div>
                                 {% endif %}
                             </div>
                         </div>
                         
                         <div class="form-column">
                             <div class="md-input-wrapper md-input-wrapper--filled {% if form.user_fullname.errors %}md-input-wrapper--error{% endif %}">
-                                {{ form.user_fullname }}
+                                <input type="text"
+                                       class="md-input {% if form.user_fullname.errors %}md-input--error{% endif %}"
+                                       id="{{ form.user_fullname.id_for_label }}"
+                                       name="{{ form.user_fullname.name }}"
+                                       value="{{ form.user_fullname.value|default:'' }}"
+                                       {% if form.user_fullname.field.required %}required{% endif %}
+                                       maxlength="{{ form.user_fullname.field.max_length|default:200 }}">
                                 <label class="md-input__label" for="{{ form.user_fullname.id_for_label }}">主机显示用户名 *</label>
                                 {% if form.user_fullname.errors %}
-                                    <span class="md-input__error-text">
+                                    <div class="md-input__error">
                                         {% for error in form.user_fullname.errors %}{{ error }}{% endfor %}
-                                    </span>
+                                    </div>
                                 {% else %}
-                                    <span class="md-input__supporting-text">用于在系统中显示的用户名</span>
+                                    <div class="md-input__helper">用于在系统中显示的用户名</div>
                                 {% endif %}
                             </div>
                         </div>
@@ -170,14 +434,20 @@
                     <div class="form-row">
                         <div class="form-column">
                             <div class="md-input-wrapper md-input-wrapper--filled md-input-wrapper--textarea {% if form.user_description.errors %}md-input-wrapper--error{% endif %}">
-                                {{ form.user_description }}
+                                <textarea
+                                    class="md-input md-input--textarea {% if form.user_description.errors %}md-input--error{% endif %}"
+                                    id="{{ form.user_description.id_for_label }}"
+                                    name="{{ form.user_description.name }}"
+                                    rows="4"
+                                    {% if form.user_description.field.required %}required{% endif %}
+                                    maxlength="{{ form.user_description.field.max_length|default:500 }}">{{ form.user_description.value|default:'' }}</textarea>
                                 <label class="md-input__label" for="{{ form.user_description.id_for_label }}">申请理由 *</label>
                                 {% if form.user_description.errors %}
-                                    <span class="md-input__error-text">
+                                    <div class="md-input__error">
                                         {% for error in form.user_description.errors %}{{ error }}{% endfor %}
-                                    </span>
+                                    </div>
                                 {% else %}
-                                    <span class="md-input__supporting-text">请说明申请云电脑主机的用途和理由</span>
+                                    <div class="md-input__helper">请说明申请云电脑主机的用途和理由</div>
                                 {% endif %}
                             </div>
                         </div>

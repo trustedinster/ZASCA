@@ -1,239 +1,619 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}个人资料 - ZASCA{% endblock %}
+{% block title %}账户设置 - ZASCA{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/profile.css' %}">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<link rel="stylesheet" href="{% static 'css/theme.css' %}">
+<style>
+/* MD3账户设置页面样式 */
+.account-settings-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.settings-header {
+    margin-bottom: 2rem;
+}
+
+.settings-header h1 {
+    font-size: var(--md-sys-typescale-headline-large-size);
+    font-weight: var(--md-sys-typescale-weight-bold);
+    color: var(--md-sys-color-on-surface);
+    margin: 0 0 0.5rem 0;
+}
+
+.settings-subtitle {
+    font-size: var(--md-sys-typescale-body-large-size);
+    color: var(--md-sys-color-on-surface-variant);
+    margin: 0;
+}
+
+.settings-layout {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+}
+
+@media (max-width: 768px) {
+    .settings-layout {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    
+    .account-settings-container {
+        padding: 1rem;
+    }
+}
+
+/* 侧边栏导航 */
+.settings-nav {
+    flex: 0 0 280px;
+    background: var(--md-sys-color-surface);
+    border-radius: var(--md-sys-shape-corner-large);
+    padding: 1rem 0;
+    box-shadow: var(--md-sys-elevation-level1);
+}
+
+@media (max-width: 768px) {
+    .settings-nav {
+        flex: none;
+        width: 100%;
+    }
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+    color: var(--md-sys-color-on-surface-variant);
+}
+
+.nav-item:hover {
+    background-color: var(--md-sys-color-surface-variant);
+    color: var(--md-sys-color-on-surface);
+}
+
+.nav-item.active {
+    background-color: var(--md-sys-color-secondary-container);
+    color: var(--md-sys-color-on-secondary-container);
+    border-left-color: var(--md-sys-color-primary);
+}
+
+.nav-item i {
+    margin-right: 1rem;
+    font-size: 1.25rem;
+}
+
+.nav-item-text {
+    font-size: var(--md-sys-typescale-body-large-size);
+    font-weight: var(--md-sys-typescale-weight-medium);
+}
+
+/* 主内容区域 */
+.settings-content {
+    flex: 1;
+    min-width: 0;
+}
+
+@media (max-width: 768px) {
+    .settings-content {
+        width: 100%;
+    }
+}
+
+.settings-panel {
+    background: var(--md-sys-color-surface);
+    border-radius: var(--md-sys-shape-corner-large);
+    padding: 2rem;
+    box-shadow: var(--md-sys-elevation-level1);
+    display: none;
+}
+
+.settings-panel.active {
+    display: block;
+}
+
+.panel-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.panel-title {
+    font-size: var(--md-sys-typescale-headline-small-size);
+    font-weight: var(--md-sys-typescale-weight-bold);
+    color: var(--md-sys-color-on-surface);
+    margin: 0 0 0.5rem 0;
+}
+
+.panel-description {
+    font-size: var(--md-sys-typescale-body-medium-size);
+    color: var(--md-sys-color-on-surface-variant);
+    margin: 0;
+}
+
+/* MD3表单样式 */
+.md-form-group {
+    margin-bottom: 1.5rem;
+}
+
+.md-form-label {
+    display: block;
+    font-size: var(--md-sys-typescale-body-medium-size);
+    font-weight: var(--md-sys-typescale-weight-medium);
+    color: var(--md-sys-color-on-surface);
+    margin-bottom: 0.5rem;
+}
+
+.md-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-corner-medium);
+    font-size: var(--md-sys-typescale-body-large-size);
+    color: var(--md-sys-color-on-surface);
+    background: var(--md-sys-color-surface);
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.md-input:focus {
+    outline: none;
+    border-color: var(--md-sys-color-primary);
+    box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
+}
+
+.md-input:disabled {
+    background-color: var(--md-sys-color-surface-variant);
+    color: var(--md-sys-color-on-surface-variant);
+    cursor: not-allowed;
+}
+
+.md-select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-corner-medium);
+    font-size: var(--md-sys-typescale-body-large-size);
+    color: var(--md-sys-color-on-surface);
+    background: var(--md-sys-color-surface);
+    transition: all 0.2s ease;
+}
+
+.md-select:focus {
+    outline: none;
+    border-color: var(--md-sys-color-primary);
+    box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
+}
+
+.md-textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-corner-medium);
+    font-size: var(--md-sys-typescale-body-large-size);
+    color: var(--md-sys-color-on-surface);
+    background: var(--md-sys-color-surface);
+    transition: all 0.2s ease;
+    min-height: 120px;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.md-textarea:focus {
+    outline: none;
+    border-color: var(--md-sys-color-primary);
+    box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
+}
+
+/* MD3开关 */
+.md-switch {
+    position: relative;
+    display: inline-block;
+    width: 52px;
+    height: 32px;
+}
+
+.md-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.md-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--md-sys-color-surface-variant);
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.md-slider:before {
+    position: absolute;
+    content: "";
+    height: 24px;
+    width: 24px;
+    left: 4px;
+    bottom: 4px;
+    background-color: var(--md-sys-color-outline);
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .md-slider {
+    background-color: var(--md-sys-color-primary);
+}
+
+input:checked + .md-slider:before {
+    background-color: var(--md-sys-color-on-primary);
+    transform: translateX(20px);
+}
+
+.switch-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.switch-label {
+    font-size: var(--md-sys-typescale-body-large-size);
+    color: var(--md-sys-color-on-surface);
+}
+
+.switch-description {
+    font-size: var(--md-sys-typescale-body-small-size);
+    color: var(--md-sys-color-on-surface-variant);
+    margin-top: 0.25rem;
+}
+
+/* MD3按钮 */
+.md-button {
+    padding: 0.625rem 1.5rem;
+    border: none;
+    border-radius: var(--md-sys-shape-corner-full);
+    font-size: var(--md-sys-typescale-label-large-size);
+    font-weight: var(--md-sys-typescale-weight-medium);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.0625rem;
+    min-width: 80px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.md-button-filled {
+    background-color: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+    box-shadow: var(--md-sys-elevation-level1);
+}
+
+.md-button-filled:hover {
+    background-color: var(--md-sys-color-primary-hover, #7D65B8);
+    box-shadow: var(--md-sys-elevation-level2);
+}
+
+.md-button-outlined {
+    background-color: transparent;
+    color: var(--md-sys-color-primary);
+    border: 1px solid var(--md-sys-color-outline);
+}
+
+.md-button-outlined:hover {
+    background-color: var(--md-sys-color-surface-variant);
+}
+
+/* MD3横幅 */
+.md-banner {
+    padding: 1rem 1.5rem;
+    border-radius: var(--md-sys-shape-corner-medium);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+}
+
+.md-banner-info {
+    background-color: var(--md-sys-color-secondary-container);
+    color: var(--md-sys-color-on-secondary-container);
+}
+
+.md-banner-warning {
+    background-color: var(--md-sys-color-warning-container);
+    color: var(--md-sys-color-on-warning-container);
+}
+
+.md-banner .material-icons {
+    font-size: 1.5rem;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.banner-content strong {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: var(--md-sys-typescale-body-medium-size);
+    font-weight: var(--md-sys-typescale-weight-bold);
+}
+
+.banner-content p {
+    margin: 0;
+    font-size: var(--md-sys-typescale-body-small-size);
+    line-height: var(--md-sys-typescale-line-height-medium);
+}
+
+/* 表单网格 */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+/* 响应式调整 */
+@media (max-width: 480px) {
+    .account-settings-container {
+        padding: 0.75rem;
+    }
+    
+    .settings-panel {
+        padding: 1.5rem;
+    }
+    
+    .nav-item {
+        padding: 0.75rem 1rem;
+    }
+    
+    .switch-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="page-header">
-        <h1>个人资料</h1>
+<div class="account-settings-container">
+    <!-- 页面头部 -->
+    <div class="settings-header">
+        <h1>账户设置</h1>
+        <p class="settings-subtitle">管理您的个人资料、安全设置和通知偏好</p>
     </div>
 
-    <div class="profile-container">
-        <!-- 中间部分：左右分栏 -->
-        <div class="profile-content">
-            <!-- 左侧：用户信息 -->
-            <div class="profile-sidebar">
-                <div class="avatar-upload">
-                    <div class="avatar-wrapper">
-                        <img src="{{ user.profile.avatar.url|default:'/static/img/default.png' }}" 
-                             alt="头像" 
-                             class="profile-avatar" 
-                             id="profile-avatar">
-                        <div class="avatar-overlay" id="avatar-overlay">
-                            <i class="bi bi-upload"></i>
-                            <span>上传头像</span>
+    <!-- 设置布局 -->
+    <div class="settings-layout">
+        <!-- 左侧导航 -->
+        <div class="settings-nav">
+            <div class="nav-item active" data-target="profile-panel">
+                <i class="material-icons">person</i>
+                <span class="nav-item-text">基本资料</span>
+            </div>
+            <div class="nav-item" data-target="security-panel">
+                <i class="material-icons">security</i>
+                <span class="nav-item-text">安全设置</span>
+            </div>
+            <div class="nav-item" data-target="notifications-panel">
+                <i class="material-icons">notifications</i>
+                <span class="nav-item-text">通知设置</span>
+            </div>
+        </div>
+
+        <!-- 右侧内容 -->
+        <div class="settings-content">
+            <!-- 基本资料面板 -->
+            <div class="settings-panel active" id="profile-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">基本资料</h2>
+                    <p class="panel-description">更新您的个人信息和联系方式</p>
+                </div>
+                
+                <form method="post" class="profile-form">
+                    {% csrf_token %}
+                    
+                    <div class="form-grid">
+                        <div class="md-form-group">
+                            <label class="md-form-label">用户名</label>
+                            <input type="text" class="md-input" value="{{ user.username }}" disabled>
+                            <small style="color: var(--md-sys-color-on-surface-variant); font-size: var(--md-sys-typescale-body-small-size);">
+                                用户名不可更改
+                            </small>
+                        </div>
+                        
+                        <div class="md-form-group">
+                            <label class="md-form-label">电子邮箱 *</label>
+                            <input type="email" 
+                                   class="md-input {% if form.email.errors %}is-invalid{% endif %}" 
+                                   name="email" 
+                                   value="{{ form.email.value|default:user.email }}" 
+                                   required>
+                            {% if form.email.errors %}
+                            <div style="color: var(--md-sys-color-error); font-size: var(--md-sys-typescale-body-small-size); margin-top: 0.25rem;">
+                                {{ form.email.errors }}
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
-                    <input type="file" id="avatar-input" name="avatar" accept="image/*" style="display: none;">
-                </div>
-                <div class="profile-info">
-                    <h2 class="profile-name">{{ user.get_full_name|default:user.username }}</h2>
-                    <p class="profile-username">@{{ user.username }}</p>
-                    <p class="profile-email">{{ user.email }}</p>
-                </div>
+
+                    <div class="form-grid">
+                        <div class="md-form-group">
+                            <label class="md-form-label">昵称</label>
+                            <input type="text" 
+                                   class="md-input" 
+                                   name="nickname" 
+                                   value="{{ user.profile.nickname|default:'' }}"
+                                   placeholder="请输入您的昵称">
+                        </div>
+                        
+                        <div class="md-form-group">
+                            <label class="md-form-label">性别</label>
+                            <select class="md-select" name="gender">
+                                <option value="">请选择</option>
+                                <option value="male" {% if user.profile.gender == 'male' %}selected{% endif %}>男</option>
+                                <option value="female" {% if user.profile.gender == 'female' %}selected{% endif %}>女</option>
+                                <option value="other" {% if user.profile.gender == 'other' %}selected{% endif %}>其他</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="md-form-group">
+                            <label class="md-form-label">生日</label>
+                            <input type="date" 
+                                   class="md-input" 
+                                   name="birthday" 
+                                   value="{{ user.profile.birthday|date:'Y-m-d'|default:'' }}">
+                        </div>
+                        
+                        <div class="md-form-group">
+                            <label class="md-form-label">所在地</label>
+                            <input type="text" 
+                                   class="md-input" 
+                                   name="location" 
+                                   value="{{ user.profile.location|default:'' }}" 
+                                   placeholder="请输入您的所在城市">
+                        </div>
+                    </div>
+
+                    <div class="md-form-group">
+                        <label class="md-form-label">个人简介</label>
+                        <textarea class="md-textarea" 
+                                  name="bio" 
+                                  placeholder="介绍一下自己...">{{ user.profile.bio|default:'' }}</textarea>
+                    </div>
+
+                    <div style="margin-top: 2rem;">
+                        <button type="submit" class="md-button md-button-filled">保存更改</button>
+                    </div>
+                </form>
             </div>
 
-            <!-- 右侧：配置表单 -->
-            <div class="profile-main">
-                <!-- 选项卡导航 -->
-                <div class="profile-tabs">
-                    <button class="profile-tab active" data-tab="basic-info">基本资料</button>
-                    <button class="profile-tab" data-tab="security">安全设置</button>
-                    <button class="profile-tab" data-tab="notifications">通知设置</button>
+            <!-- 安全设置面板 -->
+            <div class="settings-panel" id="security-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">安全设置</h2>
+                    <p class="panel-description">管理您的账户安全和密码</p>
                 </div>
+                
+                {% if is_demo_mode %}
+                <div class="md-banner md-banner-warning">
+                    <i class="material-icons">warning</i>
+                    <div class="banner-content">
+                        <strong>DEMO模式提醒</strong>
+                        <p>当前系统处于DEMO演示模式，为保证演示环境稳定，密码修改功能已被禁用。</p>
+                    </div>
+                </div>
+                {% else %}
+                <form method="post" class="security-form">
+                    {% csrf_token %}
+                    
+                    <div class="md-form-group">
+                        <label class="md-form-label">当前密码 *</label>
+                        <input type="password" 
+                               class="md-input" 
+                               name="current_password" 
+                               placeholder="请输入当前密码"
+                               required>
+                    </div>
 
-                <!-- 基本资料选项卡 -->
-                <div class="tab-content active" id="basic-info-content">
-                    <form method="post" 
-                          action="{% url 'accounts:profile' %}" 
-                          class="profile-form needs-validation" 
-                          id="profile-form"
-                          novalidate>
-                        {% csrf_token %}
+                    <div class="form-grid">
+                        <div class="md-form-group">
+                            <label class="md-form-label">新密码 *</label>
+                            <input type="password" 
+                                   class="md-input" 
+                                   name="new_password" 
+                                   placeholder="请输入新密码"
+                                   required>
+                        </div>
                         
-                        <div class="form-section">
-                            <h3 class="form-section-title">账户信息</h3>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="username" class="form-label">用户名</label>
-                                    <input type="text" 
-                                           class="form-control" 
-                                           id="username" 
-                                           name="username" 
-                                           value="{{ user.username }}" 
-                                           disabled>
-                                </div>
-                                <div class="form-group">
-                                    <label for="email" class="form-label">电子邮箱</label>
-                                    <input type="email" 
-                                           class="form-control {% if form.email.errors %}is-invalid{% endif %}" 
-                                           id="email" 
-                                           name="email" 
-                                           value="{{ form.email.value|default:user.email }}" 
-                                           required>
-                                    {% if form.email.errors %}
-                                    <div class="invalid-feedback">
-                                        {{ form.email.errors }}
-                                    </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-section">
-                            <h3 class="form-section-title">个人信息</h3>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="id_nickname" class="form-label">昵称</label>
-                                    <input type="text" 
-                                           class="form-control" 
-                                           id="id_nickname" 
-                                           name="nickname" 
-                                           value="{{ user.profile.nickname|default:'' }}">
-                                </div>
-                                <div class="form-group">
-                                    <label for="id_gender" class="form-label">性别</label>
-                                    <select class="form-control" id="id_gender" name="gender">
-                                        <option value="">请选择</option>
-                                        <option value="male" {% if user.profile.gender == 'male' %}selected{% endif %}>男</option>
-                                        <option value="female" {% if user.profile.gender == 'female' %}selected{% endif %}>女</option>
-                                        <option value="other" {% if user.profile.gender == 'other' %}selected{% endif %}>其他</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="id_birthday" class="form-label">生日</label>
-                                    <input type="date" 
-                                           class="form-control" 
-                                           id="id_birthday" 
-                                           name="birthday" 
-                                           value="{{ user.profile.birthday|date:'Y-m-d'|default:'' }}">
-                                </div>
-                                <div class="form-group">
-                                    <label for="id_location" class="form-label">所在地</label>
-                                    <input type="text" 
-                                           class="form-control" 
-                                           id="id_location" 
-                                           name="location" 
-                                           value="{{ user.profile.location|default:'' }}" 
-                                           placeholder="请输入您的所在城市">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="id_bio" class="form-label">个人简介</label>
-                                <textarea class="form-control" 
-                                          id="id_bio" 
-                                          name="bio" 
-                                          rows="4" 
-                                          placeholder="介绍一下自己...">{{ user.profile.bio|default:'' }}</textarea>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary">保存更改</button>
-                    </form>
-                </div>
-
-                <!-- 安全设置选项卡 -->
-                <div class="tab-content" id="security-content">
-                    {% if is_demo_mode %}
-                    <div class="form-section">
-                        <h3 class="form-section-title">安全设置</h3>
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i>
-                            <strong>DEMO模式提醒</strong>
-                            <p>当前系统处于DEMO演示模式，为保证演示环境稳定，密码修改功能已被禁用。</p>
+                        <div class="md-form-group">
+                            <label class="md-form-label">确认新密码 *</label>
+                            <input type="password" 
+                                   class="md-input" 
+                                   name="confirm_password" 
+                                   placeholder="请再次输入新密码"
+                                   required>
                         </div>
                     </div>
-                    {% else %}
-                    <form method="post" 
-                          action="{% url 'accounts:profile' %}" 
-                          class="profile-form needs-validation" 
-                          id="password-form"
-                          novalidate>
-                        {% csrf_token %}
-                        
-                        <div class="form-section">
-                            <h3 class="form-section-title">修改密码</h3>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="current_password" class="form-label">当前密码</label>
-                                    <input type="password" 
-                                           class="form-control" 
-                                           id="current_password" 
-                                           name="current_password" 
-                                           placeholder="请输入当前密码">
-                                </div>
-                                <div class="form-group">
-                                    <label for="new_password" class="form-label">新密码</label>
-                                    <input type="password" 
-                                           class="form-control" 
-                                           id="new_password" 
-                                           name="new_password" 
-                                           placeholder="请输入新密码">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="confirm_password" class="form-label">确认新密码</label>
-                                <input type="password" 
-                                       class="form-control" 
-                                       id="confirm_password" 
-                                       name="confirm_password" 
-                                       placeholder="请再次输入新密码">
-                            </div>
-                        </div>
 
-                        <button type="submit" class="btn btn-primary">更新密码</button>
-                    </form>
-                    {% endif %}
+                    <div style="margin-top: 2rem;">
+                        <button type="submit" class="md-button md-button-filled">更新密码</button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+
+            <!-- 通知设置面板 -->
+            <div class="settings-panel" id="notifications-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">通知设置</h2>
+                    <p class="panel-description">自定义您想要接收的通知类型</p>
                 </div>
-
-                <!-- 通知设置选项卡 -->
-                <div class="tab-content" id="notifications-content">
-                    <form method="post" 
-                          action="{% url 'accounts:profile' %}" 
-                          class="profile-form needs-validation" 
-                          id="notification-form"
-                          novalidate>
-                        {% csrf_token %}
-                        
-                        <div class="form-section">
-                            <h3 class="form-section-title">通知偏好设置</h3>
-                            <div class="form-group">
-                                <div class="form-check">
-                                    <input type="checkbox" 
-                                           class="form-check-input" 
-                                           id="email_notification" 
-                                           name="email_notification" 
-                                           {% if user.profile.email_notification %}checked{% endif %}>
-                                    <label class="form-check-label" for="email_notification">
-                                        接收邮件通知
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <div class="form-check">
-                                    <input type="checkbox" 
-                                           class="form-check-input" 
-                                           id="system_notification" 
-                                           name="system_notification" 
-                                           {% if user.profile.system_notification %}checked{% endif %}>
-                                    <label class="form-check-label" for="system_notification">
-                                        接收系统通知
-                                    </label>
-                                </div>
-                            </div>
+                
+                <form method="post" class="notifications-form">
+                    {% csrf_token %}
+                    
+                    <div class="switch-container">
+                        <div>
+                            <div class="switch-label">邮件通知</div>
+                            <div class="switch-description">接收重要的账户和系统通知邮件</div>
                         </div>
+                        <label class="md-switch">
+                            <input type="checkbox" 
+                                   name="email_notification" 
+                                   {% if user.profile.email_notification %}checked{% endif %}>
+                            <span class="md-slider"></span>
+                        </label>
+                    </div>
 
-                        <button type="submit" class="btn btn-primary">保存设置</button>
-                    </form>
-                </div>
+                    <div class="switch-container">
+                        <div>
+                            <div class="switch-label">系统通知</div>
+                            <div class="switch-description">在网站内接收系统消息和提醒</div>
+                        </div>
+                        <label class="md-switch">
+                            <input type="checkbox" 
+                                   name="system_notification" 
+                                   {% if user.profile.system_notification %}checked{% endif %}>
+                            <span class="md-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="switch-container">
+                        <div>
+                            <div class="switch-label">营销推广</div>
+                            <div class="switch-description">接收产品更新和优惠活动信息</div>
+                        </div>
+                        <label class="md-switch">
+                            <input type="checkbox" 
+                                   name="marketing_notification" 
+                                   {% if user.profile.marketing_notification %}checked{% endif %}>
+                            <span class="md-slider"></span>
+                        </label>
+                    </div>
+
+                    <div style="margin-top: 2rem;">
+                        <button type="submit" class="md-button md-button-filled">保存设置</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -241,57 +621,58 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/accounts.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // 选项卡切换功能
-    const tabs = document.querySelectorAll('.profile-tab');
-    const tabContents = document.querySelectorAll('.tab-content');
+    // 导航切换功能
+    const navItems = document.querySelectorAll('.nav-item');
+    const panels = document.querySelectorAll('.settings-panel');
 
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
             // 移除所有激活状态
-            tabs.forEach(t => t.classList.remove('active'));
-            tabContents.forEach(c => c.classList.remove('active'));
+            navItems.forEach(nav => nav.classList.remove('active'));
+            panels.forEach(panel => panel.classList.remove('active'));
 
             // 添加当前激活状态
-            tab.classList.add('active');
-            const tabId = tab.getAttribute('data-tab');
-            document.getElementById(`${tabId}-content`).classList.add('active');
+            item.classList.add('active');
+            const targetId = item.getAttribute('data-target');
+            document.getElementById(targetId).classList.add('active');
         });
     });
 
-    // 头像上传功能
-    const avatarWrapper = document.querySelector('.avatar-wrapper');
-    const avatarInput = document.getElementById('avatar-input');
-    
-    if (avatarWrapper && avatarInput) {
-        avatarWrapper.addEventListener('click', () => {
-            avatarInput.click();
-        });
-        
-        avatarInput.addEventListener('change', function(e) {
-            if (this.files && this.files[0]) {
-                const file = this.files[0];
-                
-                // 验证文件类型
-                if (!file.type.match('image.*')) {
-                    alert('请选择图片文件');
-                    return;
+    // 表单验证
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+            
+            // 检查必填字段
+            const requiredFields = form.querySelectorAll('[required]');
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    field.style.borderColor = 'var(--md-sys-color-error)';
+                    isValid = false;
+                } else {
+                    field.style.borderColor = 'var(--md-sys-color-outline)';
                 }
-                
-                // 创建预览
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('profile-avatar').src = e.target.result;
+            });
+
+            // 检查密码确认
+            const newPassword = form.querySelector('[name="new_password"]');
+            const confirmPassword = form.querySelector('[name="confirm_password"]');
+            if (newPassword && confirmPassword) {
+                if (newPassword.value !== confirmPassword.value) {
+                    confirmPassword.style.borderColor = 'var(--md-sys-color-error)';
+                    isValid = false;
+                    alert('两次输入的密码不一致');
                 }
-                reader.readAsDataURL(file);
-                
-                // 这里可以添加上传逻辑
-                // uploadAvatar(file);
+            }
+
+            if (!isValid) {
+                e.preventDefault();
             }
         });
-    }
+    });
 });
 </script>
 {% endblock %}
