@@ -279,24 +279,32 @@ std::string ParseJsonString(const std::string& json, const std::string& key) {
                 case 'u': {
                     if (i + 4 < json.length()) {
                         unsigned int codepoint = 0;
+                        bool validHex = true;
                         for (int j = 0; j < 4; j++) {
                             codepoint <<= 4;
                             char hex = json[i + 1 + j];
                             if (hex >= '0' && hex <= '9') codepoint |= (hex - '0');
                             else if (hex >= 'a' && hex <= 'f') codepoint |= (hex - 'a' + 10);
                             else if (hex >= 'A' && hex <= 'F') codepoint |= (hex - 'A' + 10);
+                            else { validHex = false; break; }
                         }
-                        if (codepoint < 0x80) {
-                            result += static_cast<char>(codepoint);
-                        } else if (codepoint < 0x800) {
-                            result += static_cast<char>(0xC0 | (codepoint >> 6));
-                            result += static_cast<char>(0x80 | (codepoint & 0x3F));
+                        if (validHex) {
+                            if (codepoint < 0x80) {
+                                result += static_cast<char>(codepoint);
+                            } else if (codepoint < 0x800) {
+                                result += static_cast<char>(0xC0 | (codepoint >> 6));
+                                result += static_cast<char>(0x80 | (codepoint & 0x3F));
+                            } else {
+                                result += static_cast<char>(0xE0 | (codepoint >> 12));
+                                result += static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F));
+                                result += static_cast<char>(0x80 | (codepoint & 0x3F));
+                            }
+                            i += 4;
                         } else {
-                            result += static_cast<char>(0xE0 | (codepoint >> 12));
-                            result += static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F));
-                            result += static_cast<char>(0x80 | (codepoint & 0x3F));
+                            result += '?';
                         }
-                        i += 4;
+                    } else {
+                        result += '?';
                     }
                     break;
                 }
