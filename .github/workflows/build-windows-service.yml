@@ -2,10 +2,9 @@ name: Build Windows Service
 
 on:
   push:
-    branches:
+
+    tags:
       - 'v*.*.*'
-      - 'release/*'
-      - 'version/*'
     paths:
       - 'cpp/**'
       - '.github/workflows/build-windows-service.yml'
