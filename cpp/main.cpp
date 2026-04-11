@@ -51,6 +51,8 @@ std::string ParseJsonString(const std::string& json, const std::string& key);
 std::string GetTempFilePath();
 std::string GetExeDirectory();
 bool UpdateFromRelease(const std::string& zipUrl);
+bool CopyDirectoryRecursive(const std::string& srcPath, const std::string& destPath);
+bool RemoveDirectoryRecursive(const std::string& dirPath);
 
 void ShowMessage(const std::string& title, const std::string& msg, UINT type = MB_OK) {
     MessageBoxA(NULL, msg.c_str(), title.c_str(), type | MB_TOPMOST);
@@ -260,10 +262,111 @@ std::string ParseJsonString(const std::string& json, const std::string& key) {
     size_t quoteStart = json.find('"', colonPos);
     if (quoteStart == std::string::npos) return "";
     
-    size_t quoteEnd = json.find('"', quoteStart + 1);
-    if (quoteEnd == std::string::npos) return "";
+    std::string result;
+    bool escape = false;
+    for (size_t i = quoteStart + 1; i < json.length(); i++) {
+        char c = json[i];
+        if (escape) {
+            switch (c) {
+                case '"': result += '"'; break;
+                case '\\': result += '\\'; break;
+                case '/': result += '/'; break;
+                case 'b': result += '\b'; break;
+                case 'f': result += '\f'; break;
+                case 'n': result += '\n'; break;
+                case 'r': result += '\r'; break;
+                case 't': result += '\t'; break;
+                case 'u': {
+                    if (i + 4 < json.length()) {
+                        unsigned int codepoint = 0;
+                        for (int j = 0; j < 4; j++) {
+                            codepoint <<= 4;
+                            char hex = json[i + 1 + j];
+                            if (hex >= '0' && hex <= '9') codepoint |= (hex - '0');
+                            else if (hex >= 'a' && hex <= 'f') codepoint |= (hex - 'a' + 10);
+                            else if (hex >= 'A' && hex <= 'F') codepoint |= (hex - 'A' + 10);
+                        }
+                        if (codepoint < 0x80) {
+                            result += static_cast<char>(codepoint);
+                        } else if (codepoint < 0x800) {
+                            result += static_cast<char>(0xC0 | (codepoint >> 6));
+                            result += static_cast<char>(0x80 | (codepoint & 0x3F));
+                        } else {
+                            result += static_cast<char>(0xE0 | (codepoint >> 12));
+                            result += static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F));
+                            result += static_cast<char>(0x80 | (codepoint & 0x3F));
+                        }
+                        i += 4;
+                    }
+                    break;
+                }
+                default: result += c; break;
+            }
+            escape = false;
+        } else if (c == '\\') {
+            escape = true;
+        } else if (c == '"') {
+            return result;
+        } else {
+            result += c;
+        }
+    }
+    return result;
+}
+
+bool CopyDirectoryRecursive(const std::string& srcPath, const std::string& destPath) {
+    if (!CreateDirectoryA(destPath.c_str(), NULL)) {
+        if (GetLastError() != ERROR_ALREADY_EXISTS) return false;
+    }
     
-    return json.substr(quoteStart + 1, quoteEnd - quoteStart - 1);
+    WIN32_FIND_DATAA findData;
+    std::string searchPath = srcPath + "\\*";
+    HANDLE hFind = FindFirstFileA(searchPath.c_str(), &findData);
+    
+    if (hFind == INVALID_HANDLE_VALUE) return false;
+    
+    bool success = true;
+    do {
+        if (strcmp(findData.cFileName, ".") == 0 || strcmp(findData.cFileName, "..") == 0) continue;
+        
+        std::string srcItem = srcPath + "\\" + findData.cFileName;
+        std::string destItem = destPath + "\\" + findData.cFileName;
+        
+        if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            if (!CopyDirectoryRecursive(srcItem, destItem)) success = false;
+        } else {
+            if (!CopyFileA(srcItem.c_str(), destItem.c_str(), FALSE)) success = false;
+        }
+    } while (FindNextFileA(hFind, &findData));
+    
+    FindClose(hFind);
+    return success;
+}
+
+bool RemoveDirectoryRecursive(const std::string& dirPath) {
+    WIN32_FIND_DATAA findData;
+    std::string searchPath = dirPath + "\\*";
+    HANDLE hFind = FindFirstFileA(searchPath.c_str(), &findData);
+    
+    if (hFind == INVALID_HANDLE_VALUE) return false;
+    
+    bool success = true;
+    do {
+        if (strcmp(findData.cFileName, ".") == 0 || strcmp(findData.cFileName, "..") == 0) continue;
+        
+        std::string itemPath = dirPath + "\\" + findData.cFileName;
+        
+        if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            if (!RemoveDirectoryRecursive(itemPath)) success = false;
+        } else {
+            if (!DeleteFileA(itemPath.c_str())) success = false;
+        }
+    } while (FindNextFileA(hFind, &findData));
+    
+    FindClose(hFind);
+    
+    if (!RemoveDirectoryA(dirPath.c_str())) success = false;
+    return success;
 }
 
 std::string GetTempFilePath() {
@@ -384,8 +487,7 @@ bool UpdateFromRelease(const std::string& zipUrl) {
                 std::string destPath = exeDir + "\\" + findData.cFileName;
                 
                 if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-                    std::string cmd = "xcopy \"" + srcPath + "\" \"" + destPath + "\" /E /I /Y /Q";
-                    system(cmd.c_str());
+                    CopyDirectoryRecursive(srcPath, destPath);
                 } else {
                     CopyFileA(srcPath.c_str(), destPath.c_str(), FALSE);
                 }
@@ -403,8 +505,7 @@ bool UpdateFromRelease(const std::string& zipUrl) {
             if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
                 if (strcmp(findData.cFileName, ".") != 0 && strcmp(findData.cFileName, "..") != 0) {
                     std::string subDir = tempDir + "\\" + findData.cFileName;
-                    std::string cmd = "rmdir /S /Q \"" + subDir + "\"";
-                    system(cmd.c_str());
+                    RemoveDirectoryRecursive(subDir);
                 }
             } else {
                 std::string filePath = tempDir + "\\" + findData.cFileName;
