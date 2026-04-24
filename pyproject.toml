@@ -2,6 +2,7 @@
 name = "zasca"
 version = "1.0.0"
 description = "ZASCA - Django Web Application"
+license = "AGPL-3.0-only"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
