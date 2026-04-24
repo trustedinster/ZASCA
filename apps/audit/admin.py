@@ -6,9 +6,9 @@ from .models import AuditLog
 class AuditLogAdmin(admin.ModelAdmin):
     list_display = [
         'action', 'host', 'user',
-        'ip_address', 'created_at',
+        'ip_address', 'timestamp',
     ]
-    list_filter = ['action', 'created_at']
+    list_filter = ['action', 'timestamp']
     search_fields = [
         'action', 'user__username',
         'host__name', 'ip_address',
@@ -16,7 +16,7 @@ class AuditLogAdmin(admin.ModelAdmin):
     readonly_fields = [
         'action', 'host', 'user',
         'ip_address', 'details',
-        'created_at',
+        'timestamp',
     ]
 
     fieldsets = (
@@ -31,7 +31,7 @@ class AuditLogAdmin(admin.ModelAdmin):
             'classes': ('collapse',),
         }),
         ('时间信息', {
-            'fields': ('created_at',),
+            'fields': ('timestamp',),
         }),
     )
 
