@@ -28,6 +28,15 @@ class AuditLog(models.Model):
         ('logout', '用户登出'),
         ('view_audit_log', '查看审计日志'),
         ('admin_action', '管理员操作'),
+        ('tunnel_online', '隧道上线'),
+        ('tunnel_offline', '隧道离线'),
+        ('tunnel_heartbeat_timeout', '隧道心跳超时'),
+        ('rdp_connect', 'RDP连接'),
+        ('rdp_disconnect', 'RDP断开'),
+        ('remote_exec', '远程执行命令'),
+        ('remote_exec_result', '远程执行结果'),
+        ('domain_bind', '域名绑定'),
+        ('domain_unbind', '域名解绑'),
     ]
 
     user = models.ForeignKey(

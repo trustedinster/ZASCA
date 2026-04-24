@@ -21,6 +21,7 @@ from .models import (
     CloudComputerUser,
     Product,
     ProductGroup,
+    RdpDomainRoute,
 )
 from apps.hosts.models import Host
 
@@ -452,10 +453,35 @@ class SystemTaskAdmin(ProviderDataIsolationMixin, admin.ModelAdmin):
         return queryset.filter(created_by=request.user)
 
     def changelist_view(self, request, extra_context=None):
-        """
-        修复模板上下文处理问题
-        """
         return super().changelist_view(request, extra_context)
+
+
+@admin.register(RdpDomainRoute)
+class RdpDomainRouteAdmin(admin.ModelAdmin):
+    list_display = [
+        'domain', 'product', 'assigned_to',
+        'tunnel_token', 'is_active',
+        'expires_at', 'created_at',
+    ]
+    list_filter = ['is_active', 'created_at', 'expires_at']
+    search_fields = ['domain', 'tunnel_token', 'assigned_to__username']
+    readonly_fields = ['created_at', 'last_activity_at']
+
+    fieldsets = (
+        ('域名信息', {
+            'fields': ('domain', 'tunnel_token', 'is_active')
+        }),
+        ('关联信息', {
+            'fields': ('product', 'assigned_to')
+        }),
+        ('有效期', {
+            'fields': ('expires_at', 'last_activity_at')
+        }),
+        ('时间信息', {
+            'fields': ('created_at',),
+            'classes': ('collapse',),
+        }),
+    )
 
 
 @admin.register(ProductGroup)
@@ -497,12 +523,14 @@ class ProductAdmin(ProviderDataIsolationMixin, admin.ModelAdmin):
         "status",
         "is_available",
         "enable_disk_quota",
+        "enable_host_protection",
         "created_at",
         "created_by",
     ]
     list_filter = [
         "is_available", "host", "host__status",
-        "enable_disk_quota", "created_at",
+        "enable_disk_quota", "enable_host_protection",
+        "created_at",
     ]
     search_fields = ["name", "display_name", "host__name"]
     readonly_fields = ["created_at", "updated_at", "created_by"]
@@ -513,6 +541,16 @@ class ProductAdmin(ProviderDataIsolationMixin, admin.ModelAdmin):
         (
             "主机关联",
             {"fields": ("host", "is_available", "auto_approval")},
+        ),
+        (
+            "主机保护",
+            {
+                "fields": ("enable_host_protection",),
+                "description": (
+                    '启用后，用户只能通过Gateway隧道访问RDP，'
+                    '主机不暴露公网IP。需部署Gateway服务。'
+                ),
+            },
         ),
         (
             "显示配置",

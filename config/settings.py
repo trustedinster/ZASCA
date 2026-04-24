@@ -242,12 +242,32 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# Redis 配置
+# Redis 配置 (保留用于兼容性检查，实际不再使用)
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
 
-# Celery 配置
-CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', REDIS_URL)
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', REDIS_URL)
+# Celery 配置 (使用 SQLite 替代 Redis)
+CELERY_BROKER_URL = os.environ.get(
+    'CELERY_BROKER_URL',
+    f'sqla+sqlite:///{BASE_DIR / "celery_broker.sqlite3"}'
+)
+CELERY_RESULT_BACKEND = os.environ.get(
+    'CELERY_RESULT_BACKEND',
+    f'db+sqlite:///{BASE_DIR / "celery_results.sqlite3"}'
+)
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    'polling_interval': 1,
+}
+
+# Gateway 控制面配置
+GATEWAY_ENABLED = os.environ.get(
+    'GATEWAY_ENABLED', 'False'
+).lower() in ('true', '1', 'yes')
+GATEWAY_CONTROL_SOCKET = os.environ.get(
+    'GATEWAY_CONTROL_SOCKET', '/run/zasca/control.sock'
+)
+
+# RDP 域名配置
+RDP_DOMAIN = os.environ.get('RDP_DOMAIN', 'zasca.com')
 
 # Geetest (极验) 验证码配置
 GEETEST_ID = os.environ.get('GEETEST_ID')

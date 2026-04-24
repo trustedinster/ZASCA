@@ -369,6 +369,14 @@ class Product(models.Model):
         verbose_name=_('启用磁盘配额管理'),
         help_text=_('是否启用磁盘配额管理，启用后将自动为新用户设置磁盘配额')
     )
+    enable_host_protection = models.BooleanField(
+        default=False,
+        verbose_name=_('启用主机保护(通过Gateway)'),
+        help_text=_(
+            '启用后，用户只能通过Gateway隧道访问该产品的RDP，'
+            '主机不暴露公网IP。需要部署Gateway服务。'
+        )
+    )
     default_disk_quota = models.JSONField(
         default=dict,
         blank=True,
@@ -1161,3 +1169,93 @@ class CloudComputerUser(models.Model):
             
             if has_upper and has_lower and has_digit and has_special:
                 return password
+
+
+class RdpDomainRoute(models.Model):
+    domain = models.CharField(
+        max_length=255, unique=True,
+        verbose_name=_('RDP域名'),
+        help_text=_('分配给用户的临时RDP访问域名')
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        verbose_name=_('关联产品'),
+        help_text=_('此域名关联的云电脑产品')
+    )
+    assigned_to = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name=_('分配用户'),
+        help_text=_('被分配此RDP域名的用户')
+    )
+    tunnel_token = models.CharField(
+        max_length=64,
+        verbose_name=_('隧道Token'),
+        help_text=_('关联主机的隧道Token')
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name=_('是否有效'),
+        help_text=_('域名是否仍然有效')
+    )
+    expires_at = models.DateTimeField(
+        verbose_name=_('过期时间'),
+        help_text=_('域名过期时间，10分钟无连接后过期')
+    )
+    last_activity_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_('最后活动时间'),
+        help_text=_('最后一次RDP连接活动时间')
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('创建时间')
+    )
+
+    class Meta:
+        verbose_name = _('RDP域名路由')
+        verbose_name_plural = _('RDP域名路由')
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['domain']),
+            models.Index(fields=['is_active']),
+            models.Index(fields=['assigned_to']),
+            models.Index(fields=['expires_at']),
+            models.Index(fields=['product']),
+        ]
+
+    def __str__(self):
+        status = '有效' if self.is_active else '已过期'
+        return f'{self.domain} -> {self.product.display_name} ({status})'
+
+    @staticmethod
+    def generate_domain():
+        import secrets
+        import string
+        prefix = ''.join(
+            secrets.choice(string.ascii_lowercase + string.digits)
+            for _ in range(8)
+        )
+        from django.conf import settings as django_settings
+        base_domain = getattr(
+            django_settings, 'RDP_DOMAIN', 'zasca.com'
+        )
+        return f'rdp-{prefix}.{base_domain}'
+
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+    def deactivate(self):
+        from utils.gateway_client import GatewayClient
+        try:
+            client = GatewayClient()
+            client.domain_unbind(self.domain)
+        except Exception:
+            pass
+        self.is_active = False
+        self.save(update_fields=['is_active'])
+
+    @property
+    def is_protected(self):
+        return self.product.enable_host_protection

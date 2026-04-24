@@ -18,12 +18,20 @@ class Host(models.Model):
         ('winrm', 'WinRM'),
         ('ssh', 'SSH'),
         ('localwinserver', '本地WinServer'),
+        ('tunnel', '隧道模式(零公网IP)'),
     ]
     
     STATUS_CHOICES = [
         ('online', '在线'),
         ('offline', '离线'),
         ('error', '错误'),
+    ]
+
+    TUNNEL_STATUS_CHOICES = [
+        ('no_tunnel', '无隧道'),
+        ('offline', '隧道离线'),
+        ('online', '隧道在线'),
+        ('error', '隧道错误'),
     ]
 
     name = models.CharField(max_length=100, verbose_name='主机名称')
@@ -59,6 +67,30 @@ class Host(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
+
+    tunnel_token = models.CharField(
+        max_length=64, unique=True, null=True, blank=True,
+        verbose_name='隧道Token'
+    )
+    tunnel_status = models.CharField(
+        max_length=20, choices=TUNNEL_STATUS_CHOICES,
+        default='no_tunnel', verbose_name='隧道状态'
+    )
+    tunnel_connected_at = models.DateTimeField(
+        null=True, blank=True, verbose_name='隧道连接时间'
+    )
+    tunnel_last_seen_at = models.DateTimeField(
+        null=True, blank=True, verbose_name='隧道最后心跳'
+    )
+    tunnel_client_version = models.CharField(
+        max_length=50, blank=True, verbose_name='隧道客户端版本'
+    )
+    tunnel_client_ip = models.GenericIPAddressField(
+        null=True, blank=True, verbose_name='隧道客户端IP'
+    )
+    tunnel_public_key = models.TextField(
+        blank=True, verbose_name='隧道公钥(Ed25519)'
+    )
 
     class Meta:
         verbose_name = '主机'
@@ -101,9 +133,6 @@ class Host(models.Model):
         # 暂时禁用自动连接测试，由Admin处理
     
     def get_connection_client(self):
-        """
-        根据连接类型获取相应的连接客户端
-        """
         if self.connection_type == 'winrm':
             from utils.winrm_client import WinrmClient
             return WinrmClient(
@@ -114,55 +143,187 @@ class Host(models.Model):
                 use_ssl=self.use_ssl
             )
         elif self.connection_type == 'localwinserver':
-            # 对于本地WinServer，使用专门的本地客户端
             from utils.local_winserver_client import LocalWinServerClient
             return LocalWinServerClient(
                 username=self.username,
                 password=self.password
             )
+        elif self.connection_type == 'tunnel':
+            from utils.gateway_client import GatewayClient
+            return TunnelConnectionAdapter(self, GatewayClient())
         elif self.connection_type == 'ssh':
-            # SSH连接将在后续实现
             raise NotImplementedError("SSH连接类型尚未实现")
         else:
-            raise ValueError(f"不支持的连接类型: {self.connection_type}")
+            raise ValueError(
+                f"不支持的连接类型: {self.connection_type}"
+            )
 
     def test_connection(self):
-        """
-        测试主机连接状态
-        """
-        # 如果是DEMO模式，所有主机都显示为在线且不执行实际连接测试
         if os.environ.get('ZASCA_DEMO', '').lower() == '1':
-            # 使用QuerySet的update方法避免触发save信号
             Host.objects.filter(pk=self.pk).update(status='online')
+            return
+
+        if self.connection_type == 'tunnel':
+            new_status = 'online' if self.tunnel_status == 'online' else 'offline'
+            Host.objects.filter(pk=self.pk).update(status=new_status)
             return
         
         try:
-            # 根据连接类型获取相应的客户端
             client = self.get_connection_client()
             
-            # 尝试执行一个简单命令来测试连接
             if self.connection_type == 'localwinserver':
-                # 本地服务器执行系统信息查询命令
-                result = client.execute_command('echo Connection Test OK')
+                result = client.execute_command(
+                    'echo Connection Test OK'
+                )
             else:
                 result = client.execute_command('whoami')
             
-            # 根据执行结果更新主机状态
             if result.success:
                 new_status = 'online'
             else:
                 new_status = 'error'
                 
         except Exception as e:
-            # 连接失败，设置状态为错误
             new_status = 'error'
-            # 记录错误日志
             import logging
             logger = logging.getLogger("zasca")
-            logger.error(f"测试主机连接失败: {self.name}, 错误: {str(e)}")
+            logger.error(
+                f"测试主机连接失败: {self.name}, 错误: {str(e)}"
+            )
         
-        # 使用QuerySet的update方法避免触发save信号和潜在的数据库锁定问题
         Host.objects.filter(pk=self.pk).update(status=new_status)
+
+
+class TunnelConnectionAdapter:
+    def __init__(self, host, gateway_client):
+        self.host = host
+        self.gateway_client = gateway_client
+        self._fallback_client = None
+
+    def _get_fallback_client(self):
+        if self._fallback_client is not None:
+            return self._fallback_client
+        if self.host.connection_type == 'tunnel' and self.host.hostname:
+            try:
+                from utils.winrm_client import WinrmClient
+                self._fallback_client = WinrmClient(
+                    hostname=self.host.hostname,
+                    port=self.host.port,
+                    username=self.host.username,
+                    password=self.host.password,
+                    use_ssl=self.host.use_ssl,
+                )
+                return self._fallback_client
+            except Exception:
+                pass
+        return None
+
+    @property
+    def success(self):
+        return True
+
+    def execute_command(self, command, arguments=None):
+        return self.execute_powershell(command)
+
+    def execute_powershell(self, script, arguments=None):
+        script_bytes = script.encode('utf-8')
+
+        result = self.gateway_client.remote_exec(
+            token=self.host.tunnel_token,
+            script=script_bytes,
+        )
+
+        if result is None:
+            fallback = self._get_fallback_client()
+            if fallback:
+                return fallback.execute_powershell(script)
+            from utils.winrm_client import WinrmResult
+            return WinrmResult(
+                status_code=1,
+                std_out='',
+                std_err='Gateway不可用且无备用连接方式'
+            )
+
+        from utils.winrm_client import WinrmResult
+        stdout = ''
+        stderr = ''
+        exit_code = 1
+
+        if result.get('success'):
+            data = result.get('data', {})
+            if isinstance(data, dict):
+                stdout = data.get('stdout', '')
+                stderr = data.get('stderr', '')
+                exit_code = data.get('exit_code', 1)
+                if isinstance(stdout, bytes):
+                    stdout = stdout.decode('utf-8', errors='ignore')
+                if isinstance(stderr, bytes):
+                    stderr = stderr.decode('utf-8', errors='ignore')
+
+        return WinrmResult(
+            status_code=exit_code,
+            std_out=stdout,
+            std_err=stderr,
+        )
+
+    def create_user(self, username, password, description=None, group=None):
+        from utils.winrm_client import _escape_ps_string
+        safe_user = _escape_ps_string(username)
+        safe_pass = _escape_ps_string(password)
+        safe_desc = _escape_ps_string(description or '')
+
+        script = f'''
+$pw = ConvertTo-SecureString "{safe_pass}" -AsPlainText -Force
+New-LocalUser -Name "{safe_user}" -Password $pw -Description "{safe_desc}" -ErrorAction Stop
+Add-LocalGroupMember -Group "Users" -Member "{safe_user}" -ErrorAction Stop
+'''
+        if group:
+            safe_group = _escape_ps_string(group)
+            script += f'Add-LocalGroupMember -Group "{safe_group}" -Member "{safe_user}" -ErrorAction Stop\n'
+
+        result = self.execute_powershell(script)
+        self.add_to_remote_users(username)
+        return result
+
+    def delete_user(self, username):
+        from utils.winrm_client import _escape_ps_string
+        safe_user = _escape_ps_string(username)
+        script = f'Remove-LocalUser -Name "{safe_user}" -ErrorAction Stop'
+        return self.execute_powershell(script)
+
+    def enable_user(self, username):
+        from utils.winrm_client import _escape_ps_string
+        safe_user = _escape_ps_string(username)
+        script = f'Enable-LocalUser -Name "{safe_user}" -ErrorAction Stop'
+        return self.execute_powershell(script)
+
+    def disabled_user(self, username):
+        from utils.winrm_client import _escape_ps_string
+        safe_user = _escape_ps_string(username)
+        script = f'Disable-LocalUser -Name "{safe_user}" -ErrorAction Stop'
+        return self.execute_powershell(script)
+
+    def reset_password(self, username, password):
+        from utils.winrm_client import _escape_ps_string
+        safe_user = _escape_ps_string(username)
+        safe_pass = _escape_ps_string(password)
+        script = f'''
+$pw = ConvertTo-SecureString "{safe_pass}" -AsPlainText -Force
+Set-LocalUser -Name "{safe_user}" -Password $pw
+'''
+        result = self.execute_powershell(script)
+        if result.status_code == 0:
+            self.add_to_remote_users(username)
+        return result
+
+    def add_to_remote_users(self, username):
+        from utils.winrm_client import _escape_ps_string
+        safe_user = _escape_ps_string(username)
+        script = (
+            f'Add-LocalGroupMember -Group "Remote Desktop Users" '
+            f'-Member "{safe_user}" -ErrorAction SilentlyContinue'
+        )
+        return self.execute_powershell(script)
 
 
 class HostGroup(models.Model):

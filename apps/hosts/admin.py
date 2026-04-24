@@ -99,11 +99,11 @@ class HostAdmin(ProviderDataIsolationMixin, admin.ModelAdmin):
     """
 
     form = HostAdminForm
-    list_display = ('name', 'hostname', 'port', 'username', 'host_type', 'status', 'created_at', 'created_by')
-    list_filter = ('status', 'host_type', 'created_at', 'use_ssl')
+    list_display = ('name', 'hostname', 'connection_type', 'tunnel_status', 'status', 'created_at', 'created_by')
+    list_filter = ('status', 'host_type', 'connection_type', 'tunnel_status', 'created_at', 'use_ssl')
     search_fields = ('name', 'hostname', 'username')
     ordering = ('-created_at',)
-    readonly_fields = ('created_at', 'updated_at', 'created_by')
+    readonly_fields = ('created_at', 'updated_at', 'created_by', 'tunnel_connected_at', 'tunnel_last_seen_at', 'tunnel_client_ip', 'tunnel_client_version')
     filter_horizontal = ('providers',)
 
     fieldsets = (
@@ -116,6 +116,16 @@ class HostAdmin(ProviderDataIsolationMixin, admin.ModelAdmin):
         }),
         ('主机信息', {
             'fields': ('host_type', 'os_version', 'status', 'description')
+        }),
+        ('隧道配置', {
+            'fields': (
+                'tunnel_token', 'tunnel_status',
+                'tunnel_connected_at', 'tunnel_last_seen_at',
+                'tunnel_client_version', 'tunnel_client_ip',
+                'tunnel_public_key',
+            ),
+            'classes': ('collapse',),
+            'description': '隧道模式相关字段，当连接类型为"隧道模式"时使用'
         }),
         ('权限分配', {
             'fields': ('providers',),

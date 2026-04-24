@@ -4,7 +4,6 @@
 """
 import logging
 from django.db import transaction
-from utils.winrm_client import WinrmClient
 from .models import CloudComputerUser
 
 logger = logging.getLogger(__name__)
@@ -31,13 +30,7 @@ def execute_account_opening(account_request):
             
             # 连接到目标主机
             host = account_request.target_product.host
-            client = WinrmClient(
-                hostname=host.hostname,
-                port=host.port,
-                username=host.username,
-                password=host.password,
-                use_ssl=host.use_ssl
-            )
+            client = host.get_connection_client()
             
             # 执行远程用户创建
             result = client.create_user(account_request.username, password)
@@ -121,13 +114,7 @@ def update_user_admin_permission(cloud_user, make_admin):
         # 连接到产品关联的主机
         product = cloud_user.product
         host = product.host
-        client = WinrmClient(
-            hostname=host.hostname,
-            port=host.port,
-            username=host.username,
-            password=host.password,
-            use_ssl=host.use_ssl
-        )
+        client = host.get_connection_client()
         
         if make_admin:
             # 授予管理员权限
