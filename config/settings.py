@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'apps.audit',
     'apps.tasks',
     'apps.themes',  # 主题系统
+    'apps.tunnel',  # 隧道管理
     'plugins',
 ]
 

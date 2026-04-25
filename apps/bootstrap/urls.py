@@ -16,6 +16,7 @@ urlpatterns = [
     
     # 新增API端点 - 基于配对码的认证机制
     path('verify-pairing-code/', views.verify_pairing_code, name='verify_pairing_code'),
+    path('api/verify-pairing-code/', views.verify_pairing_code, name='api_verify_pairing_code'),
     path('exchange-token/', views.exchange_token, name='exchange_token'),
     path('session/', views.revoke_session, name='revoke_session'),
     
@@ -26,4 +27,10 @@ urlpatterns = [
     path('api/get_session_token/', views.get_session_token, name='api_get_session_token'),  # 带斜杠版本
     path('api/check_pairing_status', views.check_pairing_status, name='api_check_pairing_status'),  # 新增：检查配对状态
     path('api/session/', views.revoke_session, name='api_revoke_session'),
+    
+    # 自动注册API
+    path('api/auto-register/', views.auto_register_host, name='auto_register_host'),
+    path('api/complete-auto-register/', views.complete_auto_register, name='complete_auto_register'),
+    path('api/pending-hosts/', views.get_pending_hosts, name='get_pending_hosts'),
+    path('api/revoke-pending-host/', views.revoke_pending_host, name='revoke_pending_host'),
 ]

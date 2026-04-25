@@ -7,13 +7,6 @@ class Host(models.Model):
     """
     主机模型
     """
-    HOST_TYPE_CHOICES = [
-        ('server', '服务器'),
-        ('workstation', '工作站'),
-        ('laptop', '笔记本'),
-        ('desktop', '台式机'),
-    ]
-    
     CONNECTION_TYPE_CHOICES = [
         ('winrm', 'WinRM'),
         ('ssh', 'SSH'),
@@ -42,7 +35,6 @@ class Host(models.Model):
     use_ssl = models.BooleanField(default=False, verbose_name='使用SSL')
     username = models.CharField(max_length=100, verbose_name='用户名')
     _password = models.CharField(max_length=255, verbose_name='密码', db_column='password')  # 加密存储
-    host_type = models.CharField(max_length=20, choices=HOST_TYPE_CHOICES, verbose_name='主机类型')
     os_version = models.CharField(max_length=100, blank=True, verbose_name='操作系统版本')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='offline', verbose_name='状态')
     description = models.TextField(blank=True, verbose_name='描述')

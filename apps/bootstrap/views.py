@@ -22,6 +22,101 @@ logger = logging.getLogger(__name__)
 
 @csrf_exempt
 @require_http_methods(["POST"])
+def revoke_pending_host(request):
+    """
+    吊销待验证主机
+    删除InitialToken和关联的Host记录
+    """
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        token = data.get('token')
+        
+        if not token:
+            return JsonResponse({
+                'success': False,
+                'error': 'Token is required'
+            }, status=400)
+        
+        try:
+            initial_token = InitialToken.objects.get(token=token)
+            host = initial_token.host
+            
+            logger.info(f"吊销主机: {host.hostname} (Token: {token[:10]}...)")
+            
+            initial_token.delete()
+            
+            host.delete()
+            
+            logger.info(f"主机 {host.hostname} 及其令牌已成功吊销")
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'主机 {host.hostname} 已成功吊销'
+            })
+            
+        except InitialToken.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Token not found'
+            }, status=404)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON in request body'
+        }, status=400)
+    except Exception as e:
+        logger.error(f"Error revoking pending host: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': 'Failed to revoke pending host'
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def get_pending_hosts(request):
+    """
+    获取待验证的主机列表
+    返回所有状态为ISSUED的InitialToken
+    """
+    try:
+        from apps.hosts.models import Host
+        
+        current_time = timezone.now()
+        pending_tokens = InitialToken.objects.filter(
+            status='ISSUED',
+            expires_at__gt=current_time
+        ).select_related('host').order_by('-created_at')
+        
+        hosts = []
+        for token in pending_tokens:
+            if token.host:
+                hosts.append({
+                    'token': token.token,
+                    'hostname': token.host.hostname,
+                    'host_id': token.host.id,
+                    'created_at': token.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'expires_at': token.expires_at.strftime('%Y-%m-%d %H:%M:%S')
+                })
+        
+        return JsonResponse({
+            'success': True,
+            'data': {
+                'hosts': hosts
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in get_pending_hosts: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': 'Failed to get pending hosts'
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
 @login_required
 @permission_required('bootstrap.add_initialtoken', raise_exception=True)
 def create_initial_token(request):
@@ -106,61 +201,104 @@ def create_initial_token(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 def verify_pairing_code(request):
-    """配对码验证接口 - 简化的认证机制"""
+    """配对码验证接口 - 简化的认证机制
+    
+    支持两种参数方式：
+    1. 通过 host_id 和 pairing_code 验证
+    2. 通过 token 和 pairing_code 验证
+    """
     try:
         data = json.loads(request.body.decode('utf-8'))
         host_id = data.get('host_id')
+        token = data.get('token')
         pairing_code = data.get('pairing_code')
         
-        if not host_id or not pairing_code:
+        if not pairing_code:
             return JsonResponse({
                 'success': False,
-                'error': 'Host ID and pairing code are required'
+                'error': 'Pairing code is required'
+            }, status=400)
+        
+        if not host_id and not token:
+            return JsonResponse({
+                'success': False,
+                'error': 'Either host_id or token is required'
             }, status=400)
         
         # 查找对应的初始令牌
         try:
-            initial_tokens = InitialToken.objects.filter(
-                host_id=host_id,
-                status='ISSUED',  # 只处理已签发但未配对的令牌
-                expires_at__gt=timezone.now()
-            )
-            
-            if not initial_tokens.exists():
-                return JsonResponse({
-                    'success': False,
-                    'error': 'No valid initial token found for this host'
-                }, status=404)
-            
-            # 尝试验证配对码
-            verified = False
-            for token_obj in initial_tokens:
-                logger.info(f"验证配对码: token={token_obj.token[:10]}..., host_id={token_obj.host.id}")
-                
-                if token_obj.verify_pairing_code(pairing_code):
-                    verified = True
-                    logger.info(f"配对码验证成功: {pairing_code}")
-                    break
-                else:
-                    logger.info(f"配对码验证失败: {pairing_code}")
-            
-            if verified:
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Pairing code verification successful'
-                })
+            if token:
+                # 通过 token 查找
+                try:
+                    token_obj = InitialToken.objects.get(
+                        token=token,
+                        status='ISSUED',
+                        expires_at__gt=timezone.now()
+                    )
+                    
+                    logger.info(f"通过token验证配对码: token={token[:10]}..., host_id={token_obj.host.id}")
+                    
+                    if token_obj.verify_pairing_code(pairing_code):
+                        logger.info(f"配对码验证成功: {pairing_code}")
+                        return JsonResponse({
+                            'success': True,
+                            'message': 'Pairing code verification successful'
+                        })
+                    else:
+                        logger.info(f"配对码验证失败: {pairing_code}")
+                        return JsonResponse({
+                            'success': False,
+                            'error': 'Invalid or expired pairing code'
+                        }, status=400)
+                        
+                except InitialToken.DoesNotExist:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'No valid initial token found'
+                    }, status=404)
             else:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Invalid or expired pairing code'
-                }, status=400)
+                # 通过 host_id 查找
+                initial_tokens = InitialToken.objects.filter(
+                    host_id=host_id,
+                    status='ISSUED',
+                    expires_at__gt=timezone.now()
+                )
+                
+                if not initial_tokens.exists():
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'No valid initial token found for this host'
+                    }, status=404)
+                
+                # 尝试验证配对码
+                verified = False
+                for token_obj in initial_tokens:
+                    logger.info(f"验证配对码: token={token_obj.token[:10]}..., host_id={token_obj.host.id}")
+                    
+                    if token_obj.verify_pairing_code(pairing_code):
+                        verified = True
+                        logger.info(f"配对码验证成功: {pairing_code}")
+                        break
+                    else:
+                        logger.info(f"配对码验证失败: {pairing_code}")
+                
+                if verified:
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Pairing code verification successful'
+                    })
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Invalid or expired pairing code'
+                    }, status=400)
                 
         except Exception as e:
             logger.error(f"Error verifying pairing code: {str(e)}", exc_info=True)
-        return JsonResponse({
-            'success': False,
-            'error': 'Pairing code verification failed'
-        }, status=500)
+            return JsonResponse({
+                'success': False,
+                'error': 'Pairing code verification failed'
+            }, status=500)
         
     except json.JSONDecodeError:
         return JsonResponse({
@@ -660,6 +798,160 @@ def revoke_session(request):
         return JsonResponse({
             'success': False,
             'error': 'Failed to revoke session'
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def complete_auto_register(request):
+    """
+    完成自动注册
+    h_side_init.exe验证成功后调用此API创建主机记录
+    """
+    try:
+        import json
+        from apps.hosts.models import Host
+        
+        data = json.loads(request.body.decode('utf-8'))
+        
+        token = data.get('token', '')
+        hostname = data.get('hostname', '')
+        
+        if not token or not hostname:
+            return JsonResponse({
+                'success': False,
+                'error': 'token and hostname are required'
+            }, status=400)
+        
+        # 检查是否已存在同名主机
+        existing_host = Host.objects.filter(hostname=hostname).first()
+        if existing_host:
+            host = existing_host
+            host.status = 'offline'
+            host.save()
+            logger.info(f"主机 {hostname} 已存在，更新状态")
+        else:
+            # 创建新主机
+            host = Host.objects.create(
+                name=hostname,
+                hostname=hostname,
+                connection_type='tunnel',
+                username='placeholder',
+                password='placeholder',
+                status='offline',
+                description='自动注册主机'
+            )
+            logger.info(f"自动创建新主机: {hostname}")
+        
+        # 创建InitialToken
+        from datetime import timedelta
+        import secrets
+        
+        expires_at = timezone.now() + timedelta(hours=24)
+        initial_token = InitialToken.objects.create(
+            token=token,
+            host=host,
+            expires_at=expires_at,
+            status='ISSUED'
+        )
+        
+        # 生成配对码
+        pairing_code = initial_token.generate_pairing_code()
+        
+        return JsonResponse({
+            'success': True,
+            'data': {
+                'host_id': host.id,
+                'hostname': host.hostname,
+                'pairing_code': pairing_code,
+                'token': initial_token.token
+            }
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON in request body'
+        }, status=400)
+    except Exception as e:
+        logger.error(f"Error in complete_auto_register: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': 'Failed to complete auto register'
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def auto_register_host(request):
+    """
+    自动注册主机接口
+    只生成预注册token，不创建主机记录
+    主机记录在h_side_init.exe完成验证后创建
+    """
+    try:
+        import json
+        import secrets
+        from datetime import timedelta
+        
+        # 支持 GET 和 POST 两种方式
+        if request.method == 'GET':
+            hostname = request.GET.get('hostname', '')
+        else:
+            data = json.loads(request.body.decode('utf-8'))
+            hostname = data.get('hostname', '')
+        
+        # 验证必填字段
+        if not hostname:
+            return JsonResponse({
+                'success': False,
+                'error': 'hostname is required'
+            }, status=400)
+        
+        # 生成预注册token（不创建主机记录）
+        token = secrets.token_urlsafe(32)
+        expires_at = timezone.now() + timedelta(hours=24)
+        
+        # 构建配置数据（供h_side_init.exe使用）
+        current_site = request.build_absolute_uri('/').rstrip('/')
+        secret_data = {
+            "c_side_url": current_site,
+            "token": token,
+            "hostname": hostname,
+            "generated_at": timezone.now().isoformat(),
+            "expires_at": expires_at.isoformat(),
+            "auto_register": True  # 标记为自动注册模式
+        }
+        
+        import base64
+        json_str = json.dumps(secret_data, ensure_ascii=False)
+        encoded_bytes = base64.b64encode(json_str.encode('utf-8'))
+        encoded_str = encoded_bytes.decode('utf-8')
+        
+        # 生成 PowerShell 脚本（下载并运行）
+        download_url = "https://zasca.cc.cd/zascateam/HostInitBash/releases/latest/download/h_side_init.exe"
+        script = f'''$exe = "$env:TEMP\\h_side_init.exe"
+Invoke-WebRequest -Uri "{download_url}" -OutFile $exe -UseBasicParsing
+& $exe "{encoded_str}"'''
+        
+        return JsonResponse({
+            'success': True,
+            'data': {
+                'script': script,
+                'secret': encoded_str
+            }
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON in request body'
+        }, status=400)
+    except Exception as e:
+        logger.error(f"Error in auto_register_host: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': 'Failed to generate register script'
         }, status=500)
 
 

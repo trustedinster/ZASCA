@@ -100,7 +100,7 @@ class HostAdmin(ProviderDataIsolationMixin, admin.ModelAdmin):
 
     form = HostAdminForm
     list_display = ('name', 'hostname', 'connection_type', 'tunnel_status', 'status', 'created_at', 'created_by')
-    list_filter = ('status', 'host_type', 'connection_type', 'tunnel_status', 'created_at', 'use_ssl')
+    list_filter = ('status', 'connection_type', 'tunnel_status', 'created_at', 'use_ssl')
     search_fields = ('name', 'hostname', 'username')
     ordering = ('-created_at',)
     readonly_fields = ('created_at', 'updated_at', 'created_by', 'tunnel_connected_at', 'tunnel_last_seen_at', 'tunnel_client_ip', 'tunnel_client_version')
@@ -115,7 +115,7 @@ class HostAdmin(ProviderDataIsolationMixin, admin.ModelAdmin):
             'description': '请输入主机的认证信息'
         }),
         ('主机信息', {
-            'fields': ('host_type', 'os_version', 'status', 'description')
+            'fields': ('os_version', 'status', 'description')
         }),
         ('隧道配置', {
             'fields': (
@@ -154,8 +154,8 @@ class HostAdmin(ProviderDataIsolationMixin, admin.ModelAdmin):
         为提供商简化过滤器
         """
         if is_provider(request.user):
-            return ('status', 'host_type', 'created_at')
-        return ('status', 'host_type', 'created_at', 'use_ssl')
+            return ('status', 'created_at')
+        return ('status', 'created_at', 'use_ssl')
 
     def get_fieldsets(self, request: HttpRequest, obj=None):  # type: ignore
         """
@@ -186,6 +186,9 @@ class HostAdmin(ProviderDataIsolationMixin, admin.ModelAdmin):
             path('<int:object_id>/revoke-admin/<int:user_id>/',
                  self.admin_site.admin_view(self.revoke_admin),
                  name='hosts_host_revoke_admin'),
+            path('quick-deploy/<int:host_id>/',
+                 self.admin_site.admin_view(self.quick_deploy),
+                 name='hosts_host_quick_deploy'),
         ]
         return custom_urls + urls
 
@@ -300,6 +303,119 @@ class HostAdmin(ProviderDataIsolationMixin, admin.ModelAdmin):
         extra_context = extra_context or {}
         extra_context['show_deploy_button'] = True
         return super().change_view(request, object_id, form_url, extra_context)
+    
+    def changelist_view(self, request, extra_context=None):
+        """重写changelist_view以添加一键部署按钮"""
+        extra_context = extra_context or {}
+        extra_context['show_quick_deploy_button'] = True
+        return super().changelist_view(request, extra_context)
+    
+    def quick_deploy(self, request, host_id):
+        """快速部署接口 - 用于列表页面的部署按钮"""
+        import logging
+        import secrets
+        import json
+        import base64
+        from apps.bootstrap.models import InitialToken
+        
+        logger = logging.getLogger(__name__)
+        
+        try:
+            host = Host.objects.get(pk=host_id)
+            user = request.user
+            
+            logger.info(f"用户 {user.username} 请求为主机 {host.name}(ID: {host.id}) 快速部署")
+            
+            current_time = timezone.now()
+            valid_tokens = InitialToken.objects.filter(
+                host=host,
+                status__in=['ISSUED', 'PAIRED'],
+                expires_at__gt=current_time
+            ).order_by('-created_at')
+            
+            if valid_tokens.exists():
+                existing_token = valid_tokens.first()
+                if existing_token is None:
+                    raise ValueError("Failed to get existing token despite exists() check")
+                logger.info(f"发现主机 {host.name} 存在有效的AccessToken (状态: {existing_token.status})")
+                initial_token = existing_token
+                created = False
+                token_message = "复用现有引导令牌"
+                pairing_code = initial_token.generate_pairing_code()
+            else:
+                logger.info(f"主机 {host.name} 不存在有效的AccessToken，生成新的令牌")
+                token = secrets.token_urlsafe(32)
+                expires_at = current_time + timedelta(hours=24)
+                
+                initial_token, created = InitialToken.objects.get_or_create(
+                    token=token,
+                    defaults={
+                        'host': host,
+                        'expires_at': expires_at,
+                        'status': 'ISSUED'
+                    }
+                )
+                token_message = "新引导令牌已生成"
+                logger.info(f"为主机 {host.name} 成功生成新的AccessToken")
+                pairing_code = initial_token.generate_pairing_code()
+            
+            try:
+                current_site = request.build_absolute_uri('/')
+                
+                secret_data = {
+                    "c_side_url": current_site.rstrip('/'),
+                    "token": initial_token.token,
+                    "host_id": str(host.id),
+                    "hostname": host.hostname,
+                    "generated_at": current_time.isoformat(),
+                    "expires_at": initial_token.expires_at.isoformat()
+                }
+                
+                json_str = json.dumps(secret_data, ensure_ascii=False)
+                encoded_bytes = base64.b64encode(json_str.encode('utf-8'))
+                encoded_str = encoded_bytes.decode('utf-8')
+                
+                deploy_command = f'.\\h_side_init.exe "{encoded_str}"'
+                
+                logger.info(f"成功为主机 {host.name} 生成快速部署命令")
+                
+                return JsonResponse({
+                    'success': True,
+                    'deploy_command': deploy_command,
+                    'secret': encoded_str,
+                    'pairing_code': pairing_code,
+                    'pairing_code_expiry': (
+                        initial_token.pairing_code_expires_at.isoformat()
+                        if initial_token.pairing_code_expires_at else None
+                    ),
+                    'expires_at': initial_token.expires_at.isoformat(),
+                    'message': f'{token_message}，将在24小时后过期',
+                    'token_id': initial_token.token,
+                    'token_status': initial_token.status,
+                    'host_name': host.name,
+                    'host_id': host.id,
+                    'created_new': created
+                })
+                
+            except Exception as encode_error:
+                logger.error(f"编码部署命令时发生错误: {str(encode_error)}", exc_info=True)
+                return JsonResponse({
+                    'success': False,
+                    'error': f'编码部署命令失败: {str(encode_error)}'
+                }, status=500)
+                
+        except Host.DoesNotExist:
+            logger.warning(f"用户 {request.user.username} 尝试为主机ID {host_id} 快速部署，但主机不存在")
+            return JsonResponse({
+                'success': False,
+                'error': '主机不存在'
+            }, status=404)
+        except Exception as e:
+            logger.error(f"快速部署时发生未预期错误: {str(e)}", exc_info=True)
+            return JsonResponse({
+                'success': False,
+                'error': f'快速部署失败: {str(e)}'
+            }, status=500)
 
     def deploy_command_button(self, obj):
         """部署命令按钮 - 现在主要通过JS在工具栏中添加"""

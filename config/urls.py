@@ -16,8 +16,9 @@ urlpatterns = [
     path('accounts/', include('apps.accounts.urls')),
     path('operations/', include('apps.operations.urls')),
     path('certificates/', include('apps.certificates.urls')),
-    # path('bootstrap/', include('apps.bootstrap.urls')),  # 已隐藏主机引导系统
+    path('bootstrap/', include('apps.bootstrap.urls')),
     path('audit/', include('apps.audit.urls')),
+    path('tunnel/', include('apps.tunnel.urls')),
     path('', include('apps.dashboard.urls')),
     # 处理404页面
     path('404/', TemplateView.as_view(template_name='errors/404.html'), name='404'),
