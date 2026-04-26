@@ -72,12 +72,6 @@ class Migration(migrations.Migration):
                 "ordering": ["display_order", "name"],
             },
         ),
-        migrations.AddIndex(
-            model_name="product",
-            index=models.Index(
-                fields=["product_group"], name="operations__product_981a27_idx"
-            ),
-        ),
         migrations.AddField(
             model_name="productgroup",
             name="auto_assign_providers",
@@ -100,6 +94,12 @@ class Migration(migrations.Migration):
                 related_name="products",
                 to="operations.productgroup",
                 verbose_name="产品组",
+            ),
+        ),
+        migrations.AddIndex(
+            model_name="product",
+            index=models.Index(
+                fields=["product_group"], name="operations__product_981a27_idx"
             ),
         ),
         migrations.AddIndex(
