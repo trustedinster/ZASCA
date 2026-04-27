@@ -44,10 +44,7 @@
     font-weight: var(--font-weight-bold);
     line-height: 1;
     margin-bottom: var(--spacing-4);
-    background: linear-gradient(135deg, var(--warning-color) 0%, var(--accent-color) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--accent-color);
     animation: errorCodePulse 2s var(--ease-default) infinite;
   }
 
@@ -129,6 +126,40 @@
       opacity: 1;
       transform: translateX(0);
     }
+  }
+
+  .error-suggestion-box {
+    background: var(--md-sys-color-info-container);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-4);
+    margin-bottom: var(--spacing-6);
+    text-align: left;
+    animation: errorInfoSlideIn 0.4s var(--ease-out) 0.5s both;
+  }
+
+  .error-suggestion-box .info-title {
+    font-weight: var(--font-weight-semibold);
+    color: var(--md-sys-color-on-info-container);
+    margin-bottom: var(--spacing-2);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+  }
+
+  .error-suggestion-box .info-title .material-icons {
+    font-size: 20px !important;
+    opacity: 1 !important;
+    color: var(--md-sys-color-on-info-container);
+  }
+
+  .error-suggestion-box ul {
+    margin: 0;
+    padding-left: var(--spacing-4);
+    color: var(--md-sys-color-on-info-container);
+  }
+
+  .error-suggestion-box ul li {
+    margin-bottom: var(--spacing-1);
   }
 
   .error-request-id {
@@ -246,6 +277,18 @@
       <strong>请求ID：</strong>{{ request_id }}
     </div>
     {% endif %}
+
+    <div class="error-suggestion-box">
+      <div class="info-title">
+        <i class="material-icons">lightbulb</i>
+        <span>解决建议</span>
+      </div>
+      <ul>
+        <li>检查网址拼写是否正确</li>
+        <li>返回上一页，尝试其他链接</li>
+        <li>清除浏览器缓存后重试</li>
+      </ul>
+    </div>
 
     <div class="error-actions">
       <a href="{% url 'dashboard:index' %}" class="error-btn error-btn-primary">
