@@ -51,7 +51,7 @@ class RegisterView(CreateView):
         captcha_id, _ = geetest_utils._get_runtime_keys()
         context['GEETEST_ID'] = captcha_id
         # 获取注册场景的配置
-        captcha_provider, captcha_key = sc.get_captcha_config(scene='register')
+        captcha_provider, _, captcha_key = sc.get_captcha_config(scene='register')
         context['CAPTCHA_PROVIDER'] = captcha_provider
         # 仅在turnstile模式下提供turnstile的site key
         if captcha_provider == 'turnstile':
@@ -618,7 +618,7 @@ class ForgotPasswordView(TemplateView):
         captcha_id, _ = geetest_utils._get_runtime_keys()
         context['GEETEST_ID'] = captcha_id
         # 获取邮箱场景的配置
-        captcha_provider, captcha_key = sc.get_captcha_config(scene='email')
+        captcha_provider, _, captcha_key = sc.get_captcha_config(scene='email')
         context['CAPTCHA_PROVIDER'] = captcha_provider
         # 仅在turnstile模式下提供turnstile的site key
         if captcha_provider == 'turnstile':

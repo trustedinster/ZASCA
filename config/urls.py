@@ -19,6 +19,7 @@ urlpatterns = [
     path('bootstrap/', include('apps.bootstrap.urls')),
     path('audit/', include('apps.audit.urls')),
     path('tunnel/', include('apps.tunnel.urls')),
+    path('tickets/', include('apps.tickets.urls')),
     path('', include('apps.dashboard.urls')),
     # 处理404页面
     path('404/', TemplateView.as_view(template_name='errors/404.html'), name='404'),

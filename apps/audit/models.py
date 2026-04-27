@@ -37,6 +37,12 @@ class AuditLog(models.Model):
         ('remote_exec_result', '远程执行结果'),
         ('domain_bind', '域名绑定'),
         ('domain_unbind', '域名解绑'),
+        ('create_ticket', '创建工单'),
+        ('update_ticket', '更新工单'),
+        ('assign_ticket', '分配工单'),
+        ('change_ticket_status', '变更工单状态'),
+        ('close_ticket', '关闭工单'),
+        ('add_ticket_comment', '添加工单评论'),
     ]
 
     user = models.ForeignKey(

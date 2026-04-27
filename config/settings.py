@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'apps.tasks',
     'apps.themes',  # 主题系统
     'apps.tunnel',  # 隧道管理
+    'apps.tickets',  # 工单系统
     'plugins',
 ]
 

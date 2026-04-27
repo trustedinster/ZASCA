@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>工单状态更新</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #17a2b8; color: white; padding: 20px; text-align: center; }
+        .content { background: #f8f9fa; padding: 20px; margin: 20px 0; }
+        .ticket-info { background: white; padding: 15px; margin: 10px 0; border-left: 4px solid #17a2b8; }
+        .status-change { background: #e7f3ff; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .footer { text-align: center; color: #666; font-size: 12px; margin-top: 30px; }
+        .btn { display: inline-block; padding: 10px 20px; background: #17a2b8; color: white; text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>工单状态更新</h1>
+        </div>
+        <div class="content">
+            <p>您好 {{ ticket.creator.username }}，</p>
+            <p>您提交的工单状态已更新：</p>
+            
+            <div class="ticket-info">
+                <h3>{{ ticket.title }}</h3>
+                <p><strong>工单编号：</strong>{{ ticket.ticket_no }}</p>
+            </div>
+            
+            <div class="status-change">
+                <p><strong>状态变更：</strong></p>
+                <p>{{ old_status }} → <strong>{{ new_status }}</strong></p>
+            </div>
+            
+            <p style="text-align: center; margin-top: 30px;">
+                <a href="{{ site_url }}{% url 'tickets:ticket_detail' ticket.pk %}" class="btn">查看工单详情</a>
+            </p>
+        </div>
+        <div class="footer">
+            <p>此邮件由 ZASCA 工单系统自动发送</p>
+        </div>
+    </div>
+</body>
+</html>

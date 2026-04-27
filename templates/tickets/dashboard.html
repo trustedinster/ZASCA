@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+
+{% block title %}工单仪表盘 - ZASCA{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3 mb-0">
+                <i class="material-icons" style="vertical-align: middle;">dashboard</i>
+                工单仪表盘
+            </h1>
+            <p class="text-muted mb-0">工单统计概览</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'tickets:ticket_create' %}" class="btn btn-primary">
+                <i class="material-icons" style="font-size: 18px; vertical-align: middle;">add</i>
+                创建工单
+            </a>
+        </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-2 col-6 mb-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <h2 class="text-primary">{{ total_tickets }}</h2>
+                    <small class="text-muted">总工单数</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6 mb-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <h2 class="text-warning">{{ pending_count }}</h2>
+                    <small class="text-muted">待处理</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6 mb-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <h2 class="text-info">{{ processing_count }}</h2>
+                    <small class="text-muted">处理中</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6 mb-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <h2 class="text-success">{{ resolved_count }}</h2>
+                    <small class="text-muted">已解决</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6 mb-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <h2 class="text-secondary">{{ closed_count }}</h2>
+                    <small class="text-muted">已关闭</small>
+                </div>
+            </div>
+        </div>
+        {% if user.is_staff or user.is_superuser %}
+        <div class="col-md-2 col-6 mb-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <h2 class="text-danger">{{ overdue_count }}</h2>
+                    <small class="text-muted">已超时</small>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 优先级分布 -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">优先级分布</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="priorityChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">最近工单</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for ticket in tickets %}
+                        <a href="{% url 'tickets:ticket_detail' ticket.pk %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="font-monospace small text-primary">{{ ticket.ticket_no }}</span>
+                                    <span class="ms-2">{{ ticket.title|truncatechars:25 }}</span>
+                                </div>
+                                <span class="badge {{ ticket.status_badge_class }}">{{ ticket.get_status_display }}</span>
+                            </div>
+                        </a>
+                        {% empty %}
+                        <div class="list-group-item text-center py-4">
+                            <p class="text-muted mb-0">暂无工单</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 快速链接 -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">快速操作</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'tickets:my_tickets' %}" class="btn btn-outline-primary w-100">
+                                <i class="material-icons" style="font-size: 18px; vertical-align: middle;">confirmation_number</i>
+                                我的工单
+                            </a>
+                        </div>
+                        {% if user.is_staff or user.is_superuser %}
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'tickets:pending_tickets' %}" class="btn btn-outline-warning w-100">
+                                <i class="material-icons" style="font-size: 18px; vertical-align: middle;">pending_actions</i>
+                                待处理工单
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'tickets:ticket_list' %}" class="btn btn-outline-info w-100">
+                                <i class="material-icons" style="font-size: 18px; vertical-align: middle;">list</i>
+                                全部工单
+                            </a>
+                        </div>
+                        {% endif %}
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'tickets:ticket_create' %}" class="btn btn-outline-success w-100">
+                                <i class="material-icons" style="font-size: 18px; vertical-align: middle;">add</i>
+                                创建工单
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 优先级分布图表
+    const priorityCtx = document.getElementById('priorityChart').getContext('2d');
+    new Chart(priorityCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['紧急', '高', '中', '低'],
+            datasets: [{
+                data: [
+                    {{ priority_distribution.urgent }},
+                    {{ priority_distribution.high }},
+                    {{ priority_distribution.medium }},
+                    {{ priority_distribution.low }}
+                ],
+                backgroundColor: [
+                    '#dc3545',
+                    '#ffc107',
+                    '#0dcaf0',
+                    '#198754'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

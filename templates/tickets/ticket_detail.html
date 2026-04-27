@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ ticket.title }} - 工单详情 - ZASCA{% endblock %}
+
+{% block content %}
+<div class="container">
+    {% if forbidden %}
+    <div class="alert alert-danger">
+        <i class="material-icons" style="vertical-align: middle;">block</i>
+        您没有权限查看此工单。
+    </div>
+    <a href="{% url 'tickets:my_tickets' %}" class="btn btn-primary">返回我的工单</a>
+    {% else %}
+    <!-- 工单头部 -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'tickets:my_tickets' %}">我的工单</a></li>
+                    <li class="breadcrumb-item active">{{ ticket.ticket_no }}</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-2">{{ ticket.title }}</h1>
+            <div class="d-flex gap-2 mb-2">
+                <span class="badge {{ ticket.status_badge_class }}">{{ ticket.get_status_display }}</span>
+                <span class="badge {{ ticket.priority_badge_class }}">{{ ticket.get_priority_display }}</span>
+                {% if ticket.category %}
+                <span class="badge bg-info">{{ ticket.category.name }}</span>
+                {% endif %}
+                {% if ticket.is_overdue %}
+                <span class="badge bg-danger">已超时</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if ticket.status != 'closed' and ticket.status != 'rejected' %}
+                {% if user.is_staff or user.is_superuser or user == ticket.creator %}
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#closeModal">
+                    <i class="material-icons" style="font-size: 18px; vertical-align: middle;">close</i>
+                    关闭工单
+                </button>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 左侧：工单详情和评论 -->
+        <div class="col-md-8">
+            <!-- 工单信息卡片 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">工单详情</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-3 text-muted">工单编号</div>
+                        <div class="col-sm-9 font-monospace">{{ ticket.ticket_no }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3 text-muted">创建者</div>
+                        <div class="col-sm-9">{{ ticket.creator.username }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3 text-muted">处理人</div>
+                        <div class="col-sm-9">
+                            {% if ticket.assignee %}
+                            {{ ticket.assignee.username }}
+                            {% else %}
+                            <span class="text-muted">未分配</span>
+                            {% endif %}
+                            {% if user.is_staff or user.is_superuser %}
+                            <button type="button" class="btn btn-sm btn-outline-primary ms-2" data-bs-toggle="modal" data-bs-target="#assignModal">
+                                分配
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3 text-muted">创建时间</div>
+                        <div class="col-sm-9">{{ ticket.created_at|date:"Y-m-d H:i:s" }}</div>
+                    </div>
+                    {% if ticket.due_at %}
+                    <div class="row mb-3">
+                        <div class="col-sm-3 text-muted">截止时间</div>
+                        <div class="col-sm-9">
+                            {% if ticket.is_overdue %}
+                            <span class="text-danger">{{ ticket.due_at|date:"Y-m-d H:i:s" }} (已超时)</span>
+                            {% else %}
+                            {{ ticket.due_at|date:"Y-m-d H:i:s" }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if ticket.related_product %}
+                    <div class="row mb-3">
+                        <div class="col-sm-3 text-muted">关联产品</div>
+                        <div class="col-sm-9">{{ ticket.related_product.display_name }}</div>
+                    </div>
+                    {% endif %}
+                    {% if ticket.related_host %}
+                    <div class="row mb-3">
+                        <div class="col-sm-3 text-muted">关联主机</div>
+                        <div class="col-sm-9">{{ ticket.related_host.name }}</div>
+                    </div>
+                    {% endif %}
+                    <hr>
+                    <div class="mb-0">
+                        <h6>问题描述</h6>
+                        <p class="mb-0">{{ ticket.description|linebreaksbr }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 状态变更（管理员） -->
+            {% if user.is_staff or user.is_superuser %}
+            {% if ticket.status != 'closed' and ticket.status != 'rejected' %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">状态变更</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'tickets:ticket_status_update' ticket.pk %}">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                {{ status_form.status.label_tag }}
+                                {{ status_form.status }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ status_form.notes.label_tag }}
+                                {{ status_form.notes }}
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">更新</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+
+            <!-- 评论列表 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        评论/回复
+                        <span class="badge bg-secondary">{{ comments.count }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if comments %}
+                    <div class="list-group list-group-flush">
+                        {% for comment in comments %}
+                        <div class="list-group-item {% if comment.is_internal %}list-group-item-warning{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ comment.author.username }}</strong>
+                                    {% if comment.is_internal %}
+                                    <span class="badge bg-warning text-dark ms-1">内部</span>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">{{ comment.created_at|date:"Y-m-d H:i" }}</small>
+                            </div>
+                            <p class="mb-0 mt-2">{{ comment.content|linebreaksbr }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-3">暂无评论</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 添加评论 -->
+            {% if ticket.status != 'closed' and ticket.status != 'rejected' %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">添加评论</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'tickets:ticket_comment' ticket.pk %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            {{ comment_form.content }}
+                        </div>
+                        {% if user.is_staff or user.is_superuser %}
+                        <div class="mb-3 form-check">
+                            {{ comment_form.is_internal }}
+                            {{ comment_form.is_internal.label_tag }}
+                        </div>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="material-icons" style="font-size: 18px; vertical-align: middle;">send</i>
+                            提交评论
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 右侧：活动记录 -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">活动记录</h5>
+                </div>
+                <div class="card-body">
+                    {% if activities %}
+                    <div class="timeline">
+                        {% for activity in activities %}
+                        <div class="timeline-item mb-3 pb-3 border-bottom">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ activity.get_action_display }}</strong>
+                                <small class="text-muted">{{ activity.created_at|date:"m-d H:i" }}</small>
+                            </div>
+                            <p class="mb-0 text-muted">{{ activity.description }}</p>
+                            {% if activity.actor %}
+                            <small class="text-muted">操作人: {{ activity.actor.username }}</small>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">暂无活动记录</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分配模态框 -->
+    {% if user.is_staff or user.is_superuser %}
+    <div class="modal fade" id="assignModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">分配工单</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post" action="{% url 'tickets:ticket_assign' ticket.pk %}">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            {{ assign_form.assignee.label_tag }}
+                            {{ assign_form.assignee }}
+                        </div>
+                        <div class="mb-3">
+                            {{ assign_form.notes.label_tag }}
+                            {{ assign_form.notes }}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">分配</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 关闭模态框 -->
+    <div class="modal fade" id="closeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">关闭工单</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post" action="{% url 'tickets:ticket_close' ticket.pk %}">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <p>确定要关闭此工单吗？关闭后将无法继续处理。</p>
+                        <div class="mb-3">
+                            {{ close_form.satisfaction.label_tag }}
+                            {{ close_form.satisfaction }}
+                        </div>
+                        <div class="mb-3">
+                            {{ close_form.satisfaction_comment.label_tag }}
+                            {{ close_form.satisfaction_comment }}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-danger">关闭工单</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

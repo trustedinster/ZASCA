@@ -292,6 +292,20 @@
                         我拥有的云电脑
                     </a>
                 </li>
+                <li class="md-nav-item">
+                    <a class="md-nav-link" href="{% url 'tickets:my_tickets' %}">
+                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">confirmation_number</i>
+                        工单中心
+                    </a>
+                </li>
+                {% if user.is_staff or user.is_superuser %}
+                <li class="md-nav-item">
+                    <a class="md-nav-link" href="{% url 'tickets:pending_tickets' %}">
+                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">pending_actions</i>
+                        待处理工单
+                    </a>
+                </li>
+                {% endif %}
                 
                 <!-- 移动端用户菜单项 -->
                 {% if user.is_authenticated %}
