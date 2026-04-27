@@ -4,52 +4,259 @@
 {% block title %}{{ error_title }} - ZASCA{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card border-warning">
-                <div class="card-header bg-warning text-dark">
-                    <h4 class="card-title mb-0">
-                        <i class="material-icons" style="font-size: 1.2rem; vertical-align: middle; margin-right: 0.5rem;">search</i>
-                        {{ error_title }}
-                    </h4>
-                </div>
-                <div class="card-body">
-                    <div class="text-center mb-4">
-                        <i class="material-icons text-warning" style="font-size: 4rem;">help_outline</i>
-                    </div>
+<style>
+  .error-page-wrapper {
+    min-height: calc(100vh - 64px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+    padding: var(--spacing-8) 0;
+  }
 
-                    <p class="text-center text-muted fs-5">
-                        {{ error_message }}
-                    </p>
+  .error-card {
+    background: var(--bg-glass);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--glass-shadow-lg);
+    max-width: 600px;
+    width: 100%;
+    padding: var(--spacing-10) var(--spacing-8);
+    text-align: center;
+    animation: errorCardFadeIn 0.5s var(--ease-out);
+  }
 
-                    {% if request_path %}
-                    <div class="alert alert-secondary mt-3">
-                        <strong>请求路径：</strong> <code>{{ request_path }}</code>
-                    </div>
-                    {% endif %}
+  @keyframes errorCardFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
 
-                    {% if request_id %}
-                    <div class="alert alert-info">
-                        <strong>请求ID：</strong> {{ request_id }}
-                    </div>
-                    {% endif %}
+  .error-code-display {
+    font-size: 6rem;
+    font-weight: var(--font-weight-bold);
+    line-height: 1;
+    margin-bottom: var(--spacing-4);
+    background: linear-gradient(135deg, var(--warning-color) 0%, var(--accent-color) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: errorCodePulse 2s var(--ease-default) infinite;
+  }
 
-                    <hr>
+  @keyframes errorCodePulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.85;
+    }
+  }
 
-                    <div class="text-center">
-                        <a href="{% url 'dashboard:index' %}" class="btn btn-primary">
-                            <i class="material-icons" style="font-size: 1rem; vertical-align: middle; margin-right: 0.25rem;">home</i>
-                            返回首页
-                        </a>
-                        <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary ms-2">
-                            <i class="material-icons" style="font-size: 1rem; vertical-align: middle; margin-right: 0.25rem;">login</i>
-                            登录系统
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
+  .error-icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    border-radius: var(--radius-full);
+    background: var(--md-sys-color-warning-container);
+    margin-bottom: var(--spacing-6);
+    animation: errorIconBounce 0.6s var(--ease-bounce) 0.2s both;
+  }
+
+  @keyframes errorIconBounce {
+    from {
+      transform: scale(0);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+
+  .error-icon-wrapper .material-icons {
+    font-size: 40px !important;
+    opacity: 1 !important;
+    color: var(--md-sys-color-on-warning-container);
+  }
+
+  .error-title-text {
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-3);
+  }
+
+  .error-message-text {
+    font-size: var(--font-size-lg);
+    color: var(--text-secondary);
+    line-height: var(--line-height-relaxed);
+    margin-bottom: var(--spacing-6);
+  }
+
+  .error-path-display {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-3);
+    margin-bottom: var(--spacing-6);
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    word-break: break-all;
+    animation: errorInfoSlideIn 0.4s var(--ease-out) 0.3s both;
+  }
+
+  .error-path-display strong {
+    font-family: var(--font-family);
+    display: block;
+    margin-bottom: var(--spacing-1);
+    color: var(--text-primary);
+  }
+
+  @keyframes errorInfoSlideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .error-request-id {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-3);
+    margin-bottom: var(--spacing-6);
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    animation: errorInfoSlideIn 0.4s var(--ease-out) 0.4s both;
+  }
+
+  .error-actions {
+    display: flex;
+    gap: var(--spacing-3);
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .error-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    padding: var(--spacing-3) var(--spacing-6);
+    border-radius: var(--radius-full);
+    font-weight: var(--font-weight-medium);
+    text-decoration: none;
+    transition: all var(--duration-normal) var(--ease-default);
+    cursor: pointer;
+    border: none;
+    font-size: var(--font-size-base);
+    min-height: 44px;
+  }
+
+  .error-btn .material-icons {
+    font-size: 20px !important;
+    opacity: 1 !important;
+  }
+
+  .error-btn-primary {
+    background: var(--primary-color);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.3);
+  }
+
+  .error-btn-primary:hover {
+    background: var(--primary-color-light);
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.4);
+    transform: translateY(-2px);
+    color: #ffffff;
+  }
+
+  .error-btn-secondary {
+    background: var(--secondary-color);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(var(--secondary-color-rgb), 0.3);
+  }
+
+  .error-btn-secondary:hover {
+    background: var(--secondary-color-light);
+    box-shadow: 0 4px 12px rgba(var(--secondary-color-rgb), 0.4);
+    transform: translateY(-2px);
+    color: #ffffff;
+  }
+
+  @media (max-width: 768px) {
+    .error-card {
+      padding: var(--spacing-6) var(--spacing-4);
+      margin: var(--spacing-4);
+    }
+
+    .error-code-display {
+      font-size: 4rem;
+    }
+
+    .error-title-text {
+      font-size: var(--font-size-2xl);
+    }
+
+    .error-actions {
+      flex-direction: column;
+    }
+
+    .error-btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
+
+<div class="error-page-wrapper">
+  <div class="error-card">
+    <div class="error-icon-wrapper">
+      <i class="material-icons">travel_explore</i>
     </div>
+
+    <div class="error-code-display">404</div>
+
+    <h1 class="error-title-text">{{ error_title }}</h1>
+
+    <p class="error-message-text">
+      {{ error_message }}
+    </p>
+
+    {% if request_path %}
+    <div class="error-path-display">
+      <strong>请求路径：</strong>
+      <code>{{ request_path }}</code>
+    </div>
+    {% endif %}
+
+    {% if request_id %}
+    <div class="error-request-id">
+      <strong>请求ID：</strong>{{ request_id }}
+    </div>
+    {% endif %}
+
+    <div class="error-actions">
+      <a href="{% url 'dashboard:index' %}" class="error-btn error-btn-primary">
+        <i class="material-icons">home</i>
+        <span>返回首页</span>
+      </a>
+      <a href="{% url 'accounts:login' %}" class="error-btn error-btn-secondary">
+        <i class="material-icons">login</i>
+        <span>登录系统</span>
+      </a>
+    </div>
+  </div>
 </div>
 {% endblock %}

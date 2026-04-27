@@ -322,6 +322,10 @@
   --md-sys-color-warning-container: rgba(var(--warning-color-rgb), 0.15);
   --md-sys-color-on-warning-container: #92400e;
   
+  /* MD3 信息色 */
+  --md-sys-color-info-container: rgba(var(--info-color-rgb), 0.15);
+  --md-sys-color-on-info-container: #1e40af;
+  
   /* MD3 成功色 */
   --md-sys-color-success: var(--success-color);
   --md-sys-color-success-container: rgba(var(--success-color-rgb), 0.15);
@@ -428,6 +432,10 @@
   
   --md-sys-color-warning-container: rgba(var(--warning-color-rgb), 0.2);
   --md-sys-color-on-warning-container: #fcd34d;
+  
+  /* MD3 信息色 - 深色模式 */
+  --md-sys-color-info-container: rgba(var(--info-color-rgb), 0.2);
+  --md-sys-color-on-info-container: #93c5fd;
   
   /* MD3 成功色 - 深色模式 */
   --md-sys-color-success: var(--success-color);
