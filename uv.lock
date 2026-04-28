@@ -403,6 +403,15 @@ wheels = [
 ]
 
 [[package]]
+name = "decorator"
+version = "5.2.1"
+source = { registry = "https://mirrors.aliyun.com/pypi/simple" }
+sdist = { url = "https://mirrors.aliyun.com/pypi/packages/43/fa/6d96a0978d19e17b68d634497769987b16c8f4cd0a7a05048bec693caa6b/decorator-5.2.1.tar.gz", hash = "sha256:65f266143752f734b0a7cc83c46f4618af75b8c5911b00ccb61d0ac9b6da0360" }
+wheels = [
+    { url = "https://mirrors.aliyun.com/pypi/packages/4e/8c/f3147f5c4b73e7550fe5f9352eaa956ae838d5c51eb58e7a25b9f3e2643b/decorator-5.2.1-py3-none-any.whl", hash = "sha256:d316bb415a2d9e2d2b3abcc4084c6502fc09240e292cd76a76afc106a1c8e04a" },
+]
+
+[[package]]
 name = "django"
 version = "4.2.27"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple" }
@@ -563,6 +572,29 @@ wheels = [
 ]
 
 [[package]]
+name = "gssapi"
+version = "1.11.1"
+source = { registry = "https://mirrors.aliyun.com/pypi/simple" }
+dependencies = [
+    { name = "decorator" },
+]
+sdist = { url = "https://mirrors.aliyun.com/pypi/packages/23/52/c1e90623c259a42ab0587078bb04f959867b970add46ff66750ead8fc7c5/gssapi-1.11.1.tar.gz", hash = "sha256:2049ee4b1d0c363163a1344b7282a363f9f4094e51d2c36de0cf01d4735e0ae2" }
+wheels = [
+    { url = "https://mirrors.aliyun.com/pypi/packages/d8/d8/dfd7632e42f3028b27fdae1dea0fd967bcee1d9164e0a9fa3946490e6c7a/gssapi-1.11.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:126352502e15dc42f786a4635e5fb4dc8ae4bbc89354e85ab094c478a9e49beb" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/0b/25/e668f8bfebdaf132b29a26bbc4cc50c5a624a83c5271e83e69c62c2ac5d3/gssapi-1.11.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:25b3bcf75a0dd5638f02f939a9c40d1c907682ccca69ea1d05ea81ad58ea1022" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/48/57/391fb8511e0e9bd2f86ed342ba65d1d1dbc0bd77d54f1f75ff4e4616df49/gssapi-1.11.1-cp310-cp310-win32.whl", hash = "sha256:e5d01ac02df8fe67c32cd1684c0954e935d50158ebb956fdffbf9aad7695a3b3" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/d3/bf/37a3359ba24d9e422094b749e031116e6613fd038ec0d4c633d210ba314e/gssapi-1.11.1-cp310-cp310-win_amd64.whl", hash = "sha256:0e8b4d76801f2a8f8e6d85746cb9048d47341c6706800b357c61ba09e4741c03" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/48/75/3cc18f2d084d19fbba38dc684588cf5f674c647e754f9cf1625bd78c39f8/gssapi-1.11.1-cp311-abi3-macosx_10_9_x86_64.whl", hash = "sha256:2298e5909a8f2d27c29352885a24e4026cfd3fa24fc38d4a0a3743fa5a3e7667" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/81/f9/ac0f8c43c209d56c89655f80cd4ae43379f88370d01a7e11f264f081eef5/gssapi-1.11.1-cp311-abi3-macosx_11_0_arm64.whl", hash = "sha256:5b60b1f8d8d3e36c025bd3494105de1dfccee578e8de001f423cc094468e3022" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/f8/97/f4ea9248bfdf5fcde2c5bf0bc0e573d212748724a32a5aa1002e11edb760/gssapi-1.11.1-cp311-abi3-win32.whl", hash = "sha256:9738fe0ba163c28ccf521de7520640bde4b135c1b6e87a5ac5a90435369e89c0" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/54/ca/7f839880baf7c365768884161c246a3b6201738722fc7581a995190ec431/gssapi-1.11.1-cp311-abi3-win_amd64.whl", hash = "sha256:96a102ad1ec266e2d843468bf03149982969fc70344f303f81ea20197b80d7a1" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/7b/79/9148636b75ca5741ddc9c57c4b256adec422e3a89bca14306d53b48caac9/gssapi-1.11.1-cp314-cp314t-macosx_10_15_x86_64.whl", hash = "sha256:82fba401e9514ad21749b8d8954e2de1c617b0a73204c8598ee84630e23c5810" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/ca/77/f34fd81bbccf2e682073964a1b1b0a383e70d02946e472f78881d50cec6f/gssapi-1.11.1-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:cb0250f27d288d4217d7f606d3b68ecb9a10fce9391106129cada96434a685b0" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/b2/34/733a6f3372040992befd1fe62288cafea9fe25acdcf8b663ec8a7857cb69/gssapi-1.11.1-cp314-cp314t-win32.whl", hash = "sha256:b17875d236b8b030a777ee3f3ece55f3d316a91937c37abbc771afe1493703cf" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/10/03/1b71feddb85f945101c3cdc07242805c5e9b48da546f8a922129ad8299e5/gssapi-1.11.1-cp314-cp314t-win_amd64.whl", hash = "sha256:da43c0e0ae84bb9f04c4e016eac6d3826c6357f827183042ba990ccedeeab052" },
+]
+
+[[package]]
 name = "idna"
 version = "3.11"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple" }
@@ -593,6 +625,20 @@ dependencies = [
 sdist = { url = "https://mirrors.aliyun.com/pypi/packages/b6/a5/607e533ed6c83ae1a696969b8e1c137dfebd5759a2e9682e26ff1b97740b/kombu-5.6.2.tar.gz", hash = "sha256:8060497058066c6f5aed7c26d7cd0d3b574990b09de842a8c5aaed0b92cc5a55" }
 wheels = [
     { url = "https://mirrors.aliyun.com/pypi/packages/fb/0f/834427d8c03ff1d7e867d3db3d176470c64871753252b21b4f4897d1fa45/kombu-5.6.2-py3-none-any.whl", hash = "sha256:efcfc559da324d41d61ca311b0c64965ea35b4c55cc04ee36e55386145dace93" },
+]
+
+[[package]]
+name = "krb5"
+version = "0.9.0"
+source = { registry = "https://mirrors.aliyun.com/pypi/simple" }
+sdist = { url = "https://mirrors.aliyun.com/pypi/packages/15/15/55a01be5f1816fe6d7d36fec4c6b2cb6f5264d289a015322562c582a81b7/krb5-0.9.0.tar.gz", hash = "sha256:4cdd2c85ff4770108edaf48fedf19888cf956ff374e2e97e40f8412b048caee6" }
+wheels = [
+    { url = "https://mirrors.aliyun.com/pypi/packages/7d/ed/473605378e398642d8f8262544774b6673178325e0166fe56ec7a7884d0a/krb5-0.9.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:b1bde451ddb3a1c064be1da967fa32b1976a06ca43969e9d80ed8b26506ac4e3" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/b4/96/00a11ef3118690cf3b3c6554127e26c16006525bf34b0e22d6b27dca3dd9/krb5-0.9.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:6e612e763304bfe4f6845f581030502327da2d0a19efccc840d7c051448ee209" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/1b/4e/0a35ae4821ca5f0491844d9343c816883b3218a265a4a95ecec66e76f239/krb5-0.9.0-cp311-abi3-macosx_10_9_x86_64.whl", hash = "sha256:7a021e869833bfed44ed4c9dfefd25813fab40a381ad4482b79ea36744545f62" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/41/32/d2a9d977d23425777c0c5722947e6f0bc80882c7de15038bd02f9269c01a/krb5-0.9.0-cp311-abi3-macosx_11_0_arm64.whl", hash = "sha256:2bca06e7ce1551f3eb7f674508bc34d9f44fa1c9056f24120878ec9ab8e430cb" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/7d/b9/fd0079f9208738bc09cf99208fc92cdf7d8b6a2a363af9a73256efa76399/krb5-0.9.0-cp314-cp314t-macosx_10_15_x86_64.whl", hash = "sha256:ea2ee73bb5aa7818ce50895fb29c276c7fe478c6eda121a5b66b0cc45fe2d42e" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/ca/9f/df4e24995e0fea7792e8ab152124c65ac845e00ddfb4dd8f7d22907d122b/krb5-0.9.0-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:f9da4558a47ec105a1a2c185bb4b2d1dd90b7c021e3116895171f913ef048d03" },
 ]
 
 [[package]]
@@ -1290,8 +1336,10 @@ dependencies = [
     { name = "django-bootstrap5" },
     { name = "django-cors-headers" },
     { name = "djangorestframework" },
+    { name = "gssapi" },
     { name = "idna" },
     { name = "kombu" },
+    { name = "krb5" },
     { name = "markdown" },
     { name = "msgpack" },
     { name = "packaging" },
@@ -1357,8 +1405,10 @@ requires-dist = [
     { name = "django-cors-headers", specifier = "==4.3.1" },
     { name = "djangorestframework", specifier = "==3.15.2" },
     { name = "flake8", marker = "extra == 'dev'" },
+    { name = "gssapi", specifier = ">=1.11.1" },
     { name = "idna", specifier = "==3.11" },
     { name = "kombu", specifier = "==5.6.2" },
+    { name = "krb5", specifier = ">=0.9.0" },
     { name = "markdown", specifier = "==3.10.1" },
     { name = "msgpack", specifier = ">=1.0.0" },
     { name = "packaging", specifier = "==26.0" },
