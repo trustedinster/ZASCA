@@ -4,12 +4,25 @@
 支持邮件通知和站内通知
 """
 
-from django.core.mail import send_mail
-from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 
-from apps.tasks.models import AsyncTask
+from apps.accounts.email_service import EmailService
+
+
+def _get_system_config():
+    """获取系统配置"""
+    from apps.dashboard.models import SystemConfig
+    try:
+        return SystemConfig.get_config()
+    except Exception:
+        return None
+
+
+def _get_site_url():
+    """获取站点URL"""
+    from django.conf import settings
+    return getattr(settings, 'SITE_URL', 'http://localhost:8000')
 
 
 def send_ticket_email(subject, template_name, context, recipient_list):
@@ -29,11 +42,35 @@ def send_ticket_email(subject, template_name, context, recipient_list):
     html_message = render_to_string(template_name, context)
     plain_message = strip_tags(html_message)
 
-    # 发送邮件
+    # 从系统配置获取邮件设置
+    config = _get_system_config()
+    if config and config.smtp_from_email:
+        from_email = config.smtp_from_email
+    else:
+        from_email = 'noreply@zasca.com'
+
+    # 使用 EmailService 发送邮件
+    if config:
+        try:
+            email_service = EmailService.from_system_config(config)
+            email_service.send_email(
+                to_emails=recipient_list,
+                subject=subject,
+                text_body=plain_message,
+                html_body=html_message,
+                from_email=from_email,
+            )
+            return
+        except Exception:
+            # 如果 EmailService 发送失败，回退到 Django 的 send_mail
+            pass
+
+    # 回退到 Django 的 send_mail
+    from django.core.mail import send_mail
     send_mail(
         subject=subject,
         message=plain_message,
-        from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@zasca.com'),
+        from_email=from_email,
         recipient_list=recipient_list,
         html_message=html_message,
         fail_silently=True
@@ -49,7 +86,7 @@ def notify_ticket_created(ticket):
     # 构建邮件上下文
     context = {
         'ticket': ticket,
-        'site_url': getattr(settings, 'SITE_URL', 'http://localhost:8000'),
+        'site_url': _get_site_url(),
     }
 
     # 通知处理人（如果有自动分配）
@@ -72,7 +109,7 @@ def notify_ticket_assigned(ticket, old_assignee=None):
 
     context = {
         'ticket': ticket,
-        'site_url': getattr(settings, 'SITE_URL', 'http://localhost:8000'),
+        'site_url': _get_site_url(),
         'old_assignee': old_assignee,
     }
 
@@ -97,7 +134,7 @@ def notify_ticket_status_changed(ticket, old_status, new_status):
 
     context = {
         'ticket': ticket,
-        'site_url': getattr(settings, 'SITE_URL', 'http://localhost:8000'),
+        'site_url': _get_site_url(),
         'old_status': old_status,
         'new_status': new_status,
     }
@@ -121,7 +158,7 @@ def notify_ticket_closed(ticket):
 
     context = {
         'ticket': ticket,
-        'site_url': getattr(settings, 'SITE_URL', 'http://localhost:8000'),
+        'site_url': _get_site_url(),
     }
 
     send_ticket_email(
@@ -156,7 +193,7 @@ def notify_new_comment(comment):
     context = {
         'ticket': ticket,
         'comment': comment,
-        'site_url': getattr(settings, 'SITE_URL', 'http://localhost:8000'),
+        'site_url': _get_site_url(),
     }
 
     send_ticket_email(
@@ -178,7 +215,7 @@ def notify_overdue_ticket(ticket):
 
     context = {
         'ticket': ticket,
-        'site_url': getattr(settings, 'SITE_URL', 'http://localhost:8000'),
+        'site_url': _get_site_url(),
     }
 
     send_ticket_email(

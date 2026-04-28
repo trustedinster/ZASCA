@@ -2,8 +2,61 @@
 
 {% block title %}我的工单 - ZASCA{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* 工单页面按钮样式 - 适配深色/浅色模式 */
+    .tickets-page a.btn-primary,
+    .tickets-page button.btn-primary,
+    .tickets-page .btn-primary {
+        background: linear-gradient(135deg, var(--primary-color, #1e3a5f), var(--primary-color-light, #2d5a8f)) !important;
+        background-color: var(--primary-color, #1e3a5f) !important;
+        color: #ffffff !important;
+        border: none !important;
+        box-shadow: var(--shadow-primary, 0 4px 14px rgba(30, 58, 95, 0.25));
+    }
+    
+    .tickets-page a.btn-primary:hover,
+    .tickets-page button.btn-primary:hover,
+    .tickets-page .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-primary, 0 4px 14px rgba(30, 58, 95, 0.25));
+        opacity: 0.9;
+    }
+    
+    .tickets-page a.btn-outline-primary,
+    .tickets-page button.btn-outline-primary,
+    .tickets-page .btn-outline-primary {
+        color: var(--primary-color, #1e3a5f) !important;
+        border: 1px solid var(--primary-color, #1e3a5f) !important;
+        background: transparent !important;
+    }
+    
+    .tickets-page a.btn-outline-primary:hover,
+    .tickets-page button.btn-outline-primary:hover,
+    .tickets-page .btn-outline-primary:hover {
+        background: var(--primary-color, #1e3a5f) !important;
+        color: #ffffff !important;
+    }
+    
+    .tickets-page a.btn-outline-secondary,
+    .tickets-page button.btn-outline-secondary,
+    .tickets-page .btn-outline-secondary {
+        color: var(--text-secondary, #475569) !important;
+        border: 1px solid var(--border-color, rgba(0,0,0,0.08)) !important;
+        background: transparent !important;
+    }
+    
+    .tickets-page a.btn-outline-secondary:hover,
+    .tickets-page button.btn-outline-secondary:hover,
+    .tickets-page .btn-outline-secondary:hover {
+        background: var(--bg-tertiary, #f1f5f9) !important;
+        color: var(--text-primary, #0f172a) !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container">
+<div class="container tickets-page">
     <div class="row mb-4">
         <div class="col-md-8">
             <h1 class="h3 mb-0">

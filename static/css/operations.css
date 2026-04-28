@@ -38,6 +38,7 @@
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
     border-color: var(--primary-color-light);
+    overflow: hidden;
   }
 }
 
@@ -504,7 +505,14 @@
 .table-responsive {
   overflow-x: auto;
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 隐藏滚动条但保留功能 */
+.table-responsive::-webkit-scrollbar {
+  height: 0;
+  width: 0;
 }
 
 /* ==================== 云电脑用户列表 (User Cards) ==================== */

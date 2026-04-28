@@ -113,6 +113,7 @@ body {
 .card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
+  overflow: hidden;
 }
 
 /* 毛玻璃卡片变体 */
@@ -847,4 +848,88 @@ body {
   background: rgba(15, 23, 42, 0.8);
   border-top-color: rgba(255, 255, 255, 0.1);
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* ==================== 模态框样式 (Modal) ==================== */
+.modal-content {
+  background-color: var(--surface-color);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.modal-header {
+  border-bottom-color: var(--border-color);
+  background-color: var(--surface-color);
+}
+
+.modal-title {
+  color: var(--text-primary);
+}
+
+.modal-footer {
+  border-top-color: var(--border-color);
+  background-color: var(--surface-color);
+}
+
+.btn-close {
+  filter: var(--btn-close-filter, none);
+}
+
+[data-theme="dark"] .modal-content {
+  background-color: var(--surface-color-elevated);
+  box-shadow: var(--shadow-xl);
+}
+
+[data-theme="dark"] .modal-header {
+  background-color: var(--surface-color-elevated);
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .modal-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .modal-footer {
+  background-color: var(--surface-color-elevated);
+  border-top-color: var(--border-color);
+}
+
+[data-theme="dark"] .btn-close {
+  --btn-close-filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+  background-color: var(--surface-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .form-label {
+  color: var(--text-secondary);
+}
+
+/* ==================== 主题感知按钮 (Theme Aware Buttons) ==================== */
+.theme-aware-btn.btn-primary {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-color-light));
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-primary);
+  border: 1px solid var(--primary-color);
+}
+
+[data-theme="dark"] .theme-aware-btn.btn-primary {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-color-light));
+  color: #0f172a;
+  box-shadow: 0 4px 14px 0 rgba(var(--primary-color-rgb), 0.45);
+}
+
+.theme-aware-btn.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-primary);
 }

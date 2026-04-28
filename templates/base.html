@@ -9,12 +9,10 @@
     <title>{% block title %}ZASCA{% endblock %}</title>
 
     <!-- CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Preload Material Icons Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link href="{% static 'vendor/bootstrap-5.1.3/css/bootstrap.min.css' %}" rel="stylesheet">
+
+    <!-- Material Icons Font -->
+    <link rel="stylesheet" href="{% static 'vendor/material-icons/material-icons.css' %}">
     
     <link rel="stylesheet" href="{% static 'css/theme.css' %}">
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
@@ -24,6 +22,16 @@
     <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
     
     <style>
+        /* Sticky Footer - 页脚始终在底部 */
+        .page-wrapper {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .page-wrapper main {
+            flex: 1 0 auto;
+        }
+
         /* 隐藏图标直到字体加载完成 - 防止闪烁 */
         .material-icons {
             font-display: block;
@@ -263,7 +271,7 @@
         }
     </style>
 </head>
-<body>
+<body class="page-wrapper">
     <!-- MD3导航栏 -->
     <nav class="md-navbar">
         <div class="md-navbar-container">
@@ -436,7 +444,7 @@
     </footer>
 
     <!-- JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'vendor/bootstrap-5.1.3/js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'js/base.js' %}"></script>
     {% block extra_js %}{% endblock %}
     

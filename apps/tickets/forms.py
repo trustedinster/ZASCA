@@ -2,6 +2,7 @@
 工单系统表单
 """
 from django import forms
+from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 

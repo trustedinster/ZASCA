@@ -230,7 +230,7 @@
   --text-primary: #f1f5f9;
   --text-secondary: #cbd5e1;
   --text-tertiary: #94a3b8;
-  --text-inverse: #0f172a;
+  --text-inverse: #ffffff;
 
   /* 边框颜色 - 深色模式 */
   --border-color: rgba(255, 255, 255, 0.1);
@@ -445,4 +445,23 @@
   /* MD3 错误色 - 深色模式 */
   --md-sys-color-error-container: rgba(var(--danger-color-rgb), 0.2);
   --md-sys-color-on-error-container: #f87171;
+}
+
+/* ==================== 组件深色模式适配 ==================== */
+
+/* list-group-item 深色模式 */
+[data-theme="dark"] .list-group-item {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .list-group-item.list-group-item-warning {
+  background-color: var(--md-sys-color-warning-container);
+  color: var(--md-sys-color-on-warning-container);
+  border-color: rgba(var(--warning-color-rgb), 0.3);
+}
+
+[data-theme="dark"] .list-group-item-warning .text-muted {
+  color: var(--text-tertiary) !important;
 }

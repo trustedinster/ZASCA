@@ -28,7 +28,7 @@ if DEBUG:
         'https://localhost',
         'https://127.0.0.1',
         'https://demo.supercmd.dpdns.org',  # 内网穿透域名
-        'https://zasca.supercmd.dpdns.org', 
+        'https://zasca.supercmd.dpdns.org',
     ]
 else:
     ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
@@ -298,31 +298,6 @@ GATEWAY_CONTROL_SOCKET = os.environ.get(
 # RDP 域名配置
 RDP_DOMAIN = os.environ.get('RDP_DOMAIN', 'zasca.com')
 
-# Geetest (极验) 验证码配置
-GEETEST_ID = os.environ.get('GEETEST_ID')
-GEETEST_KEY = os.environ.get('GEETEST_KEY')
-# 是否在极验服务不可用时回退到本地验证码（True/False）
-GEETEST_FALLBACK_LOCAL = os.environ.get('GEETEST_FALLBACK_LOCAL', 'True').lower() == 'true'
-# 缓存极验服务状态的秒数（用于短期内避免重复探测）
-GEETEST_SERVER_STATUS_CACHE_SECONDS = int(os.environ.get('GEETEST_SERVER_STATUS_CACHE_SECONDS', '300'))
-
-# Cloudflare Turnstile 配置
-TURNSTILE_SITE_KEY = os.environ.get('TURNSTILE_SITE_KEY')
-TURNSTILE_SECRET_KEY = os.environ.get('TURNSTILE_SECRET_KEY')
-
-# 系统配置
-ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@localhost')
-SYSTEM_NAME = os.environ.get('SYSTEM_NAME', 'ZASCA 管理系统')
-
-# Email settings
-EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '25'))
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False').lower() == 'true'
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'webmaster@localhost')
-
 # DEMO模式配置
 if os.environ.get('ZASCA_DEMO', '').lower() == '1':
     # 使用DEMO数据库
@@ -332,7 +307,7 @@ if os.environ.get('ZASCA_DEMO', '').lower() == '1':
             'NAME': BASE_DIR / 'DEMO.sqlite3',
         }
     }
-    
+
     # DEMO模式保留最小长度验证，仅放宽复杂度要求
     AUTH_PASSWORD_VALIDATORS = [
         {
@@ -340,13 +315,13 @@ if os.environ.get('ZASCA_DEMO', '').lower() == '1':
             'OPTIONS': {'min_length': 4},
         },
     ]
-    
+
     # 允许所有主机
     ALLOWED_HOSTS = ['*']
-    
+
     # DEBUG模式开启
     DEBUG = True
-    
+
     # 生成随机SECRET_KEY（每次启动不同）
     import secrets as _secrets
     SECRET_KEY = _secrets.token_urlsafe(50)

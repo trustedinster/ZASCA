@@ -51,7 +51,7 @@
                                     {{ ticket.get_priority_display }}
                                 </span>
                             </td>
-                            <td>{{ ticket.creator.username }}</td>
+                            <td style="color: var(--text-primary);">{{ ticket.creator.username }}</td>
                             <td>
                                 {% if ticket.due_at %}
                                     {% if ticket.is_overdue %}
