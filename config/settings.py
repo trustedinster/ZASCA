@@ -1,5 +1,12 @@
 """
 Django settings for ZASCA project.
+
+配置加载优先级（从高到低）：
+1. 环境变量（os.environ）- 方便 DEMO 配置和容器部署
+2. .env 文件 - 本地开发配置
+3. 默认值 - 确保基本可用
+
+DEMO 模式（ZASCA_DEMO=1）会强制锁定特定配置，不受 .env 影响。
 """
 
 import os
@@ -11,11 +18,31 @@ pymysql.install_as_MySQLdb()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# ========== .env 文件加载 ==========
+# 优先级：环境变量 > .env 文件 > 默认值
+# 使用 python-dotenv 加载 .env，但不覆盖已存在的环境变量
+from dotenv import load_dotenv
+
+ENV_FILE = BASE_DIR / '.env'
+if ENV_FILE.exists():
+    load_dotenv(dotenv_path=ENV_FILE, override=False)
+
+
+def _env(key, default=None):
+    """
+    读取配置的统一入口。
+    优先级：环境变量 > .env 文件 > 默认值
+    """
+    return os.environ.get(key, default)
+
+
+# ========== 核心配置（必须在初始化时定义） ==========
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-change-this-in-production')
+SECRET_KEY = _env('DJANGO_SECRET_KEY', 'django-insecure-change-this-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
+DEBUG = _env('DEBUG', 'True').lower() == 'true'
 
 # 允许的主机列表
 # 在DEBUG模式下，允许所有主机
@@ -31,8 +58,8 @@ if DEBUG:
         'https://zasca.supercmd.dpdns.org',
     ]
 else:
-    ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-    CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://localhost,https://127.0.0.1').split(',')
+    ALLOWED_HOSTS = _env('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+    CSRF_TRUSTED_ORIGINS = _env('CSRF_TRUSTED_ORIGINS', 'https://localhost,https://127.0.0.1').split(',')
 
 # Application definition
 
@@ -106,17 +133,17 @@ AUTH_USER_MODEL = 'accounts.User'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DB_ENGINE = os.environ.get('DB_ENGINE', 'sqlite').lower()
+DB_ENGINE = _env('DB_ENGINE', 'sqlite').lower()
 
 if DB_ENGINE == 'mysql':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.environ.get('DB_NAME', 'zasca'),
-            'USER': os.environ.get('DB_USER', 'root'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-            'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
-            'PORT': os.environ.get('DB_PORT', '3306'),
+            'NAME': _env('DB_NAME', 'zasca'),
+            'USER': _env('DB_USER', 'root'),
+            'PASSWORD': _env('DB_PASSWORD', ''),
+            'HOST': _env('DB_HOST', '127.0.0.1'),
+            'PORT': _env('DB_PORT', '3306'),
             'OPTIONS': {
                 'charset': 'utf8mb4',
                 'init_command': (
@@ -192,18 +219,18 @@ REST_FRAMEWORK = {
 }
 
 # CORS settings
-CORS_ALLOW_ALL_ORIGINS = os.environ.get(
+CORS_ALLOW_ALL_ORIGINS = _env(
     'CORS_ALLOW_ALL_ORIGINS', 'True' if DEBUG else 'False'
 ).lower() == 'true'
 
 
 # Winrm settings
-WINRM_TIMEOUT = int(os.environ.get('WINRM_TIMEOUT', '30'))  # Winrm连接超时时间（秒）
-WINRM_MAX_RETRIES = int(os.environ.get('WINRM_RETRY_COUNT', '3'))  # Winrm连接最大重试次数
+WINRM_TIMEOUT = int(_env('WINRM_TIMEOUT', '30'))  # Winrm连接超时时间（秒）
+WINRM_MAX_RETRIES = int(_env('WINRM_RETRY_COUNT', '3'))  # Winrm连接最大重试次数
 
 # Logging settings
-LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
-LOG_FILE = os.environ.get('LOG_FILE', str(BASE_DIR / 'logs' / 'zasca.log'))
+LOG_LEVEL = _env('LOG_LEVEL', 'INFO')
+LOG_FILE = _env('LOG_FILE', str(BASE_DIR / 'logs' / 'zasca.log'))
 
 LOGGING = {
     'version': 1,
@@ -251,35 +278,35 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
-USE_X_FORWARDED_FOR = os.environ.get(
+USE_X_FORWARDED_FOR = _env(
     'USE_X_FORWARDED_FOR', 'False'
 ).lower() == 'true'
 
-SESSION_COOKIE_SECURE = os.environ.get(
+SESSION_COOKIE_SECURE = _env(
     'SESSION_COOKIE_SECURE', 'True' if not DEBUG else 'False'
 ).lower() == 'true'
-CSRF_COOKIE_SECURE = os.environ.get(
+CSRF_COOKIE_SECURE = _env(
     'CSRF_COOKIE_SECURE', 'True' if not DEBUG else 'False'
 ).lower() == 'true'
 SESSION_COOKIE_HTTPONLY = True
 
 # HTTPS相关安全配置 (仅在生产环境中启用)
 if not DEBUG:
-    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True').lower() == 'true'
+    SECURE_SSL_REDIRECT = _env('SECURE_SSL_REDIRECT', 'True').lower() == 'true'
     SECURE_HSTS_SECONDS = 31536000  # 一年
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Redis 配置 (保留用于兼容性检查，实际不再使用)
-REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+REDIS_URL = _env('REDIS_URL', 'redis://localhost:6379/0')
 
 # Celery 配置 (使用 SQLite 替代 Redis)
-CELERY_BROKER_URL = os.environ.get(
+CELERY_BROKER_URL = _env(
     'CELERY_BROKER_URL',
     f'sqla+sqlite:///{BASE_DIR / "celery_broker.sqlite3"}'
 )
-CELERY_RESULT_BACKEND = os.environ.get(
+CELERY_RESULT_BACKEND = _env(
     'CELERY_RESULT_BACKEND',
     f'db+sqlite:///{BASE_DIR / "celery_results.sqlite3"}'
 )
@@ -288,19 +315,21 @@ CELERY_BROKER_TRANSPORT_OPTIONS = {
 }
 
 # Gateway 控制面配置
-GATEWAY_ENABLED = os.environ.get(
+GATEWAY_ENABLED = _env(
     'GATEWAY_ENABLED', 'False'
 ).lower() in ('true', '1', 'yes')
-GATEWAY_CONTROL_SOCKET = os.environ.get(
+GATEWAY_CONTROL_SOCKET = _env(
     'GATEWAY_CONTROL_SOCKET', '/run/zasca/control.sock'
 )
 
 # RDP 域名配置
-RDP_DOMAIN = os.environ.get('RDP_DOMAIN', 'zasca.com')
+RDP_DOMAIN = _env('RDP_DOMAIN', 'zasca.com')
 
-# DEMO模式配置
-if os.environ.get('ZASCA_DEMO', '').lower() == '1':
-    # 使用DEMO数据库
+# ========== DEMO模式配置（强制锁定，不受 .env 影响） ==========
+ZASCA_DEMO = os.environ.get('ZASCA_DEMO', '').lower() == '1'
+
+if ZASCA_DEMO:
+    # DEMO模式强制使用 DEMO.sqlite3，不受 DB_ENGINE 或 .env 影响
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -329,7 +358,7 @@ if os.environ.get('ZASCA_DEMO', '').lower() == '1':
     _logging.getLogger('zasca').warning('DEMO模式: 使用随机生成的SECRET_KEY，重启后所有session将失效')
 
 # DEMO模式启动消息
-if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+if ZASCA_DEMO:
     from config.demo_startup import show_demo_startup_message
     show_demo_startup_message()
 
@@ -337,4 +366,4 @@ if os.environ.get('ZASCA_DEMO', '').lower() == '1':
 os.makedirs(BASE_DIR / 'logs', exist_ok=True)
 
 # Bootstrap认证配置
-BOOTSTRAP_SHARED_SALT = os.environ.get('BOOTSTRAP_SHARED_SALT', '')
+BOOTSTRAP_SHARED_SALT = _env('BOOTSTRAP_SHARED_SALT', '')
