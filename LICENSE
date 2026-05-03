@@ -657,5 +657,255 @@ specific requirements.
 
   You should also get your employer (if you work as a programmer) or school,
 if any, to sign a "copyright disclaimer" for the program, if necessary.
-For more information on this, and how to apply and follow the GNU AGPL, see
+For more information, and how to apply and follow the GNU AGPL, see
 <https://www.gnu.org/licenses/>.
+
+
+                    ZASCA PLUGIN EXCEPTION TO THE
+              GNU AFFERO GENERAL PUBLIC LICENSE VERSION 3
+
+  This Plugin Exception ("Exception") is an additional permission under
+Section 7 of the GNU Affero General Public License, Version 3 ("AGPLv3").
+It applies to the software known as ZASCA (the "Program"). This Exception
+modifies the AGPLv3 as it applies to the Program by providing an exception
+for qualifying Plugins, as defined below.
+
+  The purpose of this Exception is to allow third-party developers to
+create Plugins for the Program under licenses of their choosing, without
+being subject to the copyleft requirements of the AGPLv3, while ensuring
+that the copyleft protections of the AGPLv3 remain fully enforceable
+against any work that modifies, extends, or derives from the Program in
+a manner that goes beyond the defined Plugin interface.
+
+  This Exception does not apply to the Program itself, which remains
+governed exclusively by the AGPLv3 without modification.
+
+
+                        1. DEFINITIONS
+
+  "Plugin" means a software module that satisfies ALL of the following
+conditions (the "Qualification Criteria"):
+
+    (a) Interface Compliance. The module's primary class must be a proper
+        subclass of the Program's PluginInterface abstract base class, as
+        defined in the source file "plugins/core/base.py" of the Program.
+        The subclass must implement all abstract methods required by
+        PluginInterface, namely initialize() and shutdown(), and must
+        provide the constructor parameters plugin_id, name, and version.
+
+    (b) Standard Loading. The module must be loaded exclusively through
+        the Program's standard PluginManager mechanisms, as implemented in
+        "plugins/core/plugin_manager.py" and "plugins/plugin_manager.py"
+        of the Program. This includes:
+          (i)   Registration via the plugins.toml configuration file; or
+          (ii)  Discovery through the PluginManager's directory scanning
+                mechanism; or
+          (iii) Registration through the Program's CLI management command
+                ("python manage.py plugin install").
+
+    (c) Communication Through Defined Interfaces. The module may
+        communicate with the Program ONLY through the following defined
+        interfaces:
+          (i)    Methods defined in the PluginInterface abstract base class;
+          (ii)   The EventHook mechanism (register_hook, trigger_hook) as
+                 provided by the Program's PluginManager;
+          (iii)  Django signals that the Program explicitly exposes for
+                 plugin use, as documented in the Program's source code;
+          (iv)   The Plugin API endpoints defined in the Program's
+                 django_integration.py module;
+          (v)    The PluginConfiguration model for storing plugin-specific
+                 key-value configuration data.
+
+    (d) No Modification of Core Program. The module must NOT:
+          (i)    Modify, patch, override, or monkey-patch any source code
+                 of the Program, including but not limited to: core modules,
+                 Django models, views, URL configurations, middleware,
+                 signal handlers, or management commands that are part of
+                 the Program;
+          (ii)   Replace or substantially rewrite any core functionality
+                 of the Program;
+          (iii)  Alter the Program's database schema or create database
+                 migrations that modify tables belonging to the Program's
+                 core applications (as opposed to creating new tables for
+                 the Plugin's own data);
+          (iv)   Modify the Program's settings, configuration, or
+                 initialization process at runtime in a manner that changes
+                 the Program's behavior for users who do not use the Plugin;
+          (v)    Inject, replace, or remove Django middleware, URL patterns,
+                 or signal handlers that belong to the Program.
+
+    (e) No Substantial Copying. The module must NOT contain, embed, or
+        reproduce substantial portions of the Program's source code. A
+        Plugin may reference the Program's public API and data structures
+        through normal import and inheritance mechanisms, but must not
+        duplicate the Program's implementation logic.
+
+    (f) Independence. The Program must remain fully functional without
+        the Plugin installed. The Plugin's absence must not cause the
+        Program to fail to start, crash, or lose any core functionality
+        that existed prior to the Plugin's installation. A Plugin may
+        add new functionality, but must not remove or break existing
+        functionality.
+
+    (g) Distinct Purpose. The Plugin must serve a purpose that is
+        distinct from and supplementary to the Program's core
+        functionality. A module that replicates, replaces, or
+        substantially duplicates the Program's core features is not a
+        Plugin, regardless of whether it technically satisfies the
+        interface requirements of subsection (a).
+
+
+                    2. GRANT OF EXCEPTION
+
+  Notwithstanding the copyleft provisions of Sections 5 and 13 of the
+AGPLv3, a work that qualifies as a Plugin under Section 1 of this
+Exception is NOT considered a work "based on the Program" solely by
+reason of its interaction with the Program through the defined Plugin
+interfaces. Accordingly, you may license such a Plugin under any terms
+of your choosing, provided that:
+
+    (a) The Plugin satisfies all Qualification Criteria set forth in
+        Section 1 at all times during its distribution and use;
+
+    (b) You comply with the notice requirements of Section 3 of this
+        Exception; and
+
+    (c) You do not distribute the Plugin combined with the Program in
+        a manner that would cause the Program itself to become subject
+        to terms inconsistent with the AGPLv3.
+
+  This Exception applies only to the Plugin itself. It does not extend
+to the Program, to any modifications of the Program, or to any
+combined work formed by aggregating the Program with a Plugin. The
+Program, and any modifications thereto, remain governed by the AGPLv3
+without exception.
+
+
+                    3. NOTICE REQUIREMENTS
+
+  Any Plugin distributed under the terms of this Exception must include
+the following notices:
+
+    (a) Source Code Notice. Each source file of the Plugin must include
+        a prominent comment at the beginning of the file containing:
+
+          (i)   A statement identifying the work as a Plugin for the
+                ZASCA program;
+          (ii)  The Plugin's own license terms; and
+          (iii) The following declaration:
+
+            "This is a plugin for the ZASCA program. ZASCA is licensed
+             under the GNU Affero General Public License, Version 3
+             (AGPLv3). This plugin is NOT part of ZASCA and is NOT
+             licensed under the AGPLv3. The AGPLv3 applies to ZASCA
+             itself, not to this plugin. This plugin uses the ZASCA
+             Plugin Exception to the AGPLv3 for its interaction with
+             ZASCA."
+
+    (b) Documentation Notice. Any documentation, README, or
+        distribution materials for the Plugin must prominently state:
+
+          (i)   That the work is a Plugin for the ZASCA program;
+          (ii)  That ZASCA is licensed under the AGPLv3;
+          (iii) That the Plugin is NOT part of ZASCA and is NOT
+                subject to the AGPLv3 by virtue of the ZASCA Plugin
+                Exception;
+          (iv)  The Plugin's own license terms; and
+          (v)   That the AGPLv3 applies to ZASCA itself, not to the
+                Plugin.
+
+    (c) Runtime Notice. If the Plugin provides any user-facing
+        interface (including but not limited to: web pages, API
+        responses, CLI output, or log messages), it must display or
+        include a notice indicating that it is a Plugin for ZASCA and
+        that ZASCA's license (AGPLv3) does not apply to the Plugin.
+
+
+                    4. RECLASSIFICATION AND TERMINATION
+
+    (a) Automatic Reclassification. If a work that purports to be a
+        Plugin fails to satisfy any of the Qualification Criteria in
+        Section 1, it is NOT a Plugin for the purposes of this
+        Exception. Such a work shall be deemed a modification of or
+        a work based on the Program, and the full terms of the AGPLv3
+        shall apply to it without exception, including but not limited
+        to the copyleft requirements of Sections 5 and 13.
+
+    (b) No Retroactive Cure. A work that initially qualifies as a
+        Plugin but is subsequently modified in a manner that causes it
+        to fail any Qualification Criterion immediately loses the
+        benefit of this Exception. The Exception may not be regained
+        for that work by reverting the non-conforming changes, unless
+        the copyright holders of the Program explicitly grant
+        permission in writing.
+
+    (c) Burden of Proof. Any party claiming the benefit of this
+        Exception bears the burden of demonstrating that their work
+        satisfies all Qualification Criteria. In case of doubt, a work
+        shall be presumed NOT to qualify as a Plugin, and the AGPLv3
+        shall apply in full.
+
+    (d) Bad Faith. A work that is designed or structured primarily to
+        circumvent the copyleft requirements of the AGPLv3, rather
+        than to serve a legitimate supplementary purpose through the
+        Program's Plugin interface, shall not qualify as a Plugin
+        regardless of its technical compliance with the Qualification
+        Criteria. Factors indicating bad faith include but are not
+        limited to:
+          (i)    The work duplicates core functionality of the Program
+                 while implementing it through the Plugin interface
+                 solely to avoid AGPLv3 obligations;
+          (ii)   The work serves as a wrapper or shim that exposes the
+                 Program's core functionality under a different license;
+          (iii)  The work is designed to be inseparable from the Program
+                 in practice, despite being technically loadable as a
+                 Plugin;
+          (iv)   The work's stated purpose is substantially identical
+                 to the Program's stated purpose.
+
+
+                    5. SCOPE AND LIMITATIONS
+
+    (a) This Exception applies only to the Program known as ZASCA, as
+        identified by its copyright holders. It does not apply to any
+        other software licensed under the AGPLv3.
+
+    (b) This Exception does not waive, modify, or limit any provision
+        of the AGPLv3 except as explicitly stated herein. All
+        provisions of the AGPLv3 that are not modified by this
+        Exception remain in full force and effect.
+
+    (c) This Exception does not grant any rights to use the trade
+        names, trademarks, service marks, or product names of the
+        Program's copyright holders, except as required to comply with
+        the notice requirements of Section 3.
+
+    (d) The copyright holders of the Program reserve the right to
+        update or modify this Exception in future versions of the
+        Program. Any such update shall not affect the status of Plugins
+        that qualified under a previous version of this Exception at
+        the time of their distribution.
+
+    (e) If any provision of this Exception is held to be invalid or
+        unenforceable, the remaining provisions shall remain in effect,
+        and the invalid provision shall be modified to the minimum
+        extent necessary to make it valid and enforceable while
+        preserving the intent of preventing the use of the Plugin
+        interface to circumvent the AGPLv3.
+
+
+                    6. INTERPRETATION
+
+  This Exception shall be interpreted in light of its purpose: to
+permit genuine Plugins that extend the Program through its defined
+Plugin interface to be licensed independently, while preserving the
+copyleft protections of the AGPLv3 against any work that modifies,
+derives from, or circumvents the Program's intended licensing
+structure.
+
+  Where ambiguity exists in the application of this Exception, the
+interpretation that best preserves the copyleft protections of the
+AGPLv3 shall prevail. The grant of an exception for Plugins is a
+limited carve-out from the AGPLv3's copyleft requirements, and any
+ambiguity in the scope of that carve-out shall be resolved in favor
+of the AGPLv3's applicability.
