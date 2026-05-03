@@ -692,6 +692,43 @@ conditions (the "Qualification Criteria"):
         The subclass must implement all abstract methods required by
         PluginInterface, namely initialize() and shutdown(), and must
         provide the constructor parameters plugin_id, name, and version.
+        A Plugin may additionally implement one or more of the following
+        optional interfaces (also defined in "plugins/core/base.py"):
+
+          (i)   ServiceProvider: to register discoverable services with
+                the Program's ServiceRegistry. A Plugin that implements
+                ServiceProvider must implement the abstract methods
+                get_service_name() and get_service_interface(), and the
+                service it provides must be consumed by the Program
+                exclusively through the ServiceRegistry's get() or
+                get_by_interface() methods.
+
+          (ii)  UIExtensionProvider: to inject UI content into designated
+                extension points (slots) in the Program's templates. A
+                Plugin that implements UIExtensionProvider must implement
+                the abstract method get_ui_extensions(), which returns a
+                list of UIExtension objects. Each UIExtension declares a
+                target slot, rendering method (inline HTML or Django
+                template), and optional context_callback for providing
+                template context data. The Program renders these
+                extensions through the "plugin_extensions" template tag
+                library. A Plugin may only inject content into slots
+                that the Program explicitly defines in its templates; it
+                must not modify, override, or replace any template,
+                template block, or UI component that belongs to the
+                Program.
+
+          (iii) URLProvider: to dynamically register URL patterns with
+                the Program's routing system. A Plugin that implements
+                URLProvider must implement the abstract method
+                get_url_patterns(), which returns a list of dictionaries
+                specifying URL prefix, Django URL conf module path,
+                namespace, and section (admin, provider, or public).
+                The Program includes these patterns through its
+                dynamic_urls module. A Plugin may only register URLs
+                under the prefix and namespace it declares; it must not
+                override, replace, or intercept URL patterns that belong
+                to the Program or to other Plugins.
 
     (b) Standard Loading. The module must be loaded exclusively through
         the Program's standard PluginManager mechanisms, as implemented in
@@ -702,6 +739,13 @@ conditions (the "Qualification Criteria"):
                 mechanism; or
           (iii) Registration through the Program's CLI management command
                 ("python manage.py plugin install").
+        A Plugin may register as a Django application (via an apps.py
+        AppConfig) in the Program's INSTALLED_APPS setting for the
+        purposes of Django model discovery, template discovery, and
+        migration management, provided that such registration is
+        documented in the Plugin's installation instructions and the
+        Plugin's Django app label is distinct from the Program's core
+        app labels.
 
     (c) Communication Through Defined Interfaces. The module may
         communicate with the Program ONLY through the following defined
@@ -714,7 +758,34 @@ conditions (the "Qualification Criteria"):
           (iv)   The Plugin API endpoints defined in the Program's
                  django_integration.py module;
           (v)    The PluginConfiguration model for storing plugin-specific
-                 key-value configuration data.
+                 key-value configuration data;
+          (vi)   The ServiceProvider and ServiceRegistry mechanism, whereby
+                 a Plugin may register services that the Program discovers
+                 and consumes through the ServiceRegistry. The Program's
+                 core code must not import or depend on any Plugin's
+                 internal modules directly; it must access Plugin-provided
+                 services exclusively through the ServiceRegistry;
+          (vii)  The UIExtensionProvider mechanism, whereby a Plugin may
+                 declare UIExtension objects that the Program renders in
+                 predefined template slots via the "plugin_extensions"
+                 Django template tag library. A Plugin may use the
+                 context_callback attribute of UIExtension to provide
+                 dynamic context data for template rendering;
+          (viii) The URLProvider mechanism, whereby a Plugin may declare
+                 URL patterns that the Program dynamically includes in its
+                 routing configuration via the dynamic_urls module. The
+                 Program resolves and serves these URLs through the
+                 Plugin's own Django views;
+          (ix)   The Django app registry (apps.get_model()) for accessing
+                 models defined by the Program's core applications, used
+                 solely for querying data through the Django ORM. A Plugin
+                 must not modify the schema of, or create migrations for,
+                 models belonging to the Program's core applications;
+          (x)    The PluginRecord model for tracking plugin installation
+                 state, and the PluginConfiguration model for storing
+                 plugin-specific key-value configuration data. A Plugin
+                 may read and write its own PluginConfiguration entries
+                 but must not modify entries belonging to other Plugins.
 
     (d) No Modification of Core Program. The module must NOT:
           (i)    Modify, patch, override, or monkey-patch any source code
@@ -734,6 +805,17 @@ conditions (the "Qualification Criteria"):
           (v)    Inject, replace, or remove Django middleware, URL patterns,
                  or signal handlers that belong to the Program.
 
+        For the avoidance of doubt, the following actions do NOT constitute
+        "modification of the core Program":
+          - Registering a Plugin's Django app in INSTALLED_APPS;
+          - Declaring UIExtension objects that inject content into the
+            Program's predefined template slots;
+          - Declaring URL patterns through the URLProvider interface;
+          - Reading data from the Program's models via apps.get_model()
+            or Django's ORM;
+          - Writing to the PluginConfiguration model for the Plugin's
+            own configuration entries.
+
     (e) No Substantial Copying. The module must NOT contain, embed, or
         reproduce substantial portions of the Program's source code. A
         Plugin may reference the Program's public API and data structures
@@ -745,7 +827,11 @@ conditions (the "Qualification Criteria"):
         Program to fail to start, crash, or lose any core functionality
         that existed prior to the Plugin's installation. A Plugin may
         add new functionality, but must not remove or break existing
-        functionality.
+        functionality. For Plugins that implement ServiceProvider, the
+        Program must gracefully handle the absence of the service by
+        degrading functionality (e.g., disabling features that depend
+        on the service, returning safe default values, or logging
+        warnings) rather than raising unhandled exceptions.
 
     (g) Distinct Purpose. The Plugin must serve a purpose that is
         distinct from and supplementary to the Program's core
@@ -819,6 +905,66 @@ the following notices:
         responses, CLI output, or log messages), it must display or
         include a notice indicating that it is a Plugin for ZASCA and
         that ZASCA's license (AGPLv3) does not apply to the Plugin.
+
+    (d) Visual Interface Attribution. In addition to the source code
+        and documentation notices required by subsections (a) and (b),
+        any Plugin that injects, renders, or otherwise presents content
+        in the Program's visual user interface MUST provide clear,
+        visible attribution within that interface itself. This
+        requirement applies regardless of whether the attribution is
+        technically feasible at the code level alone, and is intended
+        to ensure that end users can identify the origin of UI
+        elements they interact with. Specifically:
+
+          (i)   Modal Dialogs and Pop-ups. Any modal dialog, pop-up,
+                overlay, or similar intrusive UI element injected by a
+                Plugin must display a visible label or badge indicating
+                that it originates from the Plugin. This label must be
+                present within the visual content of the dialog itself
+                (for example, in the dialog header, footer, or a
+                clearly visible badge), not merely in the underlying
+                HTML source code, comments, or developer tools. The
+                label must include at minimum the Plugin's name and a
+                statement that the content is provided by a third-party
+                Plugin (e.g., "Provided by [Plugin Name] (ZASCA
+                Plugin)").
+
+          (ii)  Injected UI Panels and Widgets. Any panel, widget,
+                sidebar section, card, or other non-modal UI component
+                that a Plugin injects into the Program's interface
+                through the UIExtensionProvider mechanism or any other
+                means must include a visible attribution element. This
+                may take the form of a header label, footer note, or
+                icon badge that identifies the Plugin as the source of
+                the content. The attribution must be reasonably
+                prominent and not hidden behind hover states, tooltips,
+                or expandable sections.
+
+          (iii) Notifications and Toast Messages. Any notification,
+                toast message, alert banner, or similar transient UI
+                element produced by a Plugin must identify the Plugin
+                as its source, either within the message text itself or
+                through an adjacent label or icon.
+
+          (iv)  Pages and Views Served by the Plugin. Any full page or
+                view that a Plugin serves through the URLProvider
+                mechanism must include a visible notice (such as a
+                footer, header badge, or sidebar indicator) stating
+                that the page is provided by the Plugin and is not part
+                of ZASCA's core interface.
+
+          (v)   General Principle. The overarching requirement is that
+                no UI content injected by a Plugin may appear to the
+                end user as though it is a native part of the ZASCA
+                program. The attribution must be sufficient for a
+                typical user to distinguish Plugin-provided UI elements
+                from ZASCA's core interface elements. Minimal or
+                hard-to-notice attributions (such as light-colored
+                small text, hidden metadata, or code comments) do not
+                satisfy this requirement. The attribution must be
+                visually apparent under normal usage conditions without
+                requiring the user to inspect source code, use
+                developer tools, or perform any special action.
 
 
                     4. RECLASSIFICATION AND TERMINATION
