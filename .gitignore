@@ -136,3 +136,12 @@ zacs/
 
 # trae
 .trae/
+
+# Tailwind CSS standalone CLI executables
+static/vendor/tailwindcss
+tools/tailwindcss
+
+# Vendor binaries (large standalone executables)
+static/vendor/**/*.exe
+static/vendor/**/node
+tools/*.exe

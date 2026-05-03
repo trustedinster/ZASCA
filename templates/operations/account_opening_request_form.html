@@ -5,457 +5,118 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/operations.css' %}">
-<style>
-/* 开户申请表单MD3样式 */
-.application-form-container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 2rem;
-}
-
-/* 移动端优化 */
-@media (max-width: 768px) {
-    .application-form-container {
-        padding: 1rem;
-    }
-    
-    .application-card-header {
-        padding: 1rem;
-    }
-    
-    .application-card-header h2 {
-        font-size: var(--md-sys-typescale-headline-small-size);
-    }
-    
-    .application-card-body {
-        padding: 1rem;
-    }
-}
-
-/* 极小屏幕优化 */
-@media (max-width: 480px) {
-    .application-form-container {
-        padding: 0.5rem;
-    }
-    
-    .application-card-body {
-        padding: 0.75rem;
-    }
-    
-    .md-input-wrapper--filled .md-input {
-        padding: 20px 10px 6px;
-        font-size: var(--md-sys-typescale-body-small-size);
-        min-height: 48px;
-    }
-    
-    .md-input__label {
-        top: 16px;
-        left: 10px;
-        font-size: var(--md-sys-typescale-body-small-size);
-    }
-    
-    .md-input:focus ~ .md-input__label,
-    .md-input:not(:placeholder-shown) ~ .md-input__label,
-    .md-input[value]:not([value=""]) ~ .md-input__label {
-        top: 4px;
-        font-size: var(--md-sys-typescale-body-smallest-size);
-    }
-    
-    .form-section-title {
-        font-size: var(--md-sys-typescale-title-small-size);
-    }
-    
-    .md-input__helper,
-    .md-input__error,
-    .md-input__supporting-text {
-        font-size: var(--md-sys-typescale-body-smallest-size);
-        margin-left: 10px;
-    }
-}
-
-/* 确保所有表单元素在移动端正确显示 */
-@media (max-width: 768px) {
-    .md-input,
-    .md-input-wrapper,
-    .form-column,
-    .form-row {
-        max-width: 100% !important;
-        width: 100% !important;
-        box-sizing: border-box;
-    }
-    
-    .form-row {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .form-column {
-        min-width: 0;
-    }
-}
-
-.application-card {
-    background: var(--md-sys-color-surface);
-    border-radius: var(--md-sys-shape-corner-medium);
-    box-shadow: var(--md-sys-elevation-1);
-    overflow: hidden;
-}
-
-.application-card-header {
-    background: var(--md-sys-color-primary-container);
-    color: var(--md-sys-color-on-primary-container);
-    padding: 1.5rem 2rem;
-}
-
-.application-card-header h2 {
-    margin: 0;
-    font-size: var(--md-sys-typescale-headline-medium-size);
-    font-weight: var(--md-sys-typescale-weight-bold);
-    line-height: var(--md-sys-typescale-line-height-condensed);
-}
-
-.application-card-body {
-    padding: 2rem;
-}
-
-.form-section {
-    margin-bottom: 2rem;
-}
-
-.form-section-title {
-    font-size: var(--md-sys-typescale-title-large-size);
-    font-weight: var(--md-sys-typescale-weight-medium);
-    color: var(--md-sys-color-on-surface);
-    margin-bottom: 1.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--md-sys-color-outline-variant);
-    line-height: var(--md-sys-typescale-line-height-default);
-}
-
-@media (max-width: 768px) {
-    .form-section-title {
-        font-size: var(--md-sys-typescale-title-medium-size);
-        margin-bottom: 1rem;
-    }
-}
-
-.form-row {
-    display: flex;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
-}
-
-@media (max-width: 768px) {
-    .form-row {
-        flex-direction: column;
-        gap: 1rem;
-    }
-}
-
-.form-column {
-    flex: 1;
-}
-
-.md-input-wrapper {
-    margin-bottom: 1.5rem;
-}
-
-/* 确保MD3输入框样式正确应用 */
-.md-input {
-    width: 100%;
-    border: none;
-    outline: none;
-    background: transparent;
-    font-family: inherit;
-    font-size: var(--md-sys-typescale-body-large-size);
-    color: var(--md-sys-color-on-surface);
-    padding: 20px 16px 8px;
-    box-sizing: border-box;
-    border-radius: var(--md-sys-shape-corner-extra-large) var(--md-sys-shape-corner-extra-large) 0 0;
-}
-
-.md-input:focus {
-    outline: none;
-}
-
-.md-input__label {
-    position: absolute;
-    top: 24px;
-    left: 16px;
-    color: var(--md-sys-color-on-surface-variant);
-    font-size: var(--md-sys-typescale-body-large-size);
-    font-weight: var(--md-sys-typescale-weight-regular);
-    pointer-events: none;
-    transition: all var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
-    z-index: 3;
-}
-
-@media (max-width: 768px) {
-    .md-input__label {
-        top: 20px;
-        left: 12px;
-        font-size: var(--md-sys-typescale-body-medium-size);
-    }
-    
-    .md-input:focus ~ .md-input__label,
-    .md-input:not(:placeholder-shown) ~ .md-input__label,
-    .md-input[value]:not([value=""]) ~ .md-input__label {
-        top: 6px;
-        font-size: var(--md-sys-typescale-body-small-size);
-    }
-}
-
-.md-input:focus ~ .md-input__label,
-.md-input:not(:placeholder-shown) ~ .md-input__label,
-.md-input[value]:not([value=""]) ~ .md-input__label {
-    top: 8px;
-    font-size: var(--md-sys-typescale-body-small-size);
-    color: var(--md-sys-color-primary);
-}
-
-.md-input-wrapper--filled {
-    background-color: var(--md-sys-color-surface-variant);
-    border-radius: var(--md-sys-shape-corner-extra-large);
-    position: relative;
-}
-
-.md-input-wrapper--filled .md-input {
-    padding: 28px 16px 12px;
-}
-
-@media (max-width: 768px) {
-    .md-input-wrapper--filled .md-input {
-        padding: 24px 12px 8px;
-        min-height: 56px;
-        font-size: var(--md-sys-typescale-body-medium-size);
-    }
-}
-
-.md-input-wrapper--filled .md-input__label {
-    left: 16px;
-}
-
-@media (max-width: 768px) {
-    .md-input-wrapper--filled .md-input__label {
-        left: 12px;
-    }
-}
-
-/* 调整辅助文本位置，避免与圆角背景冲突 */
-.md-input-wrapper--filled .md-input__helper,
-.md-input-wrapper--filled .md-input__error,
-.md-input-wrapper--filled .md-input__supporting-text {
-    margin-left: 16px;
-    padding-left: 2px;
-}
-
-@media (max-width: 768px) {
-    .md-input-wrapper--filled .md-input__helper,
-    .md-input-wrapper--filled .md-input__error,
-    .md-input-wrapper--filled .md-input__supporting-text {
-        margin-left: 12px;
-        font-size: var(--md-sys-typescale-body-small-size);
-    }
-}
-
-.md-input--textarea {
-    resize: vertical;
-    min-height: 120px;
-}
-
-.md-input__helper {
-    margin-top: 4px;
-    margin-left: 16px;
-    font-size: var(--md-sys-typescale-body-small-size);
-    color: var(--md-sys-color-on-surface-variant);
-    line-height: var(--md-sys-typescale-line-height-default);
-}
-
-.md-input__error {
-    margin-top: 4px;
-    margin-left: 16px;
-    font-size: var(--md-sys-typescale-body-small-size);
-    color: var(--md-sys-color-error);
-    line-height: var(--md-sys-typescale-line-height-default);
-}
-
-.md-input__supporting-text {
-    margin-top: 4px;
-    margin-left: 16px;
-    padding-left: 2px;
-    font-size: var(--md-sys-typescale-body-small-size);
-    color: var(--md-sys-color-on-surface-variant);
-    line-height: var(--md-sys-typescale-line-height-default);
-}
-
-.md-input-wrapper--error .md-input {
-    border-color: var(--md-sys-color-error);
-}
-
-.md-input-wrapper--error .md-input__label {
-    color: var(--md-sys-color-error);
-}
-
-.form-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--md-sys-color-outline-variant);
-}
-
-@media (max-width: 768px) {
-    .form-actions {
-        flex-direction: column;
-        gap: 0.75rem;
-        margin-top: 1.5rem;
-        padding-top: 1rem;
-    }
-}
-
-.readonly-field {
-    background: var(--md-sys-color-surface-variant) !important;
-    color: var(--md-sys-color-on-surface-variant) !important;
-}
-
-.target-product-info {
-    background: var(--md-sys-color-secondary-container);
-    color: var(--md-sys-color-on-secondary-container);
-    padding: 1rem;
-    border-radius: var(--md-sys-shape-corner-small);
-    margin-top: 1rem;
-}
-
-@media (max-width: 768px) {
-    .target-product-info {
-        padding: 0.75rem;
-        font-size: var(--md-sys-typescale-body-medium-size);
-    }
-}
-
-.target-product-info strong {
-    display: block;
-    margin-bottom: 0.5rem;
-}
-
-.hidden-target-product {
-    display: none;
-}
-</style>
 {% endblock %}
 
 {% block content %}
-<div class="application-form-container">
+<div class="max-w-[800px] mx-auto p-8 sm:p-4">
     {% if messages %}
         {% for message in messages %}
             {% include 'components/alert.html' with message=message.tags content=message %}
         {% endfor %}
     {% endif %}
 
-    <div class="application-card">
-        <div class="application-card-header">
-            <h2>提交开户申请</h2>
+    <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl overflow-hidden">
+        <div class="bg-md-primary-container text-md-on-primary-container px-8 py-6 sm:px-4 sm:py-4">
+            <h2 class="text-2xl font-bold m-0 leading-tight">提交开户申请</h2>
         </div>
         
-        <div class="application-card-body">
+        <div class="p-8 sm:p-4">
             <form id="account-opening-form" method="post">
                 {% csrf_token %}
                 
-                <div class="form-section">
-                    <h3 class="form-section-title">基本信息</h3>
+                <div class="mb-8">
+                    <h3 class="text-xl font-medium text-md-on-surface mb-6 pb-2 border-b border-md-outline-variant leading-normal">基本信息</h3>
                     
-                    <div class="form-row">
-                        <div class="form-column">
-                            <div class="md-input-wrapper md-input-wrapper--filled">
+                    <div class="flex flex-col gap-4 mb-6 sm:flex-row sm:gap-6">
+                        <div class="flex-1 min-w-0">
+                            <div class="relative bg-md-surface-variant rounded-3xl mb-6">
                                 <input type="email" 
-                                       class="md-input readonly-field" 
+                                       class="w-full border-0 outline-none bg-transparent font-[inherit] text-base text-md-on-surface pt-7 pb-3 px-4 box-border rounded-3xl !bg-md-surface-variant !text-md-on-surface-variant" 
                                        id="user-email"
                                        name="user_email"
                                        value="{{ request.user.email }}" 
                                        readonly>
-                                <label class="md-input__label" for="user-email">联系邮箱</label>
-                                <span class="md-input__supporting-text">使用当前账户的注册邮箱，不可修改</span>
+                                <label class="absolute top-2 left-4 text-sm text-md-on-surface-variant pointer-events-none transition-all z-[3]" for="user-email">联系邮箱</label>
+                                <span class="mt-1 ml-4 text-sm text-md-on-surface-variant leading-normal">使用当前账户的注册邮箱，不可修改</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="form-section">
-                    <h3 class="form-section-title">用户信息</h3>
+                <div class="mb-8">
+                    <h3 class="text-xl font-medium text-md-on-surface mb-6 pb-2 border-b border-md-outline-variant leading-normal">用户信息</h3>
                     
-                    <div class="form-row">
-                        <div class="form-column">
-                            <div class="md-input-wrapper md-input-wrapper--filled {% if form.username.errors %}md-input-wrapper--error{% endif %}">
+                    <div class="flex flex-col gap-4 mb-6 sm:flex-row sm:gap-6">
+                        <div class="flex-1 min-w-0">
+                            <div class="relative bg-md-surface-variant rounded-3xl mb-6 {% if form.username.errors %}border-md-error{% endif %}">
                                 <input type="text"
-                                       class="md-input {% if form.username.errors %}md-input--error{% endif %}"
+                                       class="w-full border-0 outline-none bg-transparent font-[inherit] text-base text-md-on-surface pt-7 pb-3 px-4 box-border rounded-3xl {% if form.username.errors %}border-md-error{% endif %}"
                                        id="{{ form.username.id_for_label }}"
                                        name="{{ form.username.name }}"
                                        value="{{ form.username.value|default:'' }}"
                                        {% if form.username.field.required %}required{% endif %}
                                        maxlength="{{ form.username.field.max_length|default:150 }}">
-                                <label class="md-input__label" for="{{ form.username.id_for_label }}">主机连接用户名 *</label>
+                                <label class="absolute top-2 left-4 text-sm text-md-on-surface-variant pointer-events-none transition-all z-[3] {% if form.username.errors %}!text-md-error{% endif %}" for="{{ form.username.id_for_label }}">主机连接用户名 *</label>
                                 {% if form.username.errors %}
-                                    <div class="md-input__error">
+                                    <div class="mt-1 ml-4 text-sm text-md-error leading-normal">
                                         {% for error in form.username.errors %}{{ error }}{% endfor %}
                                     </div>
                                 {% else %}
-                                    <div class="md-input__helper">将在云电脑主机上创建的连接用户名</div>
+                                    <div class="mt-1 ml-4 text-sm text-md-on-surface-variant leading-normal">将在云电脑主机上创建的连接用户名</div>
                                 {% endif %}
                             </div>
                         </div>
                         
-                        <div class="form-column">
-                            <div class="md-input-wrapper md-input-wrapper--filled {% if form.user_fullname.errors %}md-input-wrapper--error{% endif %}">
+                        <div class="flex-1 min-w-0">
+                            <div class="relative bg-md-surface-variant rounded-3xl mb-6 {% if form.user_fullname.errors %}border-md-error{% endif %}">
                                 <input type="text"
-                                       class="md-input {% if form.user_fullname.errors %}md-input--error{% endif %}"
+                                       class="w-full border-0 outline-none bg-transparent font-[inherit] text-base text-md-on-surface pt-7 pb-3 px-4 box-border rounded-3xl {% if form.user_fullname.errors %}border-md-error{% endif %}"
                                        id="{{ form.user_fullname.id_for_label }}"
                                        name="{{ form.user_fullname.name }}"
                                        value="{{ form.user_fullname.value|default:'' }}"
                                        {% if form.user_fullname.field.required %}required{% endif %}
                                        maxlength="{{ form.user_fullname.field.max_length|default:200 }}">
-                                <label class="md-input__label" for="{{ form.user_fullname.id_for_label }}">主机显示用户名 *</label>
+                                <label class="absolute top-2 left-4 text-sm text-md-on-surface-variant pointer-events-none transition-all z-[3] {% if form.user_fullname.errors %}!text-md-error{% endif %}" for="{{ form.user_fullname.id_for_label }}">主机显示用户名 *</label>
                                 {% if form.user_fullname.errors %}
-                                    <div class="md-input__error">
+                                    <div class="mt-1 ml-4 text-sm text-md-error leading-normal">
                                         {% for error in form.user_fullname.errors %}{{ error }}{% endfor %}
                                     </div>
                                 {% else %}
-                                    <div class="md-input__helper">用于在系统中显示的用户名</div>
+                                    <div class="mt-1 ml-4 text-sm text-md-on-surface-variant leading-normal">用于在系统中显示的用户名</div>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="form-section">
-                    <h3 class="form-section-title">申请详情</h3>
+                <div class="mb-8">
+                    <h3 class="text-xl font-medium text-md-on-surface mb-6 pb-2 border-b border-md-outline-variant leading-normal">申请详情</h3>
                     
-                    <div class="form-row">
-                        <div class="form-column">
-                            <div class="md-input-wrapper md-input-wrapper--filled md-input-wrapper--textarea {% if form.user_description.errors %}md-input-wrapper--error{% endif %}">
+                    <div class="flex flex-col gap-4 mb-6 sm:flex-row sm:gap-6">
+                        <div class="flex-1 min-w-0">
+                            <div class="relative bg-md-surface-variant rounded-3xl mb-6 {% if form.user_description.errors %}border-md-error{% endif %}">
                                 <textarea
-                                    class="md-input md-input--textarea {% if form.user_description.errors %}md-input--error{% endif %}"
+                                    class="w-full border-0 outline-none bg-transparent font-[inherit] text-base text-md-on-surface pt-7 pb-3 px-4 box-border rounded-3xl resize-y min-h-[120px] {% if form.user_description.errors %}border-md-error{% endif %}"
                                     id="{{ form.user_description.id_for_label }}"
                                     name="{{ form.user_description.name }}"
                                     rows="4"
                                     {% if form.user_description.field.required %}required{% endif %}
                                     maxlength="{{ form.user_description.field.max_length|default:500 }}">{{ form.user_description.value|default:'' }}</textarea>
-                                <label class="md-input__label" for="{{ form.user_description.id_for_label }}">申请理由 *</label>
+                                <label class="absolute top-2 left-4 text-sm text-md-on-surface-variant pointer-events-none transition-all z-[3] {% if form.user_description.errors %}!text-md-error{% endif %}" for="{{ form.user_description.id_for_label }}">申请理由 *</label>
                                 {% if form.user_description.errors %}
-                                    <div class="md-input__error">
+                                    <div class="mt-1 ml-4 text-sm text-md-error leading-normal">
                                         {% for error in form.user_description.errors %}{{ error }}{% endfor %}
                                     </div>
                                 {% else %}
-                                    <div class="md-input__helper">请说明申请云电脑主机的用途和理由</div>
+                                    <div class="mt-1 ml-4 text-sm text-md-on-surface-variant leading-normal">请说明申请云电脑主机的用途和理由</div>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="target-product-info">
-                    <strong>目标产品:</strong>
+                <div class="bg-md-secondary-container text-md-on-secondary-container p-4 rounded-md mt-4">
+                    <strong class="block mb-2">目标产品:</strong>
                     {% if form.target_product.field.queryset.first %}
                         {{ form.target_product.field.queryset.first.display_name }}
                     {% else %}
@@ -465,16 +126,16 @@
                 
                 {{ form.target_product }}
 
-                <div id="disk-quota-section" class="form-section" style="display:none;">
-                    <h3 class="form-section-title">磁盘容量需求</h3>
-                    <p class="md-input__helper" style="margin-bottom:1rem;">
+                <div id="disk-quota-section" class="mb-8 hidden">
+                    <h3 class="text-xl font-medium text-md-on-surface mb-6 pb-2 border-b border-md-outline-variant leading-normal">磁盘容量需求</h3>
+                    <p class="text-sm text-md-on-surface-variant mb-4">
                         以下磁盘允许额外申请容量，如需超出默认配额请填写需求容量（MB）
                     </p>
                     <div id="disk-quota-inputs"></div>
                     {{ form.requested_disk_capacity }}
                 </div>
 
-                <div class="form-actions">
+                <div class="flex flex-col gap-3 justify-center mt-8 pt-6 border-t border-md-outline-variant sm:flex-row sm:gap-4">
                     {% include 'components/button.html' with type="submit" variant="filled" text="提交申请并确认" size="large" %}
                     {% url 'operations:account_opening_list' as account_opening_list_url %}
                     {% include 'components/button.html' with href=account_opening_list_url variant="outlined" text="取消" size="large" %}
@@ -525,12 +186,11 @@
         config.allowExtraQuotaDisks.forEach(function(disk) {
             var defaultVal = config.defaultDiskQuota[disk] || 0;
             var item = document.createElement('div');
-            item.className = 'disk-quota-item';
-            item.style.cssText = 'display:flex;align-items:center;margin-bottom:12px;';
+            item.className = 'flex items-center mb-3';
 
             var label = document.createElement('label');
             label.textContent = disk;
-            label.style.cssText = 'width:60px;margin-right:8px;font-weight:bold;color:var(--md-sys-color-on-surface);';
+            label.className = 'w-[60px] mr-2 font-bold text-md-on-surface';
 
             var input = document.createElement('input');
             input.type = 'number';
@@ -538,15 +198,11 @@
             input.step = '1';
             input.placeholder = '需求容量(MB)';
             input.dataset.disk = disk;
-            input.style.cssText = 'width:200px;padding:12px 16px 8px;border:none;outline:none;' +
-                'background:var(--md-sys-color-surface-variant);' +
-                'border-radius:var(--md-sys-shape-corner-extra-large) var(--md-sys-shape-corner-extra-large) 0 0;' +
-                'font-size:var(--md-sys-typescale-body-large-size);color:var(--md-sys-color-on-surface);';
+            input.className = 'w-[200px] pt-7 pb-3 px-4 border-0 outline-none bg-md-surface-variant rounded-3xl text-base text-md-on-surface';
 
             var hint = document.createElement('span');
             hint.textContent = 'MB（默认: ' + defaultVal + 'MB）';
-            hint.style.cssText = 'margin-left:8px;color:var(--md-sys-color-on-surface-variant);' +
-                'font-size:var(--md-sys-typescale-body-small-size);';
+            hint.className = 'ml-2 text-md-on-surface-variant text-sm';
 
             item.appendChild(label);
             item.appendChild(input);
@@ -581,3 +237,4 @@
     updateDiskQuotaSection();
 })();
 </script>
+{% endblock %}

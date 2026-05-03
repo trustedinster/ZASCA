@@ -30,7 +30,7 @@ User = get_user_model()
 class Command(BaseCommand):
     help = '设置提供商组和默认权限，管理组成员'
 
-    PROVIDER_GROUP_NAME = '提供商'
+    PROVIDER_GROUP_NAME = '主机提供商'
 
     PROVIDER_PERMISSIONS = [
         # 产品权限 - 提供商可以创建和管理自己的产品
@@ -115,7 +115,18 @@ class Command(BaseCommand):
 
         if created:
             self.stdout.write(
-                self.style.SUCCESS(f'成功创建组: {self.PROVIDER_GROUP_NAME}')
+                self.style.SUCCESS(
+                    f'成功创建组: {self.PROVIDER_GROUP_NAME}'
+                )
+            )
+            from apps.accounts.models import GroupProfile
+            GroupProfile.objects.get_or_create(
+                group=group,
+                defaults={
+                    'is_default': True,
+                    'description': '主机提供商，可管理分配给自己的主机、产品、开户申请和工单。',
+                    'sort_order': 1,
+                }
             )
         else:
             self.stdout.write(

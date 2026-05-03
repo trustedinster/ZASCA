@@ -1,0 +1,572 @@
+{% extends "admin_base/base.html" %}
+
+{% block title %}ZASCA 超级管理员 - 添加主机向导{% endblock %}
+
+{% block breadcrumb %}
+<a href="{% url 'admin:admin_hosts:host_list' %}" class="text-white/70 hover:text-cyan-400 transition">主机管理</a>
+<span class="material-symbols-rounded text-sm text-white/50">chevron_right</span>
+<span class="text-cyan-400 font-medium">添加主机</span>
+{% endblock %}
+
+{% block content %}
+<div x-data="hostWizard()" class="max-w-3xl mx-auto">
+
+    <!-- Page Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-white">添加主机</h1>
+            <p class="text-white/70 text-sm mt-1">按照步骤引导创建新主机</p>
+        </div>
+        <a href="{% url 'admin:admin_hosts:host_list' %}" class="inline-flex items-center gap-2 text-cyan-400 hover:text-white hover:bg-cyan-500/10 px-4 py-2 rounded-md transition text-sm font-medium">
+            <span class="material-symbols-rounded text-lg">arrow_back</span>
+            返回列表
+        </a>
+    </div>
+
+    <!-- Step Indicator -->
+    <div class="flex items-center justify-center gap-2 mb-8">
+        <template x-for="s in 3" :key="s">
+            <div class="flex items-center gap-2">
+                <div
+                    :class="step >= s ? 'bg-cyan-600 text-white' : 'bg-slate-600/20 text-white/70'"
+                    class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300"
+                    x-text="s"
+                ></div>
+                <div
+                    x-show="s < 3"
+                    :class="step > s ? 'bg-cyan-600' : 'bg-slate-600/20'"
+                    class="w-12 h-1 rounded-full transition-all duration-300"
+                ></div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Step Labels -->
+    <div class="flex items-center justify-between mb-8 px-2">
+        <div :class="step >= 1 ? 'text-cyan-400' : 'text-white/70'" class="text-xs font-medium text-center w-20 transition">
+            <span class="material-symbols-rounded text-base">info</span><br>基本信息
+        </div>
+        <div :class="step >= 2 ? 'text-cyan-400' : 'text-white/70'" class="text-xs font-medium text-center w-20 transition">
+            <span class="material-symbols-rounded text-base">settings_ethernet</span><br>连接配置
+        </div>
+        <div :class="step >= 3 ? 'text-cyan-400' : 'text-white/70'" class="text-xs font-medium text-center w-20 transition">
+            <span class="material-symbols-rounded text-base">admin_panel_settings</span><br>分配提供商
+        </div>
+    </div>
+
+    <!-- Form -->
+    <form method="post" @submit.prevent="onSubmit">
+        {% csrf_token %}
+
+        <!-- Non-field errors -->
+        {% if form.non_field_errors %}
+        <div class="mb-6">
+            <x-admin-alert type="error" title="表单错误" dismissible="true">
+                {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+            </x-admin-alert>
+        </div>
+        {% endif %}
+
+        <!-- Step 1: Basic Info -->
+        <div x-show="step === 1" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-8" x-transition:enter-end="opacity-100 translate-x-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-x-0" x-transition:leave-end="opacity-0 -translate-x-8">
+            <x-admin-card title="基本信息" icon="info">
+                <div class="space-y-5">
+                    <!-- Host Name -->
+                    <div>
+                        <label for="id_name" class="block text-sm font-medium text-white mb-2">
+                            主机名称 <span class="text-red-400 ml-1">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="name"
+                            id="id_name"
+                            x-model="name"
+                            placeholder="输入主机名称，如: 北京服务器-01"
+                            required
+                            class="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-md px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500 transition"
+                        >
+                        {% if form.name.errors %}
+                        <div class="mt-1">
+                            {% for error in form.name.errors %}
+                            <p class="text-sm text-red-400">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Hostname -->
+                    <div>
+                        <label for="id_hostname" class="block text-sm font-medium text-white mb-2">
+                            主机地址 <span class="text-red-400 ml-1">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="hostname"
+                            id="id_hostname"
+                            x-model="hostname"
+                            placeholder="输入主机地址，如: 192.168.1.100"
+                            required
+                            class="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-md px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500 transition"
+                        >
+                        {% if form.hostname.errors %}
+                        <div class="mt-1">
+                            {% for error in form.hostname.errors %}
+                            <p class="text-sm text-red-400">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Connection Type -->
+                    <div>
+                        <label for="id_connection_type" class="block text-sm font-medium text-white mb-2">
+                            连接类型 <span class="text-red-400 ml-1">*</span>
+                        </label>
+                        <div class="relative">
+                            <select
+                                name="connection_type"
+                                id="id_connection_type"
+                                x-model="connectionType"
+                                x-on:change="onConnectionTypeChange()"
+                                required
+                                class="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-md px-4 py-3 text-white appearance-none focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500 transition cursor-pointer"
+                            >
+                                {% for value, label in connection_type_choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <span class="material-symbols-rounded absolute right-3 top-1/2 -translate-y-1/2 text-white/50 pointer-events-none">expand_more</span>
+                        </div>
+                        {% if form.connection_type.errors %}
+                        <div class="mt-1">
+                            {% for error in form.connection_type.errors %}
+                            <p class="text-sm text-red-400">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Tunnel Info Alert -->
+                    <div x-show="connectionType === 'tunnel'" x-transition>
+                        <x-admin-alert type="info" title="隧道模式说明" dismissible="false">
+                            隧道模式适用于无公网IP的主机。主机将通过隧道客户端主动连接到服务器，无需开放入站端口。创建后将自动生成隧道Token。
+                        </x-admin-alert>
+                    </div>
+                </div>
+            </x-admin-card>
+        </div>
+
+        <!-- Step 2: Connection Config -->
+        <div x-show="step === 2" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-8" x-transition:enter-end="opacity-100 translate-x-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-x-0" x-transition:leave-end="opacity-0 -translate-x-8">
+            <x-admin-card title="连接配置" icon="settings_ethernet">
+                <div class="space-y-5">
+                    <!-- Port & RDP Port -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div>
+                            <label for="id_port" class="block text-sm font-medium text-white mb-2">
+                                连接端口 <span class="text-red-400 ml-1">*</span>
+                            </label>
+                            <input
+                                type="number"
+                                name="port"
+                                id="id_port"
+                                x-model.number="port"
+                                required
+                                class="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-md px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500 transition"
+                            >
+                            <p class="mt-1 text-sm text-white/70" x-text="portHint"></p>
+                            {% if form.port.errors %}
+                            <div class="mt-1">
+                                {% for error in form.port.errors %}
+                                <p class="text-sm text-red-400">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <label for="id_rdp_port" class="block text-sm font-medium text-white mb-2">
+                                RDP端口
+                            </label>
+                            <input
+                                type="number"
+                                name="rdp_port"
+                                id="id_rdp_port"
+                                x-model.number="rdpPort"
+                                class="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-md px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500 transition"
+                            >
+                            {% if form.rdp_port.errors %}
+                            <div class="mt-1">
+                                {% for error in form.rdp_port.errors %}
+                                <p class="text-sm text-red-400">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Use SSL -->
+                    <div class="flex items-center gap-3">
+                        <input
+                            type="checkbox"
+                            name="use_ssl"
+                            id="id_use_ssl"
+                            x-model="useSsl"
+                            class="w-5 h-5 rounded border-slate-700/50 bg-slate-900/50 text-cyan-400 focus:ring-cyan-500 focus:ring-2 transition cursor-pointer accent-md-primary"
+                        >
+                        <label for="id_use_ssl" class="text-sm text-white cursor-pointer">使用SSL加密连接</label>
+                        <span x-show="port === 5986" class="text-xs text-cyan-400">(端口5986通常需要SSL)</span>
+                    </div>
+
+                    <!-- Username -->
+                    <div>
+                        <label for="id_username" class="block text-sm font-medium text-white mb-2">
+                            用户名 <span class="text-red-400 ml-1">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="username"
+                            id="id_username"
+                            x-model="username"
+                            placeholder="输入连接用户名，如: Administrator"
+                            required
+                            class="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-md px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500 transition"
+                        >
+                        {% if form.username.errors %}
+                        <div class="mt-1">
+                            {% for error in form.username.errors %}
+                            <p class="text-sm text-red-400">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Password -->
+                    <div>
+                        <label for="id_password" class="block text-sm font-medium text-white mb-2">
+                            密码
+                        </label>
+                        <div class="relative">
+                            <input
+                                type="password"
+                                name="password"
+                                id="id_password"
+                                x-model="password"
+                                placeholder="输入密码或留空自动生成"
+                                autocomplete="new-password"
+                                class="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-md px-4 py-3 pr-12 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500 transition"
+                            >
+                            <button
+                                type="button"
+                                @click="togglePasswordVisibility()"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition"
+                            >
+                                <span class="material-symbols-rounded text-lg" x-text="showPassword ? 'visibility_off' : 'visibility'">visibility</span>
+                            </button>
+                        </div>
+                        <p class="mt-1 text-sm text-white/70">留空将自动生成随机密码</p>
+                        {% if form.password.errors %}
+                        <div class="mt-1">
+                            {% for error in form.password.errors %}
+                            <p class="text-sm text-red-400">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Tunnel auto-generate option -->
+                        <div x-show="connectionType === 'tunnel'" x-transition class="mt-2">
+                            <x-admin-alert type="info" dismissible="false">
+                                隧道模式下，密码将用于本地WinServer连接的备用认证。建议留空自动生成。
+                            </x-admin-alert>
+                        </div>
+                    </div>
+
+                    <!-- Test Connection (placeholder) -->
+                    <div class="pt-3 border-t border-slate-700/50">
+                        <button
+                            type="button"
+                            @click="testConnection()"
+                            :disabled="testingConnection"
+                            class="inline-flex items-center gap-2 text-cyan-400 hover:bg-cyan-500/10 px-4 py-2 rounded-md transition text-sm font-medium disabled:opacity-50"
+                        >
+                            <span class="material-symbols-rounded text-lg" x-text="testingConnection ? 'hourglass_empty' : 'cable'">cable</span>
+                            <span x-text="testingConnection ? '测试中...' : '测试连接'">测试连接</span>
+                        </button>
+                        <div x-show="testResult" x-transition class="mt-3">
+                            <x-admin-alert :type="testSuccess ? 'success' : 'error'" dismissible="true">
+                                <span x-text="testResult"></span>
+                            </x-admin-alert>
+                        </div>
+                    </div>
+                </div>
+            </x-admin-card>
+        </div>
+
+        <!-- Step 3: Provider Assignment -->
+        <div x-show="step === 3" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-8" x-transition:enter-end="opacity-100 translate-x-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-x-0" x-transition:leave-end="opacity-0 -translate-x-8">
+            <x-admin-card title="分配提供商" icon="admin_panel_settings">
+                <div class="space-y-5">
+                    <!-- Provider Selection -->
+                    <div>
+                        <label class="block text-sm font-medium text-white mb-3">
+                            选择管理提供商
+                        </label>
+                        <p class="text-sm text-white/70 mb-4">选择可以管理此主机的提供商用户</p>
+
+                        {% if providers_with_count %}
+                        <div class="space-y-2 max-h-64 overflow-y-auto pr-2">
+                            {% for provider in providers_with_count %}
+                            <label
+                                class="flex items-center justify-between gap-3 px-4 py-3 rounded-md bg-slate-900/50 backdrop-blur-sm border border-slate-600/30 hover:border-cyan-500/50 hover:bg-cyan-600/5 cursor-pointer transition"
+                                :class="selectedProviders.includes({{ provider.id }}) ? 'border-cyan-500/50 bg-cyan-500/10' : ''"
+                            >
+                                <div class="flex items-center gap-3">
+                                    <input
+                                        type="checkbox"
+                                        name="providers"
+                                        value="{{ provider.id }}"
+                                        x-model.number="selectedProviders"
+                                        class="w-5 h-5 rounded border-slate-700/50 bg-slate-900/50 text-cyan-400 focus:ring-cyan-500 focus:ring-2 transition accent-md-primary"
+                                    >
+                                    <span class="text-sm text-white font-medium">{{ provider.username }}</span>
+                                </div>
+                                <span class="text-xs text-white/70">
+                                    已管理 {{ provider.host_count }} 台主机
+                                </span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-8">
+                            <span class="material-symbols-rounded text-4xl text-white/70 mb-2">person_off</span>
+                            <p class="text-sm text-white/70">暂无可用的提供商用户</p>
+                            <p class="text-xs text-white/70 mt-1">请先在用户管理中创建提供商用户</p>
+                        </div>
+                        {% endif %}
+
+                        {% if form.providers.errors %}
+                        <div class="mt-2">
+                            {% for error in form.providers.errors %}
+                            <p class="text-sm text-red-400">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Description -->
+                    <div class="pt-4 border-t border-slate-700/50">
+                        <label for="id_description" class="block text-sm font-medium text-white mb-2">
+                            描述
+                        </label>
+                        <textarea
+                            name="description"
+                            id="id_description"
+                            x-model="description"
+                            rows="3"
+                            placeholder="输入主机描述（可选）"
+                            class="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-md px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500 transition resize-y"
+                        ></textarea>
+                    </div>
+
+                    <!-- Summary Preview -->
+                    <div class="pt-4 border-t border-slate-700/50">
+                        <h3 class="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                            <span class="material-symbols-rounded text-cyan-400 text-lg">summarize</span>
+                            创建预览
+                        </h3>
+                        <div class="bg-slate-950/30 rounded-md p-4 space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-white/70">主机名称</span>
+                                <span class="text-white font-medium" x-text="name || '-'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-white/70">主机地址</span>
+                                <span class="text-white font-medium" x-text="hostname || '-'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-white/70">连接类型</span>
+                                <span class="text-white font-medium" x-text="connectionTypeLabel"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-white/70">端口</span>
+                                <span class="text-white font-medium" x-text="port"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-white/70">SSL</span>
+                                <span class="text-white font-medium" x-text="useSsl ? '是' : '否'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-white/70">用户名</span>
+                                <span class="text-white font-medium" x-text="username || '-'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-white/70">密码</span>
+                                <span class="text-white font-medium" x-text="password ? '已设置' : '自动生成'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-white/70">提供商</span>
+                                <span class="text-white font-medium" x-text="selectedProviders.length ? selectedProviders.length + ' 位' : '未分配'"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </x-admin-card>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="flex justify-between mt-6">
+            <button
+                type="button"
+                x-show="step > 1"
+                @click="step--"
+                x-transition
+                class="inline-flex items-center justify-center gap-2 border border-slate-600 text-cyan-400 rounded-md font-medium transition hover:bg-cyan-500/10 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500 px-6 py-3"
+            >
+                <span class="material-symbols-rounded text-xl">arrow_back</span>
+                上一步
+            </button>
+            <div x-show="step === 1" class="flex-1"></div>
+
+            <button
+                type="button"
+                x-show="step < 3"
+                @click="nextStep()"
+                x-transition
+                class="inline-flex items-center justify-center gap-2 bg-cyan-600 text-white rounded-md font-medium transition hover:bg-cyan-600/90 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500 px-6 py-3"
+            >
+                下一步
+                <span class="material-symbols-rounded text-xl">arrow_forward</span>
+            </button>
+
+            <button
+                type="submit"
+                x-show="step === 3"
+                x-transition
+                class="inline-flex items-center justify-center gap-2 bg-cyan-600 text-white rounded-md font-medium transition hover:bg-cyan-600/90 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500 px-6 py-3"
+            >
+                <span class="material-symbols-rounded text-xl">check</span>
+                创建主机
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+function hostWizard() {
+    return {
+        step: 1,
+        name: '',
+        hostname: '',
+        connectionType: 'winrm',
+        port: 5985,
+        rdpPort: 3389,
+        useSsl: false,
+        username: '',
+        password: '',
+        description: '',
+        selectedProviders: [],
+        showPassword: false,
+        testingConnection: false,
+        testResult: null,
+        testSuccess: false,
+
+        // 连接类型默认端口映射
+        defaultPorts: {{ default_ports|safe }},
+        defaultSsl: {{ default_ssl|safe }},
+
+        // 连接类型中文标签
+        connectionTypeLabels: {
+            {% for value, label in connection_type_choices %}
+            '{{ value }}': '{{ label }}',
+            {% endfor %}
+        },
+
+        get connectionTypeLabel() {
+            return this.connectionTypeLabels[this.connectionType] || this.connectionType;
+        },
+
+        get portHint() {
+            const hints = {
+                'winrm': 'WinRM默认: 5985(HTTP) / 5986(HTTPS)',
+                'ssh': 'SSH默认: 22',
+                'localwinserver': '本地WinServer默认: 5985',
+                'tunnel': '隧道模式默认: 5985',
+            };
+            return hints[this.connectionType] || '';
+        },
+
+        onConnectionTypeChange() {
+            // 根据连接类型自动设置端口和SSL
+            const newPort = this.defaultPorts[this.connectionType];
+            if (newPort) {
+                this.port = newPort;
+            }
+            const newSsl = this.defaultSsl[this.connectionType];
+            if (newSsl !== undefined) {
+                this.useSsl = newSsl;
+            }
+            // 端口5986自动启用SSL
+            if (this.port === 5986) {
+                this.useSsl = true;
+            }
+        },
+
+        togglePasswordVisibility() {
+            this.showPassword = !this.showPassword;
+            const input = document.getElementById('id_password');
+            input.type = this.showPassword ? 'text' : 'password';
+        },
+
+        nextStep() {
+            // 简单的客户端验证
+            if (this.step === 1) {
+                if (!this.name.trim()) {
+                    this.shakeField('id_name');
+                    return;
+                }
+                if (!this.hostname.trim()) {
+                    this.shakeField('id_hostname');
+                    return;
+                }
+            }
+            if (this.step === 2) {
+                if (!this.username.trim()) {
+                    this.shakeField('id_username');
+                    return;
+                }
+            }
+            this.step++;
+        },
+
+        shakeField(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add('border-red-500');
+                el.focus();
+                setTimeout(() => {
+                    el.classList.remove('border-red-500');
+                }, 2000);
+            }
+        },
+
+        testConnection() {
+            // 占位：测试连接功能
+            this.testingConnection = true;
+            this.testResult = null;
+            setTimeout(() => {
+                this.testingConnection = false;
+                this.testResult = '连接测试功能将在保存主机后自动执行';
+                this.testSuccess = true;
+            }, 1500);
+        },
+
+        onSubmit() {
+            // 同步 Alpine.js 状态到隐藏的表单字段
+            const form = this.$el;
+            // 确保所有字段值已同步
+            this.$el.submit();
+        },
+    };
+}
+</script>
+{% endblock %}

@@ -1,3 +1,1 @@
-from django.contrib import admin
-
-# Register your models here.
+# 隧道系统无需后台管理

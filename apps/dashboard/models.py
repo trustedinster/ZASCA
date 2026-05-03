@@ -72,60 +72,6 @@ class DashboardWidget(models.Model):
         return self.title
 
 
-class UserActivity(models.Model):
-    """
-    用户活动模型
-    用于跟踪用户的活动情况
-    """
-    class Meta:
-        verbose_name = '用户活动'
-        verbose_name_plural = verbose_name
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['user']),
-            models.Index(fields=['activity_type']),
-            models.Index(fields=['ip_address']),
-            models.Index(fields=['created_at']),
-        ]
-
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        verbose_name='用户',
-        related_name='activities',
-        help_text='关联的用户'
-    )
-    activity_type = models.CharField(
-        '活动类型',
-        max_length=100,
-        help_text='用户活动的类型'
-    )
-    description = models.TextField(
-        '描述',
-        blank=True,
-        help_text='活动描述'
-    )
-    ip_address = models.GenericIPAddressField(
-        'IP地址',
-        null=True,
-        blank=True,
-        help_text='用户操作的IP地址'
-    )
-    user_agent = models.TextField(
-        '用户代理',
-        blank=True,
-        help_text='用户浏览器的User-Agent信息'
-    )
-    created_at = models.DateTimeField(
-        '创建时间',
-        auto_now_add=True,
-        help_text='活动记录创建时间'
-    )
-
-    def __str__(self):
-        return f'{self.user.username} - {self.activity_type}'  # type: ignore
-
-
 class SystemConfig(models.Model):
     """
     系统配置模型
@@ -309,26 +255,24 @@ class SystemConfig(models.Model):
         help_text='公安备案号，例如：京公网安备 11010502000000号'
     )
 
-    # 邮箱后缀配置
-    EMAIL_SUFFIX_MODE_CHOICES = (
-        ('allow_all', '全部允许'),
-        ('whitelist', '白名单'),
-        ('blacklist', '黑名单'),
-    )
-    email_suffix_mode = models.CharField(
-        max_length=20,
-        choices=EMAIL_SUFFIX_MODE_CHOICES,
-        default='allow_all',
-        verbose_name='邮箱后缀模式',
-        help_text='邮箱后缀验证模式：全部允许、白名单或黑名单'
-    )
-    email_suffix_list = models.TextField(
+    email_suffix_whitelist = models.TextField(
         blank=True,
         null=True,
-        verbose_name='邮箱后缀列表',
+        verbose_name='邮箱后缀白名单',
         help_text=(
-            '允许或禁止的邮箱后缀列表，每行一个后缀，'
-            '例如：\n@example.com\n@gmail.com\n@company.com'
+            '允许注册的邮箱后缀列表，每行一个后缀，'
+            '例如：\n@example.com\n@gmail.com\n@company.com\n'
+            '留空表示不限制'
+        )
+    )
+    email_suffix_blacklist = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='邮箱后缀黑名单',
+        help_text=(
+            '禁止注册的邮箱后缀列表，每行一个后缀，'
+            '例如：\n@tempmail.com\n@spam.com\n'
+            '留空表示不限制'
         )
     )
 
@@ -336,6 +280,30 @@ class SystemConfig(models.Model):
         default=False,
         verbose_name='禁止本地访问',
         help_text='启用后将禁止来自 localhost/127.0.0.1 的访问'
+    )
+
+    qq_bot_host = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name='QQ机器人服务器地址',
+        help_text='QQ机器人服务器的主机地址（系统默认配置）'
+    )
+
+    qq_bot_port = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name='QQ机器人服务器端口',
+        help_text='QQ机器人服务器的端口号（系统默认配置）'
+    )
+
+    qq_bot_token = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name='QQ机器人访问令牌',
+        help_text='用于认证的访问令牌（系统默认配置）'
     )
 
     created_at = models.DateTimeField(

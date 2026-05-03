@@ -127,8 +127,6 @@ class DemoModeMiddleware:
         permissions = [
             # View登录日志
             ('accounts', 'loginlog', 'view'),
-            # View日志记录 (UserActivity)
-            ('dashboard', 'useractivity', 'view'),
             # View开户申请
             ('operations', 'accountopeningrequest', 'view'),
             # Change开户申请

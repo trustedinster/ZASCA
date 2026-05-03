@@ -2,7 +2,7 @@
 用户管理模型
 """
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Group
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
@@ -244,4 +244,41 @@ class LoginLog(models.Model):
 
     def __str__(self):
         """返回登录信息"""
-        return f'{self.user.username if self.user else "未知用户"} - {self.ip_address}'
+        return (
+            f'{self.user.username if self.user else "未知用户"}'
+            f' - {self.ip_address}'
+        )
+
+
+class GroupProfile(models.Model):
+    group = models.OneToOneField(
+        Group,
+        on_delete=models.CASCADE,
+        related_name='profile',
+        verbose_name=_('用户组'),
+        help_text=_('关联的Django用户组')
+    )
+    is_default = models.BooleanField(
+        default=False,
+        verbose_name=_('默认组'),
+        help_text=_('默认组不可删除，系统预设角色')
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name=_('描述'),
+        help_text=_('用户组的功能描述')
+    )
+    sort_order = models.IntegerField(
+        default=0,
+        verbose_name=_('排序'),
+        help_text=_('数值越小排序越靠前')
+    )
+
+    class Meta:
+        verbose_name = _('用户组配置')
+        verbose_name_plural = verbose_name
+        ordering = ['sort_order', 'group__name']
+
+    def __str__(self):
+        default_tag = ' [默认]' if self.is_default else ''
+        return f'{self.group.name}{default_tag}'

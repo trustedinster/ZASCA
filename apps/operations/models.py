@@ -266,12 +266,31 @@ class ProductGroup(models.Model):
         verbose_name=_('是否启用'),
         help_text=_('是否在前端展示此产品组')
     )
+    visibility = models.CharField(
+        max_length=20,
+        choices=[
+            ('public', _('公开')),
+            ('invite_only', _('邀请访问')),
+        ],
+        default='public',
+        verbose_name=_('可见性'),
+        help_text=_('产品组的可见性：公开对所有用户可见，邀请访问仅对已授权用户可见')
+    )
     auto_assign_providers = models.ManyToManyField(
         User,
         blank=True,
         related_name='auto_product_groups',
         verbose_name=_('自动分配提供商'),
         help_text=_('这些提供商创建的产品将自动加入此产品组')
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_product_groups',
+        verbose_name=_('创建者'),
+        help_text=_('创建此产品组的用户')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -362,6 +381,16 @@ class Product(models.Model):
         default=False,
         verbose_name=_('自动审核'),
         help_text=_('是否自动批准针对此产品的开户申请')
+    )
+    visibility = models.CharField(
+        max_length=20,
+        choices=[
+            ('public', _('公开')),
+            ('invite_only', _('邀请访问')),
+        ],
+        default='public',
+        verbose_name=_('可见性'),
+        help_text=_('产品的可见性：公开对所有用户可见，邀请访问仅对已授权用户可见')
     )
 
     enable_disk_quota = models.BooleanField(
@@ -1240,3 +1269,221 @@ class RdpDomainRoute(models.Model):
     @property
     def is_protected(self):
         return self.product.enable_host_protection
+
+
+class ProductInvitationToken(models.Model):
+    """
+    产品邀请令牌模型
+
+    用于生成邀请链接，用户访问链接后可解锁指定产品或产品组的访问权限
+    """
+    token = models.CharField(
+        max_length=64,
+        unique=True,
+        verbose_name=_('邀请令牌'),
+        help_text=_('用于邀请链接的唯一令牌')
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='invitation_tokens',
+        verbose_name=_('关联产品'),
+        help_text=_('此令牌关联的产品（与产品组至少选一个）')
+    )
+    product_group = models.ForeignKey(
+        ProductGroup,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='invitation_tokens',
+        verbose_name=_('关联产品组'),
+        help_text=_('此令牌关联的产品组（与产品至少选一个）')
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='created_invitation_tokens',
+        verbose_name=_('创建者'),
+        help_text=_('创建此邀请令牌的用户')
+    )
+    max_uses = models.IntegerField(
+        default=0,
+        verbose_name=_('最大使用次数'),
+        help_text=_('令牌最大可使用次数，0表示无限制')
+    )
+    used_count = models.IntegerField(
+        default=0,
+        verbose_name=_('已使用次数'),
+        help_text=_('令牌已被使用的次数')
+    )
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_('过期时间'),
+        help_text=_('令牌过期时间，留空表示永不过期')
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name=_('是否启用'),
+        help_text=_('令牌是否有效')
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('创建时间')
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_('更新时间')
+    )
+
+    class Meta:
+        verbose_name = _('产品邀请令牌')
+        verbose_name_plural = _('产品邀请令牌')
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['token']),
+            models.Index(fields=['is_active']),
+            models.Index(fields=['expires_at']),
+            models.Index(fields=['created_by']),
+        ]
+
+    def __str__(self):
+        target = self.product.display_name if self.product else (self.product_group.name if self.product_group else _('未知'))
+        return f'{self.token[:8]}... -> {target}'
+
+    def is_expired(self):
+        if self.expires_at and timezone.now() > self.expires_at:
+            return True
+        return False
+
+    def is_exhausted(self):
+        if self.max_uses > 0 and self.used_count >= self.max_uses:
+            return True
+        return False
+
+    def is_valid(self):
+        return self.is_active and not self.is_expired() and not self.is_exhausted()
+
+    def increment_usage(self):
+        self.used_count += 1
+        self.save(update_fields=['used_count', 'updated_at'])
+
+    def generate_token(self):
+        import secrets
+        import string
+        return ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32))
+
+    def save(self, *args, **kwargs):
+        if not self.token:
+            self.token = self.generate_token()
+        super().save(*args, **kwargs)
+
+
+class ProductAccessGrant(models.Model):
+    """
+    产品访问授权记录模型
+
+    记录用户通过邀请链接获得的产品或产品组访问权限
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='product_access_grants',
+        verbose_name=_('用户'),
+        help_text=_('获得访问权限的用户')
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='access_grants',
+        verbose_name=_('关联产品'),
+        help_text=_('授权访问的产品')
+    )
+    product_group = models.ForeignKey(
+        ProductGroup,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='access_grants',
+        verbose_name=_('关联产品组'),
+        help_text=_('授权访问的产品组')
+    )
+    granted_by_token = models.ForeignKey(
+        ProductInvitationToken,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='access_grants',
+        verbose_name=_('来源邀请令牌'),
+        help_text=_('通过哪个邀请令牌获得的权限')
+    )
+    granted_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('授权时间')
+    )
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_('授权过期时间'),
+        help_text=_('访问权限过期时间，留空表示永久有效')
+    )
+    is_revoked = models.BooleanField(
+        default=False,
+        verbose_name=_('是否已撤销'),
+        help_text=_('权限是否已被撤销')
+    )
+    revoked_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_('撤销时间')
+    )
+    revoked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='revoked_access_grants',
+        verbose_name=_('撤销人'),
+        help_text=_('撤销此权限的用户')
+    )
+
+    class Meta:
+        verbose_name = _('产品访问授权')
+        verbose_name_plural = _('产品访问授权')
+        ordering = ['-granted_at']
+        indexes = [
+            models.Index(fields=['user']),
+            models.Index(fields=['product']),
+            models.Index(fields=['product_group']),
+            models.Index(fields=['is_revoked']),
+            models.Index(fields=['granted_at']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'product'],
+                condition=models.Q(product__isnull=False),
+                name='unique_user_product_grant'
+            ),
+            models.UniqueConstraint(
+                fields=['user', 'product_group'],
+                condition=models.Q(product_group__isnull=False),
+                name='unique_user_productgroup_grant'
+            ),
+        ]
+
+    def __str__(self):
+        target = self.product.display_name if self.product else (self.product_group.name if self.product_group else _('未知'))
+        status = _('已撤销') if self.is_revoked else (_('已过期') if self.is_expired() else _('有效'))
+        return f'{self.user.username} -> {target} ({status})'
+
+    def is_expired(self):
+        if self.expires_at and timezone.now() > self.expires_at:
+            return True
+        return False
+
+    def is_effective(self):
+        return not self.is_revoked and not self.is_expired()

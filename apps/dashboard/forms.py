@@ -6,6 +6,26 @@ from django.core.mail import send_mail
 from django.core.exceptions import ValidationError
 from .models import DashboardWidget, SystemConfig
 
+MD_INPUT_CLASS = (
+    'w-full bg-md-surface/50 border border-md-outline/50 rounded-md px-4 py-3 '
+    'text-md-on-surface placeholder-md-outline focus:outline-none focus:ring-2 '
+    'focus:ring-md-primary transition'
+)
+MD_SELECT_CLASS = (
+    'w-full bg-md-surface/50 border border-md-outline/50 rounded-md px-4 py-3 '
+    'text-md-on-surface appearance-none focus:outline-none focus:ring-2 '
+    'focus:ring-md-primary transition cursor-pointer'
+)
+MD_CHECKBOX_CLASS = (
+    'w-5 h-5 rounded border-md-outline/50 bg-md-surface/50 text-md-primary '
+    'focus:ring-md-primary focus:ring-2 transition cursor-pointer accent-md-primary'
+)
+MD_TEXTAREA_CLASS = (
+    'w-full bg-md-surface/50 border border-md-outline/50 rounded-md px-4 py-3 '
+    'text-md-on-surface placeholder-md-outline focus:outline-none focus:ring-2 '
+    'focus:ring-md-primary transition resize-y'
+)
+
 
 class DashboardWidgetForm(forms.ModelForm):
     """
@@ -20,21 +40,21 @@ class DashboardWidgetForm(forms.ModelForm):
         ]
         widgets = {
             'widget_type': forms.Select(attrs={
-                'class': 'form-control'
+                'class': MD_SELECT_CLASS
             }),
             'title': forms.TextInput(attrs={
-                'class': 'form-control',
+                'class': MD_INPUT_CLASS,
                 'placeholder': '请输入组件标题'
             }),
             'display_order': forms.NumberInput(attrs={
-                'class': 'form-control',
+                'class': MD_INPUT_CLASS,
                 'min': 0
             }),
             'is_enabled': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
+                'class': MD_CHECKBOX_CLASS
             }),
             'widget_config': forms.Textarea(attrs={
-                'class': 'form-control',
+                'class': MD_TEXTAREA_CLASS,
                 'rows': 5,
                 'placeholder': '请输入JSON格式的配置参数'
             })
@@ -70,7 +90,7 @@ class WidgetConfigForm(forms.Form):
         label='启用组件',
         required=False,
         widget=forms.CheckboxInput(attrs={
-            'class': 'form-check-input'
+            'class': MD_CHECKBOX_CLASS
         })
     )
     display_order = forms.IntegerField(
@@ -78,7 +98,7 @@ class WidgetConfigForm(forms.Form):
         required=True,
         min_value=0,
         widget=forms.NumberInput(attrs={
-            'class': 'form-control'
+            'class': MD_INPUT_CLASS
         })
     )
 
@@ -101,58 +121,58 @@ class SystemConfigForm(forms.ModelForm):
             'captcha_id',
             'captcha_key',
             'captcha_provider',
-            'email_suffix_mode',
-            'email_suffix_list',
+            'email_suffix_whitelist',
+            'email_suffix_blacklist',
         ]
         widgets = {
             'site_name': forms.TextInput(attrs={
-                'class': 'form-control',
+                'class': MD_INPUT_CLASS,
                 'placeholder': '请输入站点名称'
             }),
             'icp_number': forms.TextInput(attrs={
-                'class': 'form-control',
+                'class': MD_INPUT_CLASS,
                 'placeholder': '例如：京ICP备12345678号'
             }),
             'police_number': forms.TextInput(attrs={
-                'class': 'form-control',
+                'class': MD_INPUT_CLASS,
                 'placeholder': '例如：京公网安备 11010502000000号'
             }),
             'enable_registration': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
+                'class': MD_CHECKBOX_CLASS
             }),
             'smtp_host': forms.TextInput(attrs={
-                'class': 'form-control',
+                'class': MD_INPUT_CLASS,
                 'placeholder': '请输入SMTP服务器地址'
             }),
             'smtp_port': forms.NumberInput(attrs={
-                'class': 'form-control',
+                'class': MD_INPUT_CLASS,
                 'placeholder': '请输入SMTP端口'
             }),
             'smtp_use_tls': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
+                'class': MD_CHECKBOX_CLASS
             }),
             'smtp_username': forms.EmailInput(attrs={
-                'class': 'form-control',
+                'class': MD_INPUT_CLASS,
                 'placeholder': '请输入SMTP用户名'
             }),
             'smtp_password': forms.PasswordInput(attrs={
-                'class': 'form-control',
+                'class': MD_INPUT_CLASS,
                 'placeholder': '请输入SMTP密码',
                 'render_value': True
             }),
             'smtp_from_email': forms.EmailInput(attrs={
-                'class': 'form-control',
+                'class': MD_INPUT_CLASS,
                 'placeholder': '请输入发件人邮箱'
             }),
             'captcha_id': forms.TextInput(attrs={
-                'class': 'form-control',
+                'class': MD_INPUT_CLASS,
                 'placeholder': (
                     '请输入验证码 ID '
                     '(Geetest的captcha_id 或 Turnstile的site key)'
                 )
             }),
             'captcha_key': forms.TextInput(attrs={
-                'class': 'form-control',
+                'class': MD_INPUT_CLASS,
                 'placeholder': (
                     '请输入验证码密钥 '
                     '(Geetest的private_key 或 Turnstile的secret key)'
@@ -160,17 +180,22 @@ class SystemConfigForm(forms.ModelForm):
                 'type': 'password'
             }),
             'captcha_provider': forms.Select(attrs={
-                'class': 'form-select'
+                'class': MD_SELECT_CLASS
             }),
-            'email_suffix_mode': forms.Select(attrs={
-                'class': 'form-select'
-            }),
-            'email_suffix_list': forms.Textarea(attrs={
-                'class': 'form-control',
+            'email_suffix_whitelist': forms.Textarea(attrs={
+                'class': MD_TEXTAREA_CLASS,
                 'rows': 5,
                 'placeholder': (
-                    '每行一个邮箱后缀，例如：\n'
+                    '每行一个允许的邮箱后缀，例如：\n'
                     '@example.com\n@gmail.com\n@company.com'
+                )
+            }),
+            'email_suffix_blacklist': forms.Textarea(attrs={
+                'class': MD_TEXTAREA_CLASS,
+                'rows': 5,
+                'placeholder': (
+                    '每行一个禁止的邮箱后缀，例如：\n'
+                    '@tempmail.com\n@spam.com'
                 )
             }),
         }

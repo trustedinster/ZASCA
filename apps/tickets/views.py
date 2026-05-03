@@ -127,10 +127,15 @@ class PendingTicketsView(LoginRequiredMixin, ListView):
         queryset = Ticket.objects.filter(status__in=['pending', 'processing', 'waiting_feedback'])
 
         if not (user.is_staff or user.is_superuser):
-            # 非管理员只能看到分配给自己的
-            queryset = queryset.filter(assignee=user)
+            # 非管理员只能看到分配给自己或自己所在用户组的
+            user_groups = user.groups.all()
+            queryset = queryset.filter(
+                Q(assignee=user) | Q(assigned_group__in=user_groups)
+            )
 
-        return queryset.select_related('creator', 'assignee', 'category').order_by('due_at', '-priority', '-created_at')
+        return queryset.select_related(
+            'creator', 'assignee', 'assigned_group', 'category'
+        ).order_by('due_at', '-priority', '-created_at')
 
     def get_context_data(self, **kwargs):
         """获取模板上下文数据"""
@@ -161,8 +166,11 @@ class TicketCreateView(LoginRequiredMixin, CreateView):
         form.instance.source = 'web'
 
         # 如果有分类，自动分配
-        if form.instance.category and form.instance.category.auto_assign_to:
-            form.instance.assignee = form.instance.category.auto_assign_to
+        if form.instance.category:
+            if form.instance.category.auto_assign_to:
+                form.instance.assignee = form.instance.category.auto_assign_to
+            if form.instance.category.auto_assign_to_group:
+                form.instance.assigned_group = form.instance.category.auto_assign_to_group
 
         response = super().form_valid(form)
 
@@ -194,7 +202,8 @@ class TicketDetailView(LoginRequiredMixin, DetailView):
     def get_queryset(self):
         """获取查询集"""
         return Ticket.objects.select_related(
-            'creator', 'assignee', 'category', 'related_product', 'related_host'
+            'creator', 'assignee', 'assigned_group', 'category',
+            'related_product', 'related_host'
         ).prefetch_related('comments', 'activities')
 
     def get_context_data(self, **kwargs):
@@ -208,7 +217,8 @@ class TicketDetailView(LoginRequiredMixin, DetailView):
             ticket.creator == user or
             ticket.assignee == user or
             user.is_staff or
-            user.is_superuser
+            user.is_superuser or
+            (ticket.assigned_group and user.groups.filter(pk=ticket.assigned_group.pk).exists())
         )
 
         if not can_view:
@@ -256,11 +266,24 @@ def ticket_assign(request, pk):
     if request.method == 'POST':
         form = TicketAssignForm(request.POST)
         if form.is_valid():
-            assignee = form.cleaned_data['assignee']
+            assignee = form.cleaned_data.get('assignee')
+            assigned_group = form.cleaned_data.get('assigned_group')
             notes = form.cleaned_data['notes']
 
             old_assignee = ticket.assignee
-            ticket.assign_to(assignee, actor=request.user)
+            old_assigned_group = ticket.assigned_group
+            ticket.assign_to(
+                user=assignee,
+                group=assigned_group,
+                actor=request.user,
+            )
+
+            # 构建分配描述
+            assign_desc_parts = []
+            if assignee:
+                assign_desc_parts.append(f'{assignee.username}')
+            if assigned_group:
+                assign_desc_parts.append(f'{assigned_group.name}(组)')
 
             # 记录活动
             TicketActivity.objects.create(
@@ -268,11 +291,11 @@ def ticket_assign(request, pk):
                 actor=request.user,
                 action='assign',
                 old_value=str(old_assignee) if old_assignee else '',
-                new_value=str(assignee),
-                description=f'工单分配给 {assignee.username}' + (f'，备注: {notes}' if notes else '')
+                new_value=' / '.join(assign_desc_parts),
+                description=f'工单分配给 {" / ".join(assign_desc_parts)}' + (f'，备注: {notes}' if notes else '')
             )
 
-            messages.success(request, f'工单已分配给 {assignee.username}')
+            messages.success(request, f'工单已分配给 {" / ".join(assign_desc_parts)}')
             return redirect('tickets:ticket_detail', pk=ticket.pk)
 
     return redirect('tickets:ticket_detail', pk=ticket.pk)
@@ -286,7 +309,8 @@ def ticket_status_update(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk)
 
     # 权限检查
-    if not (request.user.is_staff or request.user.is_superuser or request.user == ticket.assignee):
+    if not (request.user.is_staff or request.user.is_superuser or request.user == ticket.assignee or
+            (ticket.assigned_group and request.user.groups.filter(pk=ticket.assigned_group.pk).exists())):
         return HttpResponseForbidden('无权操作')
 
     if request.method == 'POST':
@@ -366,7 +390,8 @@ def ticket_comment(request, pk):
         ticket.creator == request.user or
         ticket.assignee == request.user or
         request.user.is_staff or
-        request.user.is_superuser
+        request.user.is_superuser or
+        (ticket.assigned_group and request.user.groups.filter(pk=ticket.assigned_group.pk).exists())
     )
 
     if not can_comment:

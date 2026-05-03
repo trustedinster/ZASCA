@@ -1,387 +1,138 @@
-# ZASCA 项目 - AI Agent UV 环境管理指南
+# ZASCA 项目 - AI Agent 绝对开发规范
 
-## 概述
+## 0. 核心铁律（违反即严重错误）
 
-ZASCA 项目使用 [UV](https://github.com/astral-sh/uv) 作为 Python 包管理器和环境管理工具。UV 是一个现代化的、极快的 Python 包管理器，可以替代 pip、pip-tools、pipx、poetry、pyenv、virtualenv 等工具。
+- **环境**：所有 Python 命令必须通过 `uv run` 执行。
+- **后台**：提供商/用户后台严禁使用 Django-Admin，必须手搓。
+- **样式**：严禁编写原生 `<style>` 或内联样式，必须使用 Tailwind 原子类。
+- **组件**：严禁使用 Bootstrap (`django-bootstrap5`)。
+- **双轨隔离**：前台（用户端）与后台（提供商端）样式严禁混用，必须严格遵循对应区域的公式。
+- **本地化**：严禁引用任何 CDN 资源（包括但不限于 fonts.googleapis.com、cdn.jsdelivr.net、unpkg.com 等），所有字体、JS 库、CSS 框架、图标字体等线上资源必须拉取到本地 `static/vendor/` 目录后引用。
 
-**重要原则：所有 Python 命令都必须通过 `uv run` 执行，而不是直接调用虚拟环境中的 Python 解释器。**
+***
 
-## 环境要求
+## 1. Python 环境与命令规范
 
-- Python 版本：3.13（由 `.python-version` 文件指定）
-- UV 工具：确保已安装 UV（`pip install uv` 或参考官方安装指南）
-- 项目依赖：由 `pyproject.toml` 和 `uv.lock` 管理
-
-## UV 基本命令
-
-### 1. 环境初始化
-
-```bash
-# 同步项目依赖（创建虚拟环境并安装所有依赖）
-uv sync
-
-# 仅同步生产依赖
-uv sync --no-dev
-
-# 同步包含开发依赖
-uv sync --all-groups
-```
-
-### 2. 运行 Python 命令
-
-**核心原则：使用 `uv run python` 而不是 `.venv/bin/python`**
+### 1.1 命令执行标准
 
 ```bash
-# ❌ 错误方式 - 不要直接调用虚拟环境中的 Python
+# ❌ 绝对禁止
 .venv/bin/python manage.py runserver
-
-# ✅ 正确方式 - 使用 uv run
+python manage.py runserver
+pip install package
+# ✅ 唯一正确方式
 uv run python manage.py runserver
+uv add package
 ```
 
-### 3. Django 项目常用命令
+### 1.2 依赖管理
 
 ```bash
-# 启动开发服务器
-uv run python manage.py runserver
-
-# 数据库迁移
-uv run python manage.py makemigrations
-uv run python manage.py migrate
-
-# 创建超级用户
-uv run python manage.py createsuperuser
-
-# 收集静态文件
-uv run python manage.py collectstatic
-
-# 运行测试
-uv run python manage.py test
-
-# Django shell
-uv run python manage.py shell
-
-# 执行自定义管理命令
-uv run python manage.py init_demo
-uv run python manage.py create_demo_superuser
+uv sync               # 同步环境
+uv add package-name   # 添加生产依赖
+uv add --dev package  # 添加开发依赖
+uv remove package     # 移除依赖
 ```
 
-### 4. 依赖管理
+### 1.3 开发服务器启停规则
+
+- **启动前**：必须执行 `lsof -i :8000` 检查端口。
+- **仅改前端 (HTML/CSS/JS)**：**严禁杀进程**，直接刷新浏览器。
+- **改了 Python 代码**：必须杀进程后重启 `kill -9 $(lsof -t -i:8000)`。
+- **严禁**同时启动多个占用不同端口的 Python 进程。
+
+### 1.4 常用脚本
 
 ```bash
-# 添加新依赖
-uv add package-name
-
-# 添加开发依赖
-uv add --dev package-name
-
-# 移除依赖
-uv remove package-name
-
-# 更新所有依赖
-uv sync --upgrade
-
-# 查看已安装的包
-uv pip list
-
-# 查看依赖树
-uv pip tree
-```
-
-### 5. 运行脚本和工具
-
-```bash
-# 运行 Python 脚本
-uv run python script.py
-
-# 运行模块
-uv run python -m module_name
-
-# 运行 pytest
-uv run pytest
-
-# 运行 black（代码格式化）
-uv run black .
-
-# 运行 flake8（代码检查）
-uv run flake8
-```
-
-## 开发工作流程
-
-### 初始化项目
-
-```bash
-# 1. 克隆项目
-git clone <repository-url>
-cd ZASCA
-
-# 2. 复制环境配置文件
-cp .env.example .env
-
-# 3. 编辑 .env 文件配置
-nano .env
-
-# 4. 同步依赖
-uv sync
-
-# 5. 运行数据库迁移
-uv run python manage.py migrate
-
-# 6. 创建超级用户
-uv run python manage.py createsuperuser
-
-# 7. 启动开发服务器
-uv run python manage.py runserver
-```
-
-### 日常开发
-
-```bash
-# 添加新功能依赖
-uv add new-package
-
-# 运行开发服务器
-uv run python manage.py runserver
-
-# 运行测试
-uv run python manage.py test
-
-# 代码格式化
-uv run black .
-
-# 代码检查
-uv run flake8
-```
-
-### 启动开发服务器注意事项
-
-**在启动服务器前，必须检查 8000 端口的使用情况，确认当前端口没有 Python 进程占用后再继续启动。**
-
-#### 检查端口占用
-
-```bash
-# 检查 8000 端口占用情况
-lsof -i :8000
-
-# 或使用
-netstat -tlnp | grep 8000
-
-# 或使用
-ss -tlnp | grep 8000
-```
-
-#### 处理已运行的服务器
-
-如果发现 8000 端口已有 Python 进程占用，请根据修改类型采取不同策略：
-
-**情况一：修改仅涉及前端（HTML、CSS、JavaScript、模板文件等）**
-1. 优先尝试复用当前的 Python 进程
-2. 仅当当前端没有任何修复或页面未正确更新时，再尝试杀除 Python 进程重启
-3. Django 开发服务器通常支持自动重载，前端修改无需重启
-
-**情况二：修改不仅涉及前端（Python 代码、模型、视图、配置等）**
-1. 杀除现有的 Python 进程
-2. 重新启动开发服务器
-
-```bash
-# 杀除占用 8000 端口的进程
-kill -9 $(lsof -t -i:8000)
-
-# 或使用 PID（从 lsof 输出中获取）
-kill -9 <PID>
-```
-
-#### 最佳实践建议
-
-1. **非必要不建议杀除 Python 进程**
-   - Django 开发服务器具有自动重载功能，大多数代码修改无需手动重启
-   - 频繁重启服务器会影响开发效率
-
-2. **非必要不要开一大堆 Python 占用一大堆端口**
-   - 保持单一开发服务器实例运行
-   - 避免资源浪费和端口冲突
-   - 如需多个服务，请使用不同端口并明确记录
-
-3. **前端修改无需重启**
-   - 静态文件修改（CSS、JS）通常只需刷新浏览器
-   - 模板文件修改会被 Django 自动检测并重载
-   - 只有在页面未正确更新时才考虑重启服务器
-
-### Celery 任务队列
-
-```bash
-# 启动 Celery worker
+uv run python manage.py makemigrations && uv run python manage.py migrate
 uv run celery -A config worker -l info
-
-# 启动 Celery beat（定时任务）
-uv run celery -A config beat -l info
+uv run pytest
 ```
 
-## 常见任务示例
+***
 
-### 创建新的 Django 应用
+## 2. 前端 UI 架构规范
 
-```bash
-uv run python manage.py startapp app_name
+### 2.1 技术栈锁定（不可替换）
+
+- **样式**：Tailwind CSS (必须使用独立 CLI 构建，**严禁 CDN**)
+- **字体**：严禁通过 CDN 加载 Google Fonts 或任何在线字体服务，必须下载字体文件到本地 `static/` 后用 `@font-face` 声明。
+- **图标**：Material Symbols 字体文件必须本地化，严禁 CDN 链接。
+- **JS 库**：Alpine.js 等交互库必须下载到本地 `static/`，严禁 `<script src="https://...">`。
+- **组件化**：`django-cotton` (所有复用 UI 必须封装为 `<x-xxx>` 标签，按区域区分如 `<x-front.card>` / `<x-admin.card>`)
+- **交互**：Alpine.js (仅处理弹窗/菜单，**严禁 Vue/React**)
+- **接口**：`djangorestframework` (所有无刷新操作必须走 API)
+
+### 2.2 前台样式公式（面向普通用户）
+
+**设计语言**：Material Design 3 (MD3) + 毛玻璃
+**严禁自由发挥，全局必须严格套用以下公式（使用** **`md:`** **命名空间）：**
+
+- **毛玻璃卡片**：`bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl`
+- **MD3 输入框**：`w-full bg-md-surface/50 border border-md-outline/50 rounded-md px-4 py-3 text-md-on-surface placeholder-md-outline focus:outline-none focus:ring-2 focus:ring-md-primary transition`
+- **圆角规范**：按钮/输入框 `rounded-md` (12px) | 卡片 `rounded-md-lg` (16px) | 弹窗/FAB `rounded-md-xl` (28px)。**严禁出现直角或小圆角。**
+
+### 2.3 后台样式公式（面向提供商/主机管理）
+
+**设计语言**：科技监控风 + 毛玻璃
+**严禁自由发挥，全局必须严格套用以下公式（直接使用 Tailwind 原生** **`slate/cyan`** **色系，严禁使用** **`md:`** **命名空间）：**
+
+- **暗色模式基准**：全站强制深色，背景必须使用极深色 `slate-950` 或 `slate-900`。
+- **科技风毛玻璃卡片**：`bg-slate-950/70 backdrop-blur-xl border border-slate-700/50 rounded-md shadow-none`
+- **发光输入框**：`w-full bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded px-3 py-2 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500 transition`
+- **科技风主按钮**：`bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded-md font-medium shadow-[0_0_15px_-3px_rgba(34,211,238,0.3)] transition`
+- **科技风毛玻璃弹窗**：`bg-slate-950/80 backdrop-blur-2xl border border-cyan-500/20 rounded-lg shadow-2xl`
+- **圆角规范**：统一使用标准圆角 `rounded-md` (6px) 或 `rounded-lg` (8px)。**严禁出现 MD3 的大圆角 (16px/28px)。**
+
+### 2.4 图标规范（前后台通用）
+
+- 统一使用 `<span class="material-symbols-rounded">icon_name</span>`。
+- 后台图标颜色强制使用 `text-cyan-400` 或 `text-slate-400`，严禁使用 MD3 的紫色。
+
+***
+
+## 3. 核心业务开发模式
+
+### 3.1 复杂表单（如：上架主机）
+
+```python
+# ❌ 禁止：在一个页面垂直堆叠长表单
+class HostCreateView(TemplateView): ...
+# ✅ 必须：使用 django-formtools 实现分步向导
+from formtools.wizard.views import SessionWizardView
+class HostDeployWizard(SessionWizardView): ...
 ```
 
-### 执行数据库操作
+**模板渲染**：严禁 `{{ form.as_p }}`，必须 `{% for field in form %}` 循环。后台表单必须套用 \[2.3 的发光输入框公式]。
+
+### 3.2 快捷操作（如：一键生成邀请链接）
+
+**前端套路**：Alpine.js 监听点击 -> `fetch` 调用 DRF POST 接口 -> `<template x-if>` 弹窗显示结果。
+
+- 前台弹窗：套用 \[2.2 的 MD3 毛玻璃弹窗公式]
+- 后台弹窗：套用 \[2.3 的科技风毛玻璃弹窗公式]
+
+### 3.3 页面布局
+
+- **严禁**在业务视图里堆砌深层 `<div>`。
+- **必须**按区域封装 `django-cotton` 组件（如前台 `<x-front.nav>`，后台 `<x-admin.sidebar>`）。
+
+***
+
+## 4. 故障排查速查
 
 ```bash
-# 创建迁移文件
-uv run python manage.py makemigrations
-
-# 应用迁移
-uv run python manage.py migrate
-
-# 查看迁移状态
+# 依赖炸了
+rm -rf .venv && uv sync
+# 迁移冲突
 uv run python manage.py showmigrations
-
-# 回滚迁移
-uv run python manage.py migrate app_name migration_name
+uv run python manage.py migrate --run-syncdb
+# 测试账号 (仅限本地)
+# 超管：admin / admin
+# 提供商：provider / provider
+# 普通用户：user / user
 ```
 
-### 加载初始数据
+***
 
-```bash
-# 导出数据
-uv run python manage.py dumpdata app_name > data.json
-
-# 导入数据
-uv run python manage.py loaddata data.json
-```
-
-### 演示环境设置
-
-```bash
-# 初始化演示环境
-uv run python manage.py init_demo
-
-# 创建演示超级用户
-uv run python manage.py create_demo_superuser
-
-# 设置演示用户
-uv run python manage.py setup_demo_users
-```
-
-### 测试账户信息
-
-**测试超级管理员账户：**
-- 用户名：`admin`
-- 密码：`admin`
-
-**注意：** 此账户仅用于开发和测试环境，请勿在生产环境中使用默认密码。
-
-## UV 与传统工具对比
-
-| 传统方式 | UV 方式 | 说明 |
-|---------|---------|------|
-| `python manage.py runserver` | `uv run python manage.py runserver` | 运行 Django 服务器 |
-| `.venv/bin/python manage.py` | `uv run python manage.py` | 使用虚拟环境中的 Python |
-| `pip install package` | `uv add package` | 安装包 |
-| `pip install -r requirements.txt` | `uv sync` | 同步依赖 |
-| `pip freeze > requirements.txt` | `uv lock` | 锁定依赖版本 |
-| `python -m venv .venv` | `uv venv` | 创建虚拟环境 |
-
-## 环境变量和配置
-
-### .env 文件配置
-
-项目使用 `python-dotenv` 管理 `.env` 文件中的环境变量。确保 `.env` 文件包含以下关键配置：
-
-```bash
-# Django 配置
-DEBUG=True
-SECRET_KEY=your-secret-key-here
-
-# 数据库配置
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=zasca_dev
-DB_USER=zasca_user
-DB_PASSWORD=your_password
-
-# 演示模式
-ZASCA_DEMO=1
-```
-
-### 检查环境配置
-
-```bash
-# 运行环境检查脚本（如果存在）
-uv run python check_env.py
-
-# 验证 Django 配置
-uv run python manage.py check
-```
-
-## 故障排查
-
-### 常见问题
-
-1. **UV 未安装**
-   ```bash
-   # 安装 UV
-   pip install uv
-   # 或使用官方推荐方式
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```
-
-2. **依赖同步失败**
-   ```bash
-   # 清理并重新同步
-   rm -rf .venv
-   uv sync
-   ```
-
-3. **Python 版本不匹配**
-   ```bash
-   # 检查 .python-version 文件
-   cat .python-version
-   # UV 会自动安装所需版本
-   uv sync
-   ```
-
-4. **迁移冲突**
-   ```bash
-   # 查看迁移状态
-   uv run python manage.py showmigrations
-   # 强制迁移
-   uv run python manage.py migrate --run-syncdb
-   ```
-
-## 最佳实践
-
-1. **始终使用 `uv run`**
-   - 不要直接调用 `.venv/bin/python`
-   - 不要使用系统 Python
-   - 所有 Python 命令都通过 `uv run` 执行
-
-2. **依赖管理**
-   - 使用 `uv add` 添加依赖，不要手动编辑 `pyproject.toml`
-   - 定期运行 `uv sync` 确保环境一致
-   - 提交 `uv.lock` 文件以锁定依赖版本
-
-3. **开发依赖**
-   - 开发工具（pytest、black、flake8）放在 `dev` 依赖组
-   - 使用 `uv sync --no-dev` 在生产环境部署
-
-4. **虚拟环境**
-   - UV 自动管理虚拟环境，无需手动创建
-   - 虚拟环境位于项目根目录的 `.venv` 文件夹
-
-5. **IDE 集成**
-   - 配置 IDE 使用 UV 管理的 Python 解释器
-   - 解释器路径：`.venv/bin/python`（但命令行仍使用 `uv run`）
-
-## 参考资源
-
-- [UV 官方文档](https://github.com/astral-sh/uv)
-- [UV 安装指南](https://docs.astral.sh/uv/getting-started/installation/)
-- [Django 官方文档](https://docs.djangoproject.com/)
-- [项目开发规范](./agent.md)
-
----
-
-**重要提醒：作为 AI Agent，在执行任何 Python 相关命令时，请始终使用 `uv run python` 而不是直接调用 Python 解释器或虚拟环境中的 Python。这确保了环境的一致性和可重复性。**
+**系统提示：作为 AI Agent，在生成模板代码时，必须首先判断当前路由属于“前台”还是“后台”，严禁跨区域套用样式公式。凡是触发“❌ 绝对禁止”项的，必须自我纠正。**

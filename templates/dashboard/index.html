@@ -4,599 +4,142 @@
 
 {% block title %}仪表盘 - ZASCA{% endblock %}
 
-{% block extra_css %}
-<style>
-.dashboard-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
-}
-
-.page-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.page-header h1 {
-    font-size: var(--md-sys-typescale-headline-large-size);
-    font-weight: var(--md-sys-typescale-weight-bold);
-    color: var(--md-sys-color-on-surface);
-    margin-bottom: var(--md-sys-spacing-margin-md);
-    line-height: var(--md-sys-typescale-line-height-condensed);
-}
-
-.page-subtitle {
-    font-size: var(--md-sys-typescale-body-large-size);
-    color: var(--md-sys-color-on-surface-variant);
-    margin-bottom: var(--md-sys-spacing-margin-xl);
-}
-
-.filter-card {
-    background: var(--md-sys-color-surface);
-    border-radius: var(--md-sys-shape-corner-medium);
-    box-shadow: var(--md-sys-elevation-1);
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-@media (max-width: 768px) {
-    .filter-card {
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-    }
-}
-
-.filter-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    align-items: end;
-}
-
-@media (max-width: 768px) {
-    .filter-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-    
-    .filter-item {
-        min-width: unset;
-    }
-}
-
-.filter-item {
-    display: flex;
-    flex-direction: column;
-}
-
-.filter-label {
-    font-size: var(--md-sys-typescale-label-large-font-size);
-    font-weight: var(--md-sys-typescale-label-large-font-weight);
-    color: var(--md-sys-color-on-surface-variant);
-    margin-bottom: 0.5rem;
-}
-
-.md-input {
-    width: 100%;
-    border: none;
-    outline: none;
-    background: var(--md-sys-color-surface-variant);
-    font-family: inherit;
-    font-size: var(--md-sys-typescale-body-large-size);
-    color: var(--md-sys-color-on-surface);
-    padding: 16px;
-    box-sizing: border-box;
-    border-radius: var(--md-sys-shape-corner-extra-large);
-}
-
-.md-input:focus {
-    background-color: var(--md-sys-color-surface);
-    border-bottom: 2px solid var(--md-sys-color-primary);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.md-input:hover {
-    background-color: rgba(var(--primary-color-rgb), 0.04);
-}
-
-select.md-input {
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    background-size: 16px;
-    padding-right: 36px;
-    cursor: pointer;
-}
-
-.computer-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: var(--md-sys-spacing-padding-lg);
-    margin-top: var(--md-sys-spacing-margin-lg);
-}
-
-.computer-card {
-    background: var(--md-sys-color-surface);
-    border-radius: var(--md-sys-shape-corner-large);
-    overflow: hidden;
-    transition: 
-        box-shadow var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
-        transform var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
-    box-shadow: var(--md-sys-elevation-level1);
-}
-
-.computer-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--md-sys-elevation-level3);
-}
-
-.computer-card-header {
-    padding: var(--md-sys-spacing-padding-lg);
-    background: var(--md-sys-color-primary-container);
-    color: var(--md-sys-color-on-primary-container);
-    border-bottom: 1px solid var(--md-sys-color-outline-variant);
-}
-
-.computer-card-header h5 {
-    font-size: var(--md-sys-typescale-title-large-size);
-    font-weight: var(--md-sys-typescale-weight-medium);
-    margin: 0;
-    color: var(--md-sys-color-on-primary-container);
-    display: flex;
-    align-items: center;
-}
-
-.status-indicator {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    border-radius: var(--md-sys-shape-corner-full);
-    margin-right: var(--md-sys-spacing-margin-sm);
-}
-
-.status-online {
-    background-color: var(--md-sys-color-success);
-}
-
-.status-offline {
-    background-color: var(--md-sys-color-error);
-}
-
-.status-error {
-    background-color: var(--md-sys-color-warning);
-}
-
-.status-unknown {
-    background-color: var(--md-sys-color-outline);
-}
-
-.computer-card-body {
-    padding: var(--md-sys-spacing-padding-lg);
-}
-
-.info-list {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 var(--md-sys-spacing-margin-lg) 0;
-}
-
-.info-list li {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: var(--md-sys-spacing-margin-sm);
-    font-size: var(--md-sys-typescale-body-medium-size);
-}
-
-.info-list li:last-child {
-    margin-bottom: 0;
-}
-
-.info-label {
-    font-weight: var(--md-sys-typescale-weight-medium);
-    color: var(--md-sys-color-on-surface-variant);
-}
-
-.info-value {
-    color: var(--md-sys-color-on-surface);
-}
-
-.status-text {
-    font-weight: var(--md-sys-typescale-weight-medium);
-}
-
-.status-text.online {
-    color: var(--md-sys-color-success);
-}
-
-.status-text.offline {
-    color: var(--md-sys-color-error);
-}
-
-.status-text.error {
-    color: var(--md-sys-color-warning);
-}
-
-.status-text.unknown {
-    color: var(--md-sys-color-outline);
-}
-
-.markdown-content {
-    padding: var(--md-sys-spacing-padding-md) 0;
-    border-top: 1px solid var(--md-sys-color-outline-variant);
-    margin-top: var(--md-sys-spacing-margin-md);
-    color: var(--md-sys-color-on-surface);
-}
-
-.markdown-content h1,
-.markdown-content h2,
-.markdown-content h3 {
-    margin-top: var(--md-sys-spacing-margin-sm);
-    margin-bottom: var(--md-sys-spacing-margin-sm);
-    color: var(--md-sys-color-on-surface);
-}
-
-.markdown-content p {
-    margin-bottom: var(--md-sys-spacing-margin-sm);
-    line-height: var(--md-sys-typescale-line-height-default);
-}
-
-.markdown-content ul,
-.markdown-content ol {
-    margin-bottom: var(--md-sys-spacing-margin-sm);
-    padding-left: var(--md-sys-spacing-padding-lg);
-}
-
-.markdown-content pre {
-    background-color: var(--md-sys-color-surface-variant);
-    padding: var(--md-sys-spacing-padding-md);
-    border-radius: var(--md-sys-shape-corner-medium);
-    overflow-x: auto;
-    font-size: var(--md-sys-typescale-body-small-size);
-    margin: var(--md-sys-spacing-margin-sm) 0;
-}
-
-.markdown-content code {
-    background-color: var(--md-sys-color-surface-variant);
-    padding: var(--md-sys-spacing-padding-xs) var(--md-sys-spacing-padding-sm);
-    border-radius: var(--md-sys-shape-corner-small);
-    font-size: var(--md-sys-typescale-body-small-size);
-}
-
-.card-actions {
-    margin-top: var(--md-sys-spacing-margin-lg);
-    text-align: center;
-    padding-top: var(--md-sys-spacing-padding-md);
-    border-top: 1px solid var(--md-sys-color-outline-variant);
-}
-
-.empty-state {
-    text-align: center;
-    padding: var(--md-sys-spacing-padding-xxl);
-    grid-column: 1 / -1;
-}
-
-.empty-icon {
-    font-size: 48px;
-    color: var(--md-sys-color-outline);
-    margin-bottom: var(--md-sys-spacing-margin-lg);
-}
-
-.empty-title {
-    font-size: var(--md-sys-typescale-headline-small-size);
-    color: var(--md-sys-color-on-surface-variant);
-    margin-bottom: var(--md-sys-spacing-margin-md);
-}
-
-.empty-description {
-    font-size: var(--md-sys-typescale-body-large-size);
-    color: var(--md-sys-color-on-surface-variant);
-    margin-bottom: var(--md-sys-spacing-margin-lg);
-}
-
-.md-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    border: none;
-    border-radius: var(--md-sys-shape-corner-full);
-    cursor: pointer;
-    font-family: inherit;
-    text-decoration: none;
-    transition: 
-        background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
-        color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
-        box-shadow var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
-        transform var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
-    overflow: hidden;
-    user-select: none;
-}
-
-.md-button__label {
-    position: relative;
-    z-index: 1;
-    font-weight: var(--md-sys-typescale-weight-medium);
-    display: flex;
-    align-items: center;
-}
-
-.md-button--medium {
-    height: 40px;
-    padding: 0 var(--md-sys-spacing-padding-lg);
-    font-size: var(--md-sys-typescale-label-large-size);
-}
-
-.md-button--filled {
-    background-color: var(--md-sys-color-primary);
-    color: var(--md-sys-color-on-primary);
-    box-shadow: var(--md-sys-elevation-level1);
-}
-
-.md-button--filled:hover {
-    background-color: var(--md-sys-color-primary);
-    box-shadow: var(--md-sys-elevation-level2);
-    transform: translateY(-2px);
-}
-
-.md-button--filled:active {
-    transform: translateY(0);
-    box-shadow: var(--md-sys-elevation-level1);
-}
-
-.md-button--outlined {
-    background-color: transparent;
-    color: var(--md-sys-color-primary);
-    border: 1px solid var(--md-sys-color-outline);
-}
-
-.md-button--outlined:hover {
-    background-color: rgba(var(--primary-color-rgb), 0.08);
-    border-color: var(--md-sys-color-primary);
-}
-
-.md-button--text {
-    background-color: transparent;
-    color: var(--md-sys-color-primary);
-    border: 1px solid var(--md-sys-color-outline);
-}
-
-.md-button--text:hover {
-    background-color: rgba(var(--primary-color-rgb), 0.08);
-    border-color: var(--md-sys-color-primary);
-}
-
-.md-button--filled:focus {
-    outline: 2px solid var(--md-sys-color-primary);
-    outline-offset: 2px;
-}
-
-.md-button--filled:disabled {
-    background-color: var(--md-sys-color-on-surface);
-    color: var(--md-sys-color-surface);
-    opacity: 0.38;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-}
-
-.product-group-section {
-    margin-top: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-@media (max-width: 768px) {
-    .dashboard-container {
-        padding: 1rem;
-    }
-    
-    .computer-grid {
-        grid-template-columns: 1fr;
-        gap: var(--md-sys-spacing-padding-md);
-    }
-    
-    .page-header h1 {
-        font-size: var(--md-sys-typescale-headline-medium-size);
-    }
-}
-
-.md-button--filled {
-    background-color: #1e3a5f !important;
-    color: #ffffff !important;
-}
-
-.md-button--filled .md-button__label {
-    color: #ffffff !important;
-}
-
-.md-button--filled .md-button__label i {
-    color: #ffffff !important;
-}
-
-[data-theme="dark"] .md-button--filled {
-    background: linear-gradient(135deg, var(--md-sys-color-primary), var(--secondary-color)) !important;
-    color: #ffffff !important;
-}
-
-[data-theme="dark"] .md-button--filled .md-button__label {
-    color: #ffffff !important;
-}
-
-[data-theme="dark"] .md-button--filled:hover {
-    background: linear-gradient(135deg, var(--md-sys-color-primary), var(--secondary-color)) !important;
-    box-shadow: var(--md-sys-elevation-level2);
-}
-
-[data-theme="dark"] .md-button--filled .md-button__label i {
-    color: #ffffff !important;
-}
-
-[data-theme="dark"] .md-input {
-    background-color: var(--md-sys-color-surface-variant);
-    color: var(--md-sys-color-on-surface);
-}
-
-[data-theme="dark"] .md-input:focus {
-    background-color: var(--md-sys-color-surface);
-    border-bottom: 2px solid var(--md-sys-color-primary);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-[data-theme="dark"] .md-input:hover {
-    background-color: rgba(var(--primary-color-rgb), 0.08);
-}
-
-[data-theme="dark"] select.md-input {
-    background-color: var(--md-sys-color-surface-variant);
-    color: var(--md-sys-color-on-surface);
-}
-
-[data-theme="dark"] select.md-input option {
-    background-color: var(--md-sys-color-surface);
-    color: var(--md-sys-color-on-surface);
-}
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <h3 class="mb-4">云电脑产品</h3>
-            
-            <div class="filter-card">
-                <form method="get" class="filter-form">
-                    <div class="filter-grid">
-                        <div class="filter-item">
-                            <label class="filter-label">搜索</label>
-                            <input type="text" 
-                                   class="md-input" 
-                                   name="search" 
-                                   value="{{ search|default:'' }}"
-                                   placeholder="搜索产品名称或描述">
+<div class="max-w-[1200px] mx-auto p-8 sm:p-4">
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-md-on-surface mb-2 leading-tight">云电脑产品</h1>
+        <p class="text-lg text-md-on-surface-variant mb-4">浏览可用的云电脑产品并申请开户</p>
+    </div>
+
+    <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl p-6 mb-8">
+        <form method="get">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fit,minmax(250px,1fr))] sm:items-end">
+                <div class="flex flex-col">
+                    <label class="text-sm font-medium text-md-on-surface-variant mb-1">搜索</label>
+                    <input type="text"
+                           class="w-full px-4 py-3 border border-md-outline/50 rounded-md bg-md-surface/50 text-md-on-surface placeholder-md-outline focus:outline-none focus:ring-2 focus:ring-md-primary transition"
+                           name="search"
+                           value="{{ search|default:'' }}"
+                           placeholder="搜索产品名称或描述">
+                </div>
+
+                <div class="flex flex-col">
+                    <label class="text-sm font-medium text-md-on-surface-variant mb-1">产品状态</label>
+                    <select class="w-full px-4 py-3 border border-md-outline/50 rounded-md bg-md-surface/50 text-md-on-surface placeholder-md-outline focus:outline-none focus:ring-2 focus:ring-md-primary transition" name="status">
+                        <option value="">全部</option>
+                        {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="flex flex-col">
+                    <label class="text-sm font-medium text-md-on-surface-variant mb-1">产品分组</label>
+                    <select class="w-full px-4 py-3 border border-md-outline/50 rounded-md bg-md-surface/50 text-md-on-surface placeholder-md-outline focus:outline-none focus:ring-2 focus:ring-md-primary transition" name="group">
+                        <option value="">全部</option>
+                        {% for group in product_groups %}
+                        <option value="{{ group.id }}" {% if group_filter|stringformat:"i" == group.id|stringformat:"i" %}selected{% endif %}>
+                            {{ group.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="flex flex-col">
+                    <label class="text-sm font-medium text-md-on-surface-variant mb-1">自动审核</label>
+                    <select class="w-full px-4 py-3 border border-md-outline/50 rounded-md bg-md-surface/50 text-md-on-surface placeholder-md-outline focus:outline-none focus:ring-2 focus:ring-md-primary transition" name="auto_approval">
+                        <option value="">全部</option>
+                        <option value="true" {% if auto_approval_filter == "true" %}selected{% endif %}>已启用</option>
+                        <option value="false" {% if auto_approval_filter == "false" %}selected{% endif %}>未启用</option>
+                    </select>
+                </div>
+
+                <div class="flex gap-2 items-end">
+                    <button type="submit" class="inline-flex items-center justify-center h-10 px-6 text-md-primary border border-md-outline rounded-full text-sm font-medium transition hover:bg-md-primary/8 hover:border-md-primary cursor-pointer">
+                        <span class="relative z-10 font-medium">搜索</span>
+                    </button>
+                    <a href="{% url 'dashboard:index' %}" class="inline-flex items-center justify-center h-10 px-6 text-md-primary border border-md-outline rounded-full text-sm font-medium transition hover:bg-md-primary/8 hover:border-md-primary cursor-pointer no-underline">
+                        <span class="relative z-10 font-medium">重置</span>
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if grouped_products %}
+        {% for group_data in grouped_products %}
+            {% if group_data.group %}
+                <div class="flex items-center mb-6 px-4 py-3 bg-md-primary-container text-md-on-primary-container rounded-md">
+                    <i class="material-icons text-2xl mr-3">folder</i>
+                    <div>
+                        <h3 class="text-xl font-medium m-0">{{ group_data.group.name }}</h3>
+                        {% if group_data.group.description %}
+                            <p class="text-sm m-0 mt-1 opacity-80">{{ group_data.group.description }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="flex items-center mb-6 px-4 py-3 bg-md-primary-container text-md-on-primary-container rounded-md">
+                    <i class="material-icons text-2xl mr-3">widgets</i>
+                    <h3 class="text-xl font-medium m-0">其他产品</h3>
+                </div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 gap-6 mb-8 sm:grid-cols-[repeat(auto-fill,minmax(350px,1fr))]">
+                {% for product in group_data.products %}
+                <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl overflow-hidden transition hover:shadow-2xl hover:-translate-y-0.5">
+                    <div class="px-6 py-4 border-b border-md-outline-variant/30">
+                        <div class="flex justify-between items-center mb-1">
+                            <h4 class="text-xl font-medium text-md-on-surface m-0">{{ product.display_name }}</h4>
+                            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium uppercase tracking-wider
+                                {% if product.status == 'online' %}bg-md-success-container text-md-on-success-container
+                                {% elif product.status == 'offline' %}bg-md-error-container text-md-on-error-container
+                                {% elif product.status == 'error' %}bg-md-warning-container text-md-on-warning-container
+                                {% else %}bg-md-surface-variant text-md-on-surface-variant{% endif %}">
+                                {% if product.status == 'online' %}在线
+                                {% elif product.status == 'offline' %}离线
+                                {% elif product.status == 'error' %}错误
+                                {% else %}未知{% endif %}
+                            </span>
                         </div>
-                        
-                        <div class="filter-item">
-                            <label class="filter-label">产品状态</label>
-                            <select class="md-input" name="status">
-                                <option value="">全部</option>
-                                {% for value, label in status_choices %}
-                                <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
-                                {% endfor %}
-                            </select>
+                    </div>
+
+                    <div class="p-6">
+                        <div class="mb-4">
+                            <span class="text-sm text-md-on-surface-variant block mb-1">自动审核</span>
+                            <p class="text-base text-md-on-surface m-0">
+                                {% if product.auto_approval %}
+                                    <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-md-success-container text-md-on-success-container">已启用</span>
+                                {% else %}
+                                    <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-md-warning-container text-md-on-warning-container">未启用</span>
+                                {% endif %}
+                            </p>
                         </div>
-                        
-                        <div class="filter-item">
-                            <label class="filter-label">产品分组</label>
-                            <select class="md-input" name="group">
-                                <option value="">全部</option>
-                                {% for group in product_groups %}
-                                <option value="{{ group.id }}" {% if group_filter|stringformat:"i" == group.id|stringformat:"i" %}selected{% endif %}>
-                                    {{ group.name }}
-                                </option>
-                                {% endfor %}
-                            </select>
+
+                        {% if product.display_description %}
+                        <div class="py-4 border-t border-md-outline-variant/30 mt-4 text-md-on-surface text-sm leading-relaxed">
+                            {{ product.display_description|markdown_filter }}
                         </div>
-                        
-                        <div class="filter-item">
-                            <label class="filter-label">自动审核</label>
-                            <select class="md-input" name="auto_approval">
-                                <option value="">全部</option>
-                                <option value="true" {% if auto_approval_filter == "true" %}selected{% endif %}>已启用</option>
-                                <option value="false" {% if auto_approval_filter == "false" %}selected{% endif %}>未启用</option>
-                            </select>
-                        </div>
-                        
-                        <div class="filter-item" style="display: flex; gap: 0.5rem; align-items: flex-end;">
-                            <button type="submit" class="md-button md-button--outlined md-button--medium">
-                                <span class="md-button__label">搜索</span>
-                            </button>
-                            <a href="{% url 'dashboard:index' %}" class="md-button md-button--text md-button--medium">
-                                <span class="md-button__label">重置</span>
+                        {% endif %}
+
+                        <div class="mt-6 text-center pt-4 border-t border-md-outline-variant/30">
+                            <a href="{% url 'operations:account_opening_create' %}?target_product={{ product.id }}" class="inline-flex items-center justify-center h-10 px-6 bg-md-primary text-md-on-primary rounded-full text-sm font-medium shadow-md transition hover:shadow-lg no-underline">
+                                <i class="material-icons align-middle mr-2 text-lg">cloud</i>
+                                <span class="relative z-10 font-medium">立即申请</span>
                             </a>
                         </div>
                     </div>
-                </form>
-            </div>
-            
-            {% if grouped_products %}
-                {% for group_data in grouped_products %}
-                    {% if group_data.group %}
-                        <div class="product-group-section">
-                            <h4 style="color: var(--md-sys-color-primary);">
-                                <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">folder</i>
-                                {{ group_data.group.name }}
-                            </h4>
-                            {% if group_data.group.description %}
-                                <p class="text-muted">{{ group_data.group.description }}</p>
-                            {% endif %}
-                        </div>
-                    {% else %}
-                        <div class="product-group-section">
-                            <h4 style="color: var(--md-sys-color-primary);">
-                                <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">widgets</i>
-                                其他产品
-                            </h4>
-                        </div>
-                    {% endif %}
-                    
-                    <div class="computer-grid">
-                        {% for product in group_data.products %}
-                        <div class="computer-card">
-                            <div class="computer-card-header">
-                                <h5 class="mb-0">
-                                    <span class="status-indicator status-{{ product.status }}"></span>
-                                    {{ product.display_name }}
-                                </h5>
-                            </div>
-                            <div class="computer-card-body">
-                                <ul class="list-unstyled">
-                                    <li><strong>状态:</strong> 
-                                        {% if product.status == 'online' %}
-                                            <span class="text-success">在线</span>
-                                        {% elif product.status == 'offline' %}
-                                            <span class="text-danger">离线</span>
-                                        {% elif product.status == 'error' %}
-                                            <span class="text-warning">错误</span>
-                                        {% else %}
-                                            <span class="text-secondary">未知</span>
-                                        {% endif %}
-                                    </li>
-                                    <li><strong>自动审核:</strong> 
-                                        {% if product.auto_approval %}
-                                            <span class="text-success">已启用</span>
-                                        {% else %}
-                                            <span class="text-warning">未启用</span>
-                                        {% endif %}
-                                    </li>
-                                </ul>
-                                {% if product.display_description %}
-                                <div class="markdown-content">
-                                    {{ product.display_description|markdown_filter }}
-                                </div>
-                                {% endif %}
-                                <div class="card-actions">
-                                    <a href="{% url 'operations:account_opening_create' %}?target_product={{ product.id }}" class="md-button md-button--filled md-button--medium">
-                                        <span class="md-button__label">
-                                            <i class="material-icons" style="font-size: 18px; margin-right: 8px;">cloud</i>
-                                            立即申请
-                                        </span>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                {% endfor %}
-            {% else %}
-                <div class="col-12">
-                    <div class="alert alert-info text-center">
-                        暂无可用的云电脑主机
-                    </div>
                 </div>
-            {% endif %}
-        </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    {% else %}
+    <div class="text-center py-16">
+        <i class="material-icons text-[48px] text-md-outline mb-4">desktop_windows</i>
+        <h3 class="text-2xl text-md-on-surface-variant mb-2">暂无可用的云电脑主机</h3>
+        <p class="text-lg text-md-on-surface-variant mb-4">当前没有可申请的云电脑产品</p>
     </div>
+    {% endif %}
 </div>
 {% endblock %}
 

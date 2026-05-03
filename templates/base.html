@@ -8,393 +8,140 @@
     <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}ZASCA{% endblock %}</title>
 
-    <!-- CSS -->
-    <link href="{% static 'vendor/bootstrap-5.1.3/css/bootstrap.min.css' %}" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <link href="{% static 'css/provider.css' %}" rel="stylesheet">
 
-    <!-- Material Icons Font -->
+    <!-- Material Symbols Rounded -->
+    <link rel="stylesheet" href="{% static 'vendor/material-symbols-rounded/material-symbols-rounded.css' %}">
+
+    <!-- Material Icons -->
     <link rel="stylesheet" href="{% static 'vendor/material-icons/material-icons.css' %}">
-    
-    <link rel="stylesheet" href="{% static 'css/theme.css' %}">
-    <link rel="stylesheet" href="{% static 'css/base.css' %}">
-    {% block extra_css %}{% endblock %}
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
-    
-    <style>
-        /* Sticky Footer - 页脚始终在底部 */
-        .page-wrapper {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .page-wrapper main {
-            flex: 1 0 auto;
-        }
 
-        /* 隐藏图标直到字体加载完成 - 防止闪烁 */
-        .material-icons {
-            font-display: block;
-            opacity: 0;
-            transition: opacity 0.1s ease-in;
-        }
-        
-        .material-icons.material-icons-loaded {
-            opacity: 1;
-        }
-    
-        /* 导航栏图标固定尺寸 - 防止字体加载时布局跳动 */
-        .md-nav-link .material-icons,
-        .md-user-button .material-icons,
-        .md-dropdown-item .material-icons {
-            width: 18px;
-            height: 18px;
-            min-width: 18px;
-            min-height: 18px;
-            font-size: 18px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-    
-        /* MD3导航栏样式 */
-        .md-navbar {
-            background-color: var(--md-sys-color-surface);
-            border-bottom: 1px solid var(--md-sys-color-outline-variant);
-            box-shadow: var(--md-sys-elevation-level1);
-            padding: 0 var(--md-sys-spacing-padding-lg);
-        }
-        
-        .md-navbar-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 64px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .md-navbar-brand {
-            display: flex;
-            align-items: center;
-            text-decoration: none;
-        }
-        
-        .md-navbar-brand img {
-            height: 32px;
-            width: auto;
-        }
-        
-        .md-navbar-brand:hover {
-            opacity: 0.9;
-        }
-        
-        .md-navbar-nav {
-            display: flex;
-            align-items: center;
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            gap: var(--md-sys-spacing-padding-md);
-        }
-        
-        .md-nav-item {
-            position: relative;
-        }
-        
-        .md-nav-link {
-            display: flex;
-            align-items: center;
-            padding: var(--md-sys-spacing-padding-sm) var(--md-sys-spacing-padding-md);
-            border-radius: var(--md-sys-shape-corner-full);
-            color: var(--md-sys-color-on-surface-variant);
-            text-decoration: none;
-            font-size: var(--md-sys-typescale-label-large-size);
-            font-weight: var(--md-sys-typescale-weight-medium);
-            transition: all var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
-            min-height: 40px;
-            white-space: nowrap;
-        }
-        
-        .md-nav-link:hover {
-            background-color: var(--md-sys-color-surface-variant);
-            color: var(--md-sys-color-on-surface);
-            text-decoration: none;
-        }
-        
-        .md-nav-link.active {
-            background-color: var(--md-sys-color-secondary-container);
-            color: var(--md-sys-color-on-secondary-container);
-        }
-        
-        .md-user-menu {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-        
-        .md-user-button {
-            display: flex;
-            align-items: center;
-            padding: var(--md-sys-spacing-padding-sm) var(--md-sys-spacing-padding-md);
-            border-radius: var(--md-sys-shape-corner-full);
-            background: transparent;
-            border: none;
-            color: var(--md-sys-color-on-surface);
-            font-size: var(--md-sys-typescale-label-large-size);
-            font-weight: var(--md-sys-typescale-weight-medium);
-            cursor: pointer;
-            transition: all var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
-        }
-        
-        .md-user-button:hover {
-            background-color: var(--md-sys-color-surface-variant);
-        }
-        
-        .md-dropdown-menu {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: var(--md-sys-color-surface);
-            border-radius: var(--md-sys-shape-corner-medium);
-            box-shadow: var(--md-sys-elevation-level2);
-            min-width: 200px;
-            z-index: 1000;
-            display: none;
-        }
-        
-        .md-dropdown-menu.show {
-            display: block;
-        }
-        
-        .md-dropdown-item {
-            display: block;
-            padding: var(--md-sys-spacing-padding-md) var(--md-sys-spacing-padding-lg);
-            color: var(--md-sys-color-on-surface);
-            text-decoration: none;
-            font-size: var(--md-sys-typescale-body-large-size);
-            transition: background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
-        }
-        
-        .md-dropdown-item:hover {
-            background-color: var(--md-sys-color-surface-variant);
-            text-decoration: none;
-            color: var(--md-sys-color-on-surface);
-        }
-        
-        .md-dropdown-divider {
-            height: 1px;
-            background-color: var(--md-sys-color-outline-variant);
-            margin: var(--md-sys-spacing-margin-xs) 0;
-        }
-        
-        .md-navbar-toggler {
-            display: none;
-            background: transparent;
-            border: none;
-            color: var(--md-sys-color-on-surface);
-            font-size: 24px;
-            cursor: pointer;
-            padding: var(--md-sys-spacing-padding-sm);
-            border-radius: var(--md-sys-shape-corner-medium);
-        }
-        
-        .md-navbar-toggler:hover {
-            background-color: var(--md-sys-color-surface-variant);
-        }
-        
-        /* 响应式设计 */
-        @media (max-width: 768px) {
-            .md-navbar-container {
-                padding: 0 var(--md-sys-spacing-padding-md);
-            }
-            
-            .md-navbar-nav {
-                display: none;
-                position: absolute;
-                top: 64px;
-                left: 0;
-                right: 0;
-                background: var(--md-sys-color-surface);
-                flex-direction: column;
-                padding: var(--md-sys-spacing-padding-md);
-                box-shadow: var(--md-sys-elevation-level2);
-                z-index: 999;
-            }
-            
-            .md-navbar-nav.mobile-show {
-                display: flex;
-            }
-            
-            .md-navbar-toggler {
-                display: block;
-            }
-            
-            /* 隐藏桌面端用户菜单 */
-            .md-user-menu {
-                display: none;
-            }
-            
-            /* 显示移动端菜单项 */
-            .mobile-user-item,
-            .mobile-admin-item,
-            .mobile-logout-item,
-            .mobile-login-item,
-            .mobile-register-item {
-                display: block;
-            }
-            
-            /* 移动端菜单项样式调整 */
-            .md-nav-item {
-                width: 100%;
-                margin-bottom: var(--md-sys-spacing-margin-xs);
-            }
-            
-            .md-nav-link {
-                width: 100%;
-                justify-content: flex-start;
-                padding: var(--md-sys-spacing-padding-md) var(--md-sys-spacing-padding-lg);
-                border-radius: var(--md-sys-shape-corner-medium);
-            }
-        }
-        
-        /* 桌面端隐藏移动端专用菜单项 */
-        @media (min-width: 769px) {
-            .mobile-user-item,
-            .mobile-admin-item,
-            .mobile-logout-item,
-            .mobile-login-item,
-            .mobile-register-item {
-                display: none;
-            }
-        }
-    </style>
+    {% block extra_css %}{% endblock %}
 </head>
-<body class="page-wrapper">
-    <!-- MD3导航栏 -->
-    <nav class="md-navbar">
-        <div class="md-navbar-container">
-            <a class="md-navbar-brand" href="{% url 'dashboard:index' %}"><img src="/static/img/favicon.svg" alt="ZASCA" style="height: 32px; width: auto;"></a>
-            
-            <button class="md-navbar-toggler" id="navbarToggle">
-                <i class="material-icons">menu</i>
+<body class="min-h-screen flex flex-col bg-fixed bg-center bg-cover text-md-on-surface" style="background-image: url('{% static 'img/bgimg.jpg' %}');">
+    <!-- 渐变遮罩层 -->
+    <div class="fixed inset-0 pointer-events-none z-0 bg-gradient-to-b from-md-surface/60 via-md-surface/40 to-md-surface/70"></div>
+
+    <!-- MD3 导航栏 -->
+    <nav class="bg-md-surface/80 backdrop-blur-xl border-b border-white/10 shadow-sm sticky top-0 z-30">
+        <div class="flex items-center justify-between h-16 max-w-7xl mx-auto px-4 lg:px-6">
+            <a class="flex items-center no-underline hover:opacity-90 transition" href="{% url 'dashboard:index' %}">
+                <img src="/static/img/favicon.svg" alt="ZASCA" class="h-8 w-auto">
+            </a>
+
+            <button class="md-navbar-toggler hidden max-md:block bg-transparent border-none text-md-on-surface cursor-pointer p-2 rounded-md hover:bg-md-surface-variant transition" id="navbarToggle">
+                <span class="material-symbols-rounded">menu</span>
             </button>
-            
-            <ul class="md-navbar-nav" id="navbarNav">
-                <li class="md-nav-item">
-                    <a class="md-nav-link" href="{% url 'dashboard:index' %}">
-                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">computer</i>
+
+            <ul class="flex items-center list-none m-0 p-0 gap-1 max-md:hidden max-md:absolute max-md:top-16 max-md:left-0 max-md:right-0 max-md:bg-md-surface max-md:flex-col max-md:p-4 max-md:shadow-2xl max-md:z-40" id="navbarNav">
+                <li class="relative max-md:w-full">
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-md-xl text-md-on-surface-variant no-underline text-sm font-medium transition hover:bg-md-surface-variant hover:text-md-on-surface min-h-[40px] whitespace-nowrap max-md:w-full max-md:justify-start max-md:px-4 max-md:py-3 max-md:rounded-md" href="{% url 'dashboard:index' %}">
+                        <span class="material-symbols-rounded text-lg">computer</span>
                         云电脑列表
                     </a>
                 </li>
-                <li class="md-nav-item">
-                    <a class="md-nav-link" href="{% url 'operations:account_opening_list' %}">
-                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">description</i>
+                <li class="relative max-md:w-full">
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-md-xl text-md-on-surface-variant no-underline text-sm font-medium transition hover:bg-md-surface-variant hover:text-md-on-surface min-h-[40px] whitespace-nowrap max-md:w-full max-md:justify-start max-md:px-4 max-md:py-3 max-md:rounded-md" href="{% url 'operations:account_opening_list' %}">
+                        <span class="material-symbols-rounded text-lg">description</span>
                         我提交的申请
                     </a>
                 </li>
-                <li class="md-nav-item">
-                    <a class="md-nav-link" href="{% url 'operations:my_cloud_computers' %}">
-                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">desktop_windows</i>
+                <li class="relative max-md:w-full">
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-md-xl text-md-on-surface-variant no-underline text-sm font-medium transition hover:bg-md-surface-variant hover:text-md-on-surface min-h-[40px] whitespace-nowrap max-md:w-full max-md:justify-start max-md:px-4 max-md:py-3 max-md:rounded-md" href="{% url 'operations:my_cloud_computers' %}">
+                        <span class="material-symbols-rounded text-lg">desktop_windows</span>
                         我拥有的云电脑
                     </a>
                 </li>
-                <li class="md-nav-item">
-                    <a class="md-nav-link" href="{% url 'tickets:my_tickets' %}">
-                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">confirmation_number</i>
+                <li class="relative max-md:w-full">
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-md-xl text-md-on-surface-variant no-underline text-sm font-medium transition hover:bg-md-surface-variant hover:text-md-on-surface min-h-[40px] whitespace-nowrap max-md:w-full max-md:justify-start max-md:px-4 max-md:py-3 max-md:rounded-md" href="{% url 'tickets:my_tickets' %}">
+                        <span class="material-symbols-rounded text-lg">confirmation_number</span>
                         工单中心
                     </a>
                 </li>
-                {% if user.is_staff or user.is_superuser %}
-                <li class="md-nav-item">
-                    <a class="md-nav-link" href="{% url 'tickets:pending_tickets' %}">
-                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">pending_actions</i>
-                        待处理工单
-                    </a>
-                </li>
-                {% endif %}
-                
+
+
                 <!-- 移动端用户菜单项 -->
                 {% if user.is_authenticated %}
-                <li class="md-nav-item mobile-user-item">
-                    <a class="md-nav-link" href="{% url 'accounts:profile' %}">
-                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">account_circle</i>
+                <li class="relative max-md:w-full mobile-user-item hidden">
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-md-xl text-md-on-surface-variant no-underline text-sm font-medium transition hover:bg-md-surface-variant hover:text-md-on-surface min-h-[40px] whitespace-nowrap max-md:w-full max-md:justify-start max-md:px-4 max-md:py-3 max-md:rounded-md" href="{% url 'accounts:profile' %}">
+                        <span class="material-symbols-rounded text-lg">account_circle</span>
                         个人资料
                     </a>
                 </li>
                 {% if user.is_staff or user.is_superuser %}
-                <li class="md-nav-item mobile-admin-item">
-                    <a class="md-nav-link" href="/admin/">
-                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">admin_panel_settings</i>
+                <li class="relative max-md:w-full mobile-admin-item hidden">
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-md-xl text-md-on-surface-variant no-underline text-sm font-medium transition hover:bg-md-surface-variant hover:text-md-on-surface min-h-[40px] whitespace-nowrap max-md:w-full max-md:justify-start max-md:px-4 max-md:py-3 max-md:rounded-md" href="/admin/">
+                        <span class="material-symbols-rounded text-lg">admin_panel_settings</span>
                         后台管理
                     </a>
                 </li>
                 {% endif %}
-                <li class="md-nav-item mobile-logout-item">
-                    <a class="md-nav-link" href="{% url 'accounts:logout' %}">
-                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">logout</i>
+                <li class="relative max-md:w-full mobile-logout-item hidden">
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-md-xl text-md-on-surface-variant no-underline text-sm font-medium transition hover:bg-md-surface-variant hover:text-md-on-surface min-h-[40px] whitespace-nowrap max-md:w-full max-md:justify-start max-md:px-4 max-md:py-3 max-md:rounded-md" href="{% url 'accounts:logout' %}">
+                        <span class="material-symbols-rounded text-lg">logout</span>
                         退出登录
                     </a>
                 </li>
                 {% else %}
-                <li class="md-nav-item mobile-login-item">
-                    <a class="md-nav-link" href="{% url 'accounts:login' %}">
-                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">login</i>
+                <li class="relative max-md:w-full mobile-login-item hidden">
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-md-xl text-md-on-surface-variant no-underline text-sm font-medium transition hover:bg-md-surface-variant hover:text-md-on-surface min-h-[40px] whitespace-nowrap max-md:w-full max-md:justify-start max-md:px-4 max-md:py-3 max-md:rounded-md" href="{% url 'accounts:login' %}">
+                        <span class="material-symbols-rounded text-lg">login</span>
                         登录
                     </a>
                 </li>
-                <li class="md-nav-item mobile-register-item">
-                    <a class="md-nav-link" href="{% url 'accounts:register' %}">
-                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">person_add</i>
+                <li class="relative max-md:w-full mobile-register-item hidden">
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-md-xl text-md-on-surface-variant no-underline text-sm font-medium transition hover:bg-md-surface-variant hover:text-md-on-surface min-h-[40px] whitespace-nowrap max-md:w-full max-md:justify-start max-md:px-4 max-md:py-3 max-md:rounded-md" href="{% url 'accounts:register' %}">
+                        <span class="material-symbols-rounded text-lg">person_add</span>
                         注册
                     </a>
                 </li>
                 {% endif %}
             </ul>
-            
-            <div class="md-user-menu">
+
+            <div class="flex items-center gap-3 max-md:hidden">
                 <!-- 主题切换按钮 -->
-                <div class="theme-toggle-wrapper" style="margin-right: var(--md-sys-spacing-padding-md); display: flex; align-items: center;">
-                    <button class="theme-toggle" id="themeToggle" title="切换主题" aria-label="切换深色/浅色模式">
-                        <span class="theme-toggle-knob" id="themeToggleKnob">
-                            <i class="material-icons" id="themeIcon">light_mode</i>
-                        </span>
-                    </button>
-                </div>
+                <button class="theme-toggle p-2 rounded-md hover:bg-md-surface-variant transition" id="themeToggle" title="切换主题" aria-label="切换深色/浅色模式">
+                    <span class="theme-toggle-knob" id="themeToggleKnob">
+                        <span class="material-symbols-rounded" id="themeIcon">light_mode</span>
+                    </span>
+                </button>
 
                 {% if user.is_authenticated %}
-                    <div class="md-user-dropdown">
-                        <button class="md-user-button" id="userDropdown">
-                            <i class="material-icons" style="font-size: 18px; margin-right: 8px;">person</i>
+                    <div class="relative" id="userDropdownWrapper">
+                        <button class="flex items-center gap-2 px-4 py-2 rounded-md-xl bg-transparent border-none text-md-on-surface text-sm font-medium cursor-pointer transition hover:bg-md-surface-variant" id="userDropdown">
+                            <span class="material-symbols-rounded text-lg">person</span>
                             {{ user.username }}
-                            <i class="material-icons" style="font-size: 18px; margin-left: 8px;">arrow_drop_down</i>
+                            <span class="material-symbols-rounded text-lg">arrow_drop_down</span>
                         </button>
-                        <div class="md-dropdown-menu" id="userDropdownMenu">
-                            <a class="md-dropdown-item" href="{% url 'accounts:profile' %}">
-                                <i class="material-icons" style="font-size: 18px; margin-right: 12px;">account_circle</i>
+                        <div class="md-dropdown-menu absolute top-full right-0 bg-md-surface rounded-md-lg shadow-2xl min-w-[200px] z-50" id="userDropdownMenu" style="display:none">
+                            <a class="flex items-center gap-3 px-4 py-3 text-md-on-surface no-underline text-sm transition hover:bg-md-surface-variant" href="{% url 'accounts:profile' %}">
+                                <span class="material-symbols-rounded text-lg">account_circle</span>
                                 个人资料
                             </a>
                             {% if user.is_staff or user.is_superuser %}
-                            <a class="md-dropdown-item" href="/admin/">
-                                <i class="material-icons" style="font-size: 18px; margin-right: 12px;">admin_panel_settings</i>
+                            <a class="flex items-center gap-3 px-4 py-3 text-md-on-surface no-underline text-sm transition hover:bg-md-surface-variant" href="/admin/">
+                                <span class="material-symbols-rounded text-lg">admin_panel_settings</span>
                                 后台管理
                             </a>
                             {% endif %}
-                            <div class="md-dropdown-divider"></div>
-                            <a class="md-dropdown-item" href="{% url 'accounts:logout' %}">
-                                <i class="material-icons" style="font-size: 18px; margin-right: 12px;">logout</i>
+                            <div class="h-px bg-md-outline-variant my-1"></div>
+                            <a class="flex items-center gap-3 px-4 py-3 text-md-error no-underline text-sm transition hover:bg-md-error/10" href="{% url 'accounts:logout' %}">
+                                <span class="material-symbols-rounded text-lg">logout</span>
                                 退出登录
                             </a>
                         </div>
                     </div>
                 {% else %}
-                    <a class="md-nav-link" href="{% url 'accounts:login' %}" style="margin-right: var(--md-sys-spacing-margin-sm);">
-                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">login</i>
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-md-xl text-md-on-surface-variant no-underline text-sm font-medium transition hover:bg-md-surface-variant hover:text-md-on-surface min-h-[40px]" href="{% url 'accounts:login' %}">
+                        <span class="material-symbols-rounded text-lg">login</span>
                         登录
                     </a>
-                    <a class="md-nav-link" href="{% url 'accounts:register' %}">
-                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">person_add</i>
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-md-xl text-md-on-surface-variant no-underline text-sm font-medium transition hover:bg-md-surface-variant hover:text-md-on-surface min-h-[40px]" href="{% url 'accounts:register' %}">
+                        <span class="material-symbols-rounded text-lg">person_add</span>
                         注册
                     </a>
                 {% endif %}
@@ -402,39 +149,61 @@
         </div>
     </nav>
 
-    <!-- 消息提示 -->
+    <!-- 消息提示 - MD3 Snackbar 风格 -->
     {% if messages %}
-    <div class="container mt-3">
+    <div class="relative z-10 max-w-7xl mx-auto px-4 lg:px-6 mt-4 space-y-2">
         {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="flex items-center justify-between gap-3 px-4 py-3 rounded-md shadow-lg
+            {% if message.tags == 'success' %}
+                bg-md-primary-container/90 text-md-on-primary-container
+            {% elif message.tags == 'error' %}
+                bg-md-error-container/90 text-md-on-error-container
+            {% elif message.tags == 'warning' %}
+                bg-md-tertiary-container/90 text-md-on-tertiary-container
+            {% else %}
+                bg-md-surface-container-high text-md-on-surface
+            {% endif %}" role="alert">
+            <div class="flex items-center gap-2">
+                {% if message.tags == 'success' %}
+                <span class="material-symbols-rounded text-lg">check_circle</span>
+                {% elif message.tags == 'error' %}
+                <span class="material-symbols-rounded text-lg">error</span>
+                {% elif message.tags == 'warning' %}
+                <span class="material-symbols-rounded text-lg">warning</span>
+                {% else %}
+                <span class="material-symbols-rounded text-lg">info</span>
+                {% endif %}
+                <span class="text-sm font-medium">{{ message }}</span>
+            </div>
+            <button type="button" class="snackbar-close bg-transparent border-none text-md-on-surface-variant cursor-pointer p-1 rounded-md hover:bg-md-surface-variant transition">
+                <span class="material-symbols-rounded text-lg">close</span>
+            </button>
         </div>
         {% endfor %}
     </div>
     {% endif %}
 
     <!-- 主内容区 -->
-    <main class="container-fluid py-4">
+    <main class="relative z-10 flex-1 max-w-7xl mx-auto w-full px-4 lg:px-6 py-6">
         {% block content %}{% endblock %}
     </main>
 
     <!-- 页脚 -->
-    <footer class="footer-glass mt-5 py-3">
-        <div class="container text-center">
-            <p class="mb-1">&copy; {% now "Y" %} ZASCA. All rights reserved.</p>
+    <footer class="relative z-10 bg-md-surface-container/70 backdrop-blur-xl border-t border-white/10 mt-8 py-4">
+        <div class="max-w-7xl mx-auto text-center px-4">
+            <p class="mb-1 text-md-on-surface-variant text-sm">&copy; {% now "Y" %} ZASCA. All rights reserved.</p>
             {% if system_config %}
                 <div class="mb-1">
                     {% if system_config.icp_number %}
-                        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none;">
+                        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" class="text-md-on-surface-variant hover:text-md-on-surface no-underline text-sm transition">
                             {{ system_config.icp_number }}
                         </a>
                     {% endif %}
                 </div>
                 {% if system_config.police_number %}
                     <div class="mb-0">
-                        <img src="{% static 'img/head-logo.png' %}" width="20"/>
-                        <a href="https://beian.mps.gov.cn/" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none;">
+                        <img src="{% static 'img/head-logo.png' %}" width="20" class="inline align-middle"/>
+                        <a href="https://beian.mps.gov.cn/" target="_blank" rel="noopener noreferrer" class="text-md-on-surface-variant hover:text-md-on-surface no-underline text-sm transition">
                             {{ system_config.police_number }}
                         </a>
                     </div>
@@ -444,10 +213,9 @@
     </footer>
 
     <!-- JavaScript -->
-    <script src="{% static 'vendor/bootstrap-5.1.3/js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'js/base.js' %}"></script>
     {% block extra_js %}{% endblock %}
-    
+
     <script>
         // ==================== 主题管理系统 ====================
         const ThemeManager = {
@@ -490,7 +258,6 @@
                 const themeIcon = document.getElementById('themeIcon');
                 if (themeIcon) {
                     themeIcon.textContent = theme === 'dark' ? 'dark_mode' : 'light_mode';
-                    themeIcon.style.color = theme === 'dark' ? '#fbbf24' : '#1e3a5f';
                 }
 
                 // 更新 meta 标签（如果存在）
@@ -517,11 +284,11 @@
         document.addEventListener('DOMContentLoaded', function() {
             // 字体加载检测 - 防止图标闪烁
             document.fonts.ready.then(function() {
-                document.querySelectorAll('.material-icons').forEach(function(icon) {
+                document.querySelectorAll('.material-icons, .material-symbols-rounded').forEach(function(icon) {
                     icon.classList.add('material-icons-loaded');
                 });
             });
-            
+
             // 初始化主题管理器
             ThemeManager.init();
 
@@ -531,11 +298,15 @@
 
             if (navbarToggle && navbarNav) {
                 navbarToggle.addEventListener('click', function() {
-                    navbarNav.classList.toggle('mobile-show');
-
-                    // 动画效果
-                    if (navbarNav.classList.contains('mobile-show')) {
-                        navbarNav.style.animation = 'slideInDown 0.2s ease-out';
+                    if (navbarNav.classList.contains('max-md:hidden')) {
+                        navbarNav.classList.remove('max-md:hidden');
+                        navbarNav.classList.add('max-md:flex');
+                    } else if (navbarNav.classList.contains('max-md:flex')) {
+                        navbarNav.classList.add('max-md:hidden');
+                        navbarNav.classList.remove('max-md:flex');
+                    } else {
+                        navbarNav.classList.remove('max-md:hidden');
+                        navbarNav.classList.add('max-md:flex');
                     }
                 });
             }
@@ -547,48 +318,34 @@
             if (userDropdown && userDropdownMenu) {
                 userDropdown.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    userDropdownMenu.classList.toggle('show');
-
-                    // 添加动画类
-                    if (userDropdownMenu.classList.contains('show')) {
-                        userDropdownMenu.style.display = 'block';
-                    }
+                    userDropdownMenu.style.display = userDropdownMenu.style.display === 'none' ? 'block' : 'none';
                 });
 
-                // 点击外部关闭下拉菜单
                 document.addEventListener('click', function() {
-                    userDropdownMenu.classList.remove('show');
+                    userDropdownMenu.style.display = 'none';
+                });
+
+                userDropdownMenu.addEventListener('click', function(e) {
+                    e.stopPropagation();
                 });
             }
 
             // 活动链接高亮
             const currentPath = window.location.pathname;
-            const navLinks = document.querySelectorAll('.md-nav-link');
+            const navLinks = document.querySelectorAll('#navbarNav a, #userDropdownWrapper a');
 
             navLinks.forEach(link => {
-                // 移除所有 active 类
-                link.classList.remove('active');
-
-                // 检查当前路径是否匹配链接
                 if (link.getAttribute('href') === currentPath) {
-                    link.classList.add('active');
+                    link.classList.add('bg-md-secondary-container', 'text-md-on-secondary-container');
                 }
-
-                // 添加悬停音效反馈（可选）
-                link.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-1px)';
-                });
-
-                link.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(0)';
-                });
             });
 
             // 页面加载动画
-            document.body.style.opacity = '0';
+            document.body.classList.add('opacity-0');
             setTimeout(() => {
-                document.body.style.transition = 'opacity 0.3s ease-in-out';
-                document.body.style.opacity = '1';
+                document.body.classList.add('transition-opacity', 'duration-300');
+                document.body.classList.remove('opacity-0');
+                document.body.classList.add('opacity-100');
             }, 100);
 
             // 添加键盘快捷键支持（Ctrl/Cmd + D 切换主题）
@@ -599,24 +356,32 @@
                 }
             });
 
+            // 消息提示 - 关闭按钮点击 & 5秒自动关闭
+            document.querySelectorAll('[role="alert"]').forEach(function(snackbar) {
+                var closeBtn = snackbar.querySelector('.snackbar-close');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', function() {
+                        dismissSnackbar(snackbar);
+                    });
+                }
+                setTimeout(function() {
+                    dismissSnackbar(snackbar);
+                }, 5000);
+            });
+
+            function dismissSnackbar(el) {
+                if (!el || el.classList.contains('snackbar-dismissing')) return;
+                el.classList.add('snackbar-dismissing');
+                el.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(-8px)';
+                setTimeout(function() {
+                    el.remove();
+                }, 300);
+            }
+
             console.log('[ZASCA] 界面初始化完成 - 快捷键: Ctrl+D 切换主题');
         });
-
-        // 添加滑入动画样式
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideInDown {
-                from {
-                    opacity: 0;
-                    transform: translateY(-10px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-        `;
-        document.head.appendChild(style);
     </script>
 </body>
 </html>

@@ -5,10 +5,18 @@ from django import forms
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 
 from .models import Ticket, TicketComment, TicketCategory
 
 User = get_user_model()
+
+
+MD3_INPUT_CLASS = (
+    'w-full bg-md-surface/50 border border-md-outline/50 rounded-md px-4 py-3 '
+    'text-md-on-surface placeholder-md-outline focus:outline-none focus:ring-2 '
+    'focus:ring-md-primary transition'
+)
 
 
 class TicketForm(forms.ModelForm):
@@ -17,50 +25,50 @@ class TicketForm(forms.ModelForm):
     """
     title = forms.CharField(
         widget=forms.TextInput(attrs={
-            'class': 'form-control',
+            'class': MD3_INPUT_CLASS,
             'placeholder': '请输入工单标题'
         }),
         label=_('标题'),
         help_text=_('请简要描述工单主题')
     )
-    
+
     description = forms.CharField(
         widget=forms.Textarea(attrs={
-            'class': 'form-control',
+            'class': MD3_INPUT_CLASS,
             'rows': 6,
             'placeholder': '请详细描述您的问题或需求'
         }),
         label=_('详细描述'),
         help_text=_('请提供尽可能详细的信息，以便我们更好地帮助您')
     )
-    
+
     category = forms.ModelChoiceField(
         queryset=TicketCategory.objects.filter(is_active=True),
-        widget=forms.Select(attrs={'class': 'form-control'}),
+        widget=forms.Select(attrs={'class': MD3_INPUT_CLASS}),
         label=_('分类'),
         help_text=_('请选择工单分类'),
         required=False
     )
-    
+
     priority = forms.ChoiceField(
         choices=Ticket.PRIORITY_CHOICES,
-        widget=forms.Select(attrs={'class': 'form-control'}),
+        widget=forms.Select(attrs={'class': MD3_INPUT_CLASS}),
         label=_('优先级'),
         help_text=_('请选择工单优先级'),
         initial='medium'
     )
-    
+
     related_product = forms.ModelChoiceField(
         queryset=None,
-        widget=forms.Select(attrs={'class': 'form-control'}),
+        widget=forms.Select(attrs={'class': MD3_INPUT_CLASS}),
         label=_('关联产品'),
         help_text=_('如有关联的产品，请选择'),
         required=False
     )
-    
+
     related_host = forms.ModelChoiceField(
         queryset=None,
-        widget=forms.Select(attrs={'class': 'form-control'}),
+        widget=forms.Select(attrs={'class': MD3_INPUT_CLASS}),
         label=_('关联主机'),
         help_text=_('如有关联的主机，请选择'),
         required=False
@@ -138,9 +146,18 @@ class TicketAssignForm(forms.Form):
         queryset=User.objects.filter(is_active=True),
         widget=forms.Select(attrs={'class': 'form-control'}),
         label=_('处理人'),
-        help_text=_('请选择要分配的处理人')
+        help_text=_('请选择要分配的处理人'),
+        required=False,
     )
-    
+
+    assigned_group = forms.ModelChoiceField(
+        queryset=Group.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label=_('处理组'),
+        help_text=_('请选择要分配的处理组'),
+        required=False,
+    )
+
     notes = forms.CharField(
         required=False,
         widget=forms.Textarea(attrs={
@@ -154,12 +171,19 @@ class TicketAssignForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # 只显示有权限处理工单的用户（staff、superuser、提供商）
         self.fields['assignee'].queryset = User.objects.filter(
             is_active=True
         ).filter(
-            models.Q(is_staff=True) | models.Q(is_superuser=True) | models.Q(groups__name='提供商')
+            models.Q(is_staff=True) | models.Q(is_superuser=True) | models.Q(groups__name='主机提供商')
         ).distinct()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        assignee = cleaned_data.get('assignee')
+        assigned_group = cleaned_data.get('assigned_group')
+        if not assignee and not assigned_group:
+            raise forms.ValidationError(_('请至少选择一个处理人或处理组'))
+        return cleaned_data
 
 
 class TicketStatusForm(forms.Form):

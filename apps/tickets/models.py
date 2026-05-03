@@ -7,6 +7,7 @@ import string
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.utils import timezone
 from django.dispatch import Signal
 
@@ -72,6 +73,15 @@ class TicketCategory(models.Model):
         verbose_name=_('自动分配给'),
         help_text=_('该分类的工单自动分配给指定用户')
     )
+    auto_assign_to_group = models.ForeignKey(
+        Group,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='auto_assigned_categories',
+        verbose_name=_('自动分配给用户组'),
+        help_text=_('该分类的工单自动分配给指定用户组')
+    )
     sla_hours = models.PositiveIntegerField(
         default=24,
         verbose_name=_('SLA时限(小时)'),
@@ -86,6 +96,15 @@ class TicketCategory(models.Model):
         default=0,
         verbose_name=_('显示顺序'),
         help_text=_('分类在前端展示的顺序，数字越小越靠前')
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_ticket_categories',
+        verbose_name=_('创建者'),
+        help_text=_('创建此分类的用户，用于提供商数据隔离')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -197,6 +216,15 @@ class Ticket(models.Model):
         verbose_name=_('处理人'),
         help_text=_('负责处理此工单的用户')
     )
+    assigned_group = models.ForeignKey(
+        Group,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_tickets',
+        verbose_name=_('处理组'),
+        help_text=_('负责处理此工单的用户组')
+    )
     related_product = models.ForeignKey(
         'operations.Product',
         on_delete=models.SET_NULL,
@@ -262,6 +290,7 @@ class Ticket(models.Model):
             models.Index(fields=['status']),
             models.Index(fields=['priority']),
             models.Index(fields=['assignee']),
+            models.Index(fields=['assigned_group']),
             models.Index(fields=['creator']),
             models.Index(fields=['category']),
             models.Index(fields=['created_at']),
@@ -292,11 +321,13 @@ class Ticket(models.Model):
         # 记录状态变更前的旧状态
         old_status = None
         old_assignee_id = None
+        old_assigned_group_id = None
         if self.pk:
             try:
                 old_ticket = Ticket.objects.get(pk=self.pk)
                 old_status = old_ticket.status
                 old_assignee_id = old_ticket.assignee_id
+                old_assigned_group_id = old_ticket.assigned_group_id
             except Ticket.DoesNotExist:
                 pass
         
@@ -324,15 +355,20 @@ class Ticket(models.Model):
                 description=f'状态从 "{self.get_status_display_old(old_status)}" 变更为 "{self.get_status_display()}"'
             )
         
-        if old_assignee_id != self.assignee_id:
+        if old_assignee_id != self.assignee_id or old_assigned_group_id != self.assigned_group_id:
+            assign_desc_parts = []
             if self.assignee:
+                assign_desc_parts.append(f'用户 {self.assignee.username}')
+            if self.assigned_group:
+                assign_desc_parts.append(f'用户组 {self.assigned_group.name}')
+            if assign_desc_parts:
                 ticket_assigned.send(sender=self.__class__, instance=self)
                 TicketActivity.objects.create(
                     ticket=self,
                     actor=self.creator if hasattr(self, '_current_user') else None,
                     action='assign',
-                    new_value=str(self.assignee),
-                    description=f'工单分配给 {self.assignee.username}'
+                    new_value=' / '.join(assign_desc_parts),
+                    description=f'工单分配给 {" / ".join(assign_desc_parts)}'
                 )
 
     def get_status_display_old(self, status):
@@ -342,11 +378,14 @@ class Ticket(models.Model):
                 return name
         return status
 
-    def assign_to(self, user, actor=None):
+    def assign_to(self, user=None, group=None, actor=None):
         """
-        分配工单给指定用户
+        分配工单给指定用户和/或用户组
         """
-        self.assignee = user
+        if user is not None:
+            self.assignee = user
+        if group is not None:
+            self.assigned_group = group
         if actor:
             self._current_user = actor
         self.save()
@@ -391,6 +430,18 @@ class Ticket(models.Model):
         if self.due_at and self.status not in ['resolved', 'closed', 'rejected']:
             return timezone.now() > self.due_at
         return False
+
+    @property
+    def assignee_display(self):
+        """
+        获取处理人显示文本（包含用户和用户组）
+        """
+        parts = []
+        if self.assignee:
+            parts.append(self.assignee.username)
+        if self.assigned_group:
+            parts.append(f'{self.assigned_group.name}(组)')
+        return ' / '.join(parts) if parts else None
 
     @property
     def status_badge_class(self):

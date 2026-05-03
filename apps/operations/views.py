@@ -9,6 +9,9 @@ from django.views.generic import ListView, CreateView, DetailView
 from django.utils.decorators import method_decorator
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse, HttpResponseForbidden
+import logging
+
+logger = logging.getLogger(__name__)
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_POST
 from django.utils.translation import gettext_lazy as _
@@ -17,7 +20,6 @@ from datetime import timedelta
 from .models import AccountOpeningRequest, SystemTask, CloudComputerUser, Product
 from .forms import AccountOpeningRequestForm, AccountOpeningRequestFilterForm, CloudComputerUserFilterForm
 from apps.hosts.models import Host
-from django.http import JsonResponse
 
 
 @method_decorator(login_required, name='dispatch')
@@ -185,9 +187,6 @@ def account_opening_confirm(request):
 @login_required
 def account_opening_submit(request):
     """提交开户申请"""
-    import logging
-    logger = logging.getLogger(__name__)
-    
     confirm_data = request.session.get('confirm_data')
     if not confirm_data:
         messages.error(request, '未找到待提交的申请信息。')
@@ -302,8 +301,30 @@ def account_opening_detail(request, pk):
         messages.error(request, '您没有权限查看此申请的详情。')
         return redirect('operations:account_opening_list')
     
+    timeline = []
+    timeline.append({
+        'label': '提交申请',
+        'time': account_request.created_at,
+        'done': True,
+    })
+    if account_request.status in ('approved', 'rejected', 'processing', 'completed', 'failed'):
+        timeline.append({
+            'label': '审核完成',
+            'time': account_request.approval_date,
+            'done': (account_request.status != 'failed' or account_request.approval_date is not None),
+            'detail': ('批准' if account_request.status != 'rejected' else '驳回'),
+        })
+    if account_request.status in ('processing', 'completed', 'failed'):
+        timeline.append({
+            'label': '执行开户',
+            'time': account_request.updated_at if account_request.status == 'completed' else None,
+            'done': account_request.status in ('completed',),
+            'detail': account_request.result_message if account_request.result_message else None,
+        })
+
     context = {
-        'request': account_request
+        'request': account_request,
+        'timeline': timeline,
     }
     return render(request, 'operations/account_opening_request_detail.html', context)
 @method_decorator(login_required, name='dispatch')
@@ -450,8 +471,8 @@ def get_password_and_burn(request, pk):
         password = cloud_user.get_and_burn_password()
         return JsonResponse({'success': True, 'password': password})
     except Exception as e:
-        logger.error(f"Error burning password: {str(e)}", exc_info=True)
-        return JsonResponse({'success': False, 'error': 'Failed to retrieve password'})
+        logger.error(f"获取密码失败: {str(e)}", exc_info=True)
+        return JsonResponse({'success': False, 'error': str(e)})
 
 
 @login_required
@@ -493,3 +514,111 @@ def get_host_disk_info(request, host_id):
     except Exception as e:
         logger.error(f"Error getting disk info: {str(e)}", exc_info=True)
         return JsonResponse({'success': False, 'error': 'Failed to get disk info'})
+
+
+def product_invite_view(request, token):
+    """
+    产品邀请链接视图
+
+    用户访问邀请链接后，解锁对应产品或产品组的访问权限
+    """
+    from django.shortcuts import render, redirect
+    from django.contrib import messages
+    from django.contrib.auth import get_user_model
+    from django.urls import reverse
+    from django.db.models import Q
+    from .models import ProductInvitationToken, ProductAccessGrant
+
+    User = get_user_model()
+
+    try:
+        invite_token = ProductInvitationToken.objects.get(token=token)
+    except ProductInvitationToken.DoesNotExist:
+        return render(request, 'operations/invite_result.html', {
+            'success': False,
+            'message': '邀请链接无效或不存在。',
+        })
+
+    # 校验令牌状态
+    if not invite_token.is_valid():
+        if invite_token.is_expired():
+            return render(request, 'operations/invite_result.html', {
+                'success': False,
+                'message': '邀请链接已过期。',
+            })
+        if invite_token.is_exhausted():
+            return render(request, 'operations/invite_result.html', {
+                'success': False,
+                'message': '邀请链接已达到最大使用次数。',
+            })
+        return render(request, 'operations/invite_result.html', {
+            'success': False,
+            'message': '邀请链接已被禁用。',
+        })
+
+    # 如果用户未登录，重定向到登录页
+    if not request.user.is_authenticated:
+        login_url = reverse('accounts:login') + f'?next={request.path}'
+        return redirect(login_url)
+
+    # 检查是否已有授权
+    existing_grant = ProductAccessGrant.objects.filter(
+        user=request.user,
+        product=invite_token.product,
+        product_group=invite_token.product_group,
+        is_revoked=False,
+    ).first()
+
+    if existing_grant and not existing_grant.is_expired():
+        return render(request, 'operations/invite_result.html', {
+            'success': True,
+            'message': '您已经拥有该产品的访问权限。',
+            'product': invite_token.product,
+            'product_group': invite_token.product_group,
+        })
+
+    # 创建授权记录
+    try:
+        grant, created = ProductAccessGrant.objects.get_or_create(
+            user=request.user,
+            product=invite_token.product,
+            product_group=invite_token.product_group,
+            defaults={
+                'granted_by_token': invite_token,
+                'expires_at': invite_token.expires_at,
+            }
+        )
+        if not created:
+            # 如果记录已存在但被撤销或过期，重新激活
+            if grant.is_revoked or grant.is_expired():
+                grant.is_revoked = False
+                grant.revoked_at = None
+                grant.revoked_by = None
+                grant.granted_by_token = invite_token
+                grant.expires_at = invite_token.expires_at
+                grant.save(update_fields=[
+                    'is_revoked', 'revoked_at', 'revoked_by',
+                    'granted_by_token', 'expires_at'
+                ])
+    except Exception as e:
+        logger.error(f"创建授权记录失败: {str(e)}", exc_info=True)
+        return render(request, 'operations/invite_result.html', {
+            'success': False,
+            'message': '授权处理失败，请稍后重试。',
+        })
+
+    # 更新令牌使用次数
+    invite_token.increment_usage()
+
+    target_name = (
+        invite_token.product.display_name
+        if invite_token.product
+        else (invite_token.product_group.name if invite_token.product_group else '未知')
+    )
+
+    return render(request, 'operations/invite_result.html', {
+        'success': True,
+        'message': f'恭喜！您已成功解锁 "{target_name}" 的访问权限。',
+        'product': invite_token.product,
+        'product_group': invite_token.product_group,
+    })

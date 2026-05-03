@@ -3,40 +3,41 @@
 {% block title %}{{ ticket.title }} - 工单详情 - ZASCA{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="max-w-7xl mx-auto px-4 lg:px-6 py-6">
     {% if forbidden %}
-    <div class="alert alert-danger">
-        <i class="material-icons" style="vertical-align: middle;">block</i>
+    <div class="bg-md-error-container/50 border border-md-error rounded-md-lg p-4 mb-4 flex items-center gap-2 text-md-on-error-container">
+        <i class="material-icons align-middle">block</i>
         您没有权限查看此工单。
     </div>
-    <a href="{% url 'tickets:my_tickets' %}" class="btn btn-primary">返回我的工单</a>
+    <a href="{% url 'tickets:my_tickets' %}" class="inline-flex items-center gap-1 bg-md-primary text-md-on-primary px-6 py-3 rounded-md-xl font-medium shadow-lg transition hover:shadow-xl">返回我的工单</a>
     {% else %}
     <!-- 工单头部 -->
-    <div class="row mb-4">
-        <div class="col-md-8">
+    <div class="flex flex-wrap items-start justify-between mb-6">
+        <div class="mb-4 sm:mb-0">
             <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'tickets:my_tickets' %}">我的工单</a></li>
-                    <li class="breadcrumb-item active">{{ ticket.ticket_no }}</li>
+                <ol class="flex items-center gap-1 text-sm mb-3">
+                    <li><a href="{% url 'tickets:my_tickets' %}" class="text-md-primary hover:underline">我的工单</a></li>
+                    <li class="text-md-on-surface-variant">/</li>
+                    <li class="text-md-on-surface-variant">{{ ticket.ticket_no }}</li>
                 </ol>
             </nav>
-            <h1 class="h3 mb-2">{{ ticket.title }}</h1>
-            <div class="d-flex gap-2 mb-2">
-                <span class="badge {{ ticket.status_badge_class }}">{{ ticket.get_status_display }}</span>
-                <span class="badge {{ ticket.priority_badge_class }}">{{ ticket.get_priority_display }}</span>
+            <h1 class="text-2xl font-semibold text-md-on-surface mb-2">{{ ticket.title }}</h1>
+            <div class="flex flex-wrap gap-2 mb-2">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium {{ ticket.status_badge_class }}">{{ ticket.get_status_display }}</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium {{ ticket.priority_badge_class }}">{{ ticket.get_priority_display }}</span>
                 {% if ticket.category %}
-                <span class="badge bg-info">{{ ticket.category.name }}</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-md-info-container text-md-on-info-container">{{ ticket.category.name }}</span>
                 {% endif %}
                 {% if ticket.is_overdue %}
-                <span class="badge bg-danger">已超时</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-md-error-container text-md-on-error-container">已超时</span>
                 {% endif %}
             </div>
         </div>
-        <div class="col-md-4 text-end">
+        <div>
             {% if ticket.status != 'closed' and ticket.status != 'rejected' %}
                 {% if user.is_staff or user.is_superuser or user == ticket.creator %}
-                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#closeModal">
-                    <i class="material-icons" style="font-size: 18px; vertical-align: middle;">close</i>
+                <button type="button" class="inline-flex items-center gap-1 text-md-error hover:bg-md-error/10 px-4 py-2 rounded-md transition border border-md-error" data-bs-toggle="modal" data-bs-target="#closeModal">
+                    <i class="material-icons text-[18px] align-middle">close</i>
                     关闭工单
                 </button>
                 {% endif %}
@@ -44,70 +45,70 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="flex flex-wrap -mx-3">
         <!-- 左侧：工单详情和评论 -->
-        <div class="col-md-8">
+        <div class="w-full lg:w-2/3 px-3 mb-6">
             <!-- 工单信息卡片 -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">工单详情</h5>
+            <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl mb-6 overflow-hidden">
+                <div class="bg-md-surface-container-high px-5 py-4 border-b border-md-outline-variant/30">
+                    <h5 class="text-md-on-surface font-medium m-0 text-lg">工单详情</h5>
                 </div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-sm-3 text-muted">工单编号</div>
-                        <div class="col-sm-9 font-monospace">{{ ticket.ticket_no }}</div>
+                <div class="p-6">
+                    <div class="flex flex-wrap mb-3">
+                        <div class="w-full sm:w-1/4 text-md-on-surface-variant text-sm">工单编号</div>
+                        <div class="w-full sm:w-3/4 font-mono text-md-on-surface">{{ ticket.ticket_no }}</div>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-sm-3 text-muted">创建者</div>
-                        <div class="col-sm-9">{{ ticket.creator.username }}</div>
+                    <div class="flex flex-wrap mb-3">
+                        <div class="w-full sm:w-1/4 text-md-on-surface-variant text-sm">创建者</div>
+                        <div class="w-full sm:w-3/4 text-md-on-surface">{{ ticket.creator.username }}</div>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-sm-3 text-muted">处理人</div>
-                        <div class="col-sm-9">
-                            {% if ticket.assignee %}
-                            {{ ticket.assignee.username }}
+                    <div class="flex flex-wrap mb-3">
+                        <div class="w-full sm:w-1/4 text-md-on-surface-variant text-sm">处理人</div>
+                        <div class="w-full sm:w-3/4 text-md-on-surface">
+                            {% if ticket.assignee or ticket.assigned_group %}
+                            {% if ticket.assignee %}{{ ticket.assignee.username }}{% endif %}{% if ticket.assignee and ticket.assigned_group %} / {% endif %}{% if ticket.assigned_group %}{{ ticket.assigned_group.name }}(组){% endif %}
                             {% else %}
-                            <span class="text-muted">未分配</span>
+                            <span class="text-md-on-surface-variant">未分配</span>
                             {% endif %}
                             {% if user.is_staff or user.is_superuser %}
-                            <button type="button" class="btn btn-sm btn-outline-primary ms-2" data-bs-toggle="modal" data-bs-target="#assignModal">
+                            <button type="button" class="inline-flex items-center ml-3 text-md-primary hover:bg-md-primary/10 px-3 py-1 rounded-md transition border border-md-primary text-sm" data-bs-toggle="modal" data-bs-target="#assignModal">
                                 分配
                             </button>
                             {% endif %}
                         </div>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-sm-3 text-muted">创建时间</div>
-                        <div class="col-sm-9">{{ ticket.created_at|date:"Y-m-d H:i:s" }}</div>
+                    <div class="flex flex-wrap mb-3">
+                        <div class="w-full sm:w-1/4 text-md-on-surface-variant text-sm">创建时间</div>
+                        <div class="w-full sm:w-3/4 text-md-on-surface">{{ ticket.created_at|date:"Y-m-d H:i:s" }}</div>
                     </div>
                     {% if ticket.due_at %}
-                    <div class="row mb-3">
-                        <div class="col-sm-3 text-muted">截止时间</div>
-                        <div class="col-sm-9">
+                    <div class="flex flex-wrap mb-3">
+                        <div class="w-full sm:w-1/4 text-md-on-surface-variant text-sm">截止时间</div>
+                        <div class="w-full sm:w-3/4">
                             {% if ticket.is_overdue %}
-                            <span class="text-danger">{{ ticket.due_at|date:"Y-m-d H:i:s" }} (已超时)</span>
+                            <span class="text-md-error">{{ ticket.due_at|date:"Y-m-d H:i:s" }} (已超时)</span>
                             {% else %}
-                            {{ ticket.due_at|date:"Y-m-d H:i:s" }}
+                            <span class="text-md-on-surface">{{ ticket.due_at|date:"Y-m-d H:i:s" }}</span>
                             {% endif %}
                         </div>
                     </div>
                     {% endif %}
                     {% if ticket.related_product %}
-                    <div class="row mb-3">
-                        <div class="col-sm-3 text-muted">关联产品</div>
-                        <div class="col-sm-9">{{ ticket.related_product.display_name }}</div>
+                    <div class="flex flex-wrap mb-3">
+                        <div class="w-full sm:w-1/4 text-md-on-surface-variant text-sm">关联产品</div>
+                        <div class="w-full sm:w-3/4 text-md-on-surface">{{ ticket.related_product.display_name }}</div>
                     </div>
                     {% endif %}
                     {% if ticket.related_host %}
-                    <div class="row mb-3">
-                        <div class="col-sm-3 text-muted">关联主机</div>
-                        <div class="col-sm-9">{{ ticket.related_host.name }}</div>
+                    <div class="flex flex-wrap mb-3">
+                        <div class="w-full sm:w-1/4 text-md-on-surface-variant text-sm">关联主机</div>
+                        <div class="w-full sm:w-3/4 text-md-on-surface">{{ ticket.related_host.name }}</div>
                     </div>
                     {% endif %}
-                    <hr>
+                    <hr class="border-md-outline-variant/30 my-4">
                     <div class="mb-0">
-                        <h6>问题描述</h6>
-                        <p class="mb-0">{{ ticket.description|linebreaksbr }}</p>
+                        <h6 class="text-md-on-surface font-medium mb-2">问题描述</h6>
+                        <p class="text-md-on-surface mb-0">{{ ticket.description|linebreaksbr }}</p>
                     </div>
                 </div>
             </div>
@@ -115,24 +116,24 @@
             <!-- 状态变更（管理员） -->
             {% if user.is_staff or user.is_superuser %}
             {% if ticket.status != 'closed' and ticket.status != 'rejected' %}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">状态变更</h5>
+            <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl mb-6 overflow-hidden">
+                <div class="bg-md-surface-container-high px-5 py-4 border-b border-md-outline-variant/30">
+                    <h5 class="text-md-on-surface font-medium m-0 text-lg">状态变更</h5>
                 </div>
-                <div class="card-body">
+                <div class="p-6">
                     <form method="post" action="{% url 'tickets:ticket_status_update' ticket.pk %}">
                         {% csrf_token %}
-                        <div class="row g-3">
-                            <div class="col-md-4">
+                        <div class="flex flex-wrap gap-4 items-end">
+                            <div class="flex-1 min-w-[200px]">
                                 {{ status_form.status.label_tag }}
                                 {{ status_form.status }}
                             </div>
-                            <div class="col-md-6">
+                            <div class="flex-[2] min-w-[250px]">
                                 {{ status_form.notes.label_tag }}
                                 {{ status_form.notes }}
                             </div>
-                            <div class="col-md-2 d-flex align-items-end">
-                                <button type="submit" class="btn btn-primary w-100 theme-aware-btn">更新</button>
+                            <div class="flex items-end">
+                                <button type="submit" class="bg-md-primary text-md-on-primary px-6 py-3 rounded-md-xl font-medium shadow-lg transition hover:shadow-xl w-full">更新</button>
                             </div>
                         </div>
                     </form>
@@ -142,57 +143,57 @@
             {% endif %}
 
             <!-- 评论列表 -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">
+            <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl mb-6 overflow-hidden">
+                <div class="bg-md-surface-container-high px-5 py-4 border-b border-md-outline-variant/30">
+                    <h5 class="text-md-on-surface font-medium m-0 text-lg flex items-center gap-2">
                         评论/回复
-                        <span class="badge bg-secondary">{{ comments.count }}</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-md-surface-container-highest text-md-on-surface-variant">{{ comments.count }}</span>
                     </h5>
                 </div>
-                <div class="card-body">
+                <div class="p-6">
                     {% if comments %}
-                    <div class="list-group list-group-flush">
+                    <div class="divide-y divide-md-outline-variant/30">
                         {% for comment in comments %}
-                        <div class="list-group-item {% if comment.is_internal %}list-group-item-warning{% endif %}">
-                            <div class="d-flex justify-content-between align-items-start">
+                        <div class="py-4 {% if comment.is_internal %}bg-md-warning-container/30 -mx-6 px-6{% endif %}">
+                            <div class="flex justify-between items-start">
                                 <div>
-                                    <strong>{{ comment.author.username }}</strong>
+                                    <strong class="text-md-on-surface">{{ comment.author.username }}</strong>
                                     {% if comment.is_internal %}
-                                    <span class="badge bg-warning text-dark ms-1">内部</span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-md-warning-container text-md-on-warning-container ml-1">内部</span>
                                     {% endif %}
                                 </div>
-                                <small class="text-muted">{{ comment.created_at|date:"Y-m-d H:i" }}</small>
+                                <small class="text-md-on-surface-variant">{{ comment.created_at|date:"Y-m-d H:i" }}</small>
                             </div>
-                            <p class="mb-0 mt-2">{{ comment.content|linebreaksbr }}</p>
+                            <p class="text-md-on-surface mb-0 mt-2">{{ comment.content|linebreaksbr }}</p>
                         </div>
                         {% endfor %}
                     </div>
                     {% else %}
-                    <p class="text-muted text-center py-3">暂无评论</p>
+                    <p class="text-md-on-surface-variant text-center py-6">暂无评论</p>
                     {% endif %}
                 </div>
             </div>
 
             <!-- 添加评论 -->
             {% if ticket.status != 'closed' and ticket.status != 'rejected' %}
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">添加评论</h5>
+            <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl overflow-hidden">
+                <div class="bg-md-surface-container-high px-5 py-4 border-b border-md-outline-variant/30">
+                    <h5 class="text-md-on-surface font-medium m-0 text-lg">添加评论</h5>
                 </div>
-                <div class="card-body">
+                <div class="p-6">
                     <form method="post" action="{% url 'tickets:ticket_comment' ticket.pk %}">
                         {% csrf_token %}
-                        <div class="mb-3">
+                        <div class="mb-4">
                             {{ comment_form.content }}
                         </div>
                         {% if user.is_staff or user.is_superuser %}
-                        <div class="mb-3 form-check">
+                        <div class="mb-4 flex items-center gap-2">
                             {{ comment_form.is_internal }}
                             {{ comment_form.is_internal.label_tag }}
                         </div>
                         {% endif %}
-                        <button type="submit" class="btn btn-primary theme-aware-btn">
-                            <i class="material-icons" style="font-size: 18px; vertical-align: middle;">send</i>
+                        <button type="submit" class="inline-flex items-center gap-1 bg-md-primary text-md-on-primary px-6 py-3 rounded-md-xl font-medium shadow-lg transition hover:shadow-xl">
+                            <i class="material-icons text-[18px] align-middle">send</i>
                             提交评论
                         </button>
                     </form>
@@ -202,29 +203,29 @@
         </div>
 
         <!-- 右侧：活动记录 -->
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">活动记录</h5>
+        <div class="w-full lg:w-1/3 px-3 mb-6">
+            <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl overflow-hidden">
+                <div class="bg-md-surface-container-high px-5 py-4 border-b border-md-outline-variant/30">
+                    <h5 class="text-md-on-surface font-medium m-0 text-lg">活动记录</h5>
                 </div>
-                <div class="card-body">
+                <div class="p-6">
                     {% if activities %}
-                    <div class="timeline">
+                    <div class="space-y-4">
                         {% for activity in activities %}
-                        <div class="timeline-item mb-3 pb-3 border-bottom">
-                            <div class="d-flex justify-content-between">
-                                <strong>{{ activity.get_action_display }}</strong>
-                                <small class="text-muted">{{ activity.created_at|date:"m-d H:i" }}</small>
+                        <div class="pb-4 border-b border-md-outline-variant/30 last:border-0 last:pb-0">
+                            <div class="flex justify-between">
+                                <strong class="text-md-on-surface text-sm">{{ activity.get_action_display }}</strong>
+                                <small class="text-md-on-surface-variant">{{ activity.created_at|date:"m-d H:i" }}</small>
                             </div>
-                            <p class="mb-0 text-muted">{{ activity.description }}</p>
+                            <p class="text-md-on-surface-variant mb-0 mt-1 text-sm">{{ activity.description }}</p>
                             {% if activity.actor %}
-                            <small class="text-muted">操作人: {{ activity.actor.username }}</small>
+                            <small class="text-md-on-surface-variant">操作人: {{ activity.actor.username }}</small>
                             {% endif %}
                         </div>
                         {% endfor %}
                     </div>
                     {% else %}
-                    <p class="text-muted text-center">暂无活动记录</p>
+                    <p class="text-md-on-surface-variant text-center">暂无活动记录</p>
                     {% endif %}
                 </div>
             </div>
@@ -233,28 +234,32 @@
 
     <!-- 分配模态框 -->
     {% if user.is_staff or user.is_superuser %}
-    <div class="modal fade" id="assignModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">分配工单</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="fixed inset-0 z-50 hidden" id="assignModal" tabindex="-1">
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+            <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl w-full max-w-lg">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-md-outline-variant/30">
+                    <h5 class="text-lg font-medium text-md-on-surface m-0">分配工单</h5>
+                    <button type="button" class="text-md-on-surface-variant hover:text-md-on-surface p-1 rounded-md transition" data-bs-dismiss="modal">&times;</button>
                 </div>
                 <form method="post" action="{% url 'tickets:ticket_assign' ticket.pk %}">
                     {% csrf_token %}
-                    <div class="modal-body">
-                        <div class="mb-3">
+                    <div class="px-6 py-4 space-y-4">
+                        <div>
                             {{ assign_form.assignee.label_tag }}
                             {{ assign_form.assignee }}
                         </div>
-                        <div class="mb-3">
+                        <div>
+                            {{ assign_form.assigned_group.label_tag }}
+                            {{ assign_form.assigned_group }}
+                        </div>
+                        <div>
                             {{ assign_form.notes.label_tag }}
                             {{ assign_form.notes }}
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                        <button type="submit" class="btn btn-primary">分配</button>
+                    <div class="flex justify-end gap-3 px-6 py-4 border-t border-md-outline-variant/30">
+                        <button type="button" class="text-md-on-surface-variant hover:bg-md-surface-container px-4 py-2 rounded-md transition border border-md-outline" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="bg-md-primary text-md-on-primary px-6 py-3 rounded-md-xl font-medium shadow-lg transition hover:shadow-xl">分配</button>
                     </div>
                 </form>
             </div>
@@ -263,29 +268,29 @@
     {% endif %}
 
     <!-- 关闭模态框 -->
-    <div class="modal fade" id="closeModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">关闭工单</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="fixed inset-0 z-50 hidden" id="closeModal" tabindex="-1">
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+            <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl w-full max-w-lg">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-md-outline-variant/30">
+                    <h5 class="text-lg font-medium text-md-on-surface m-0">关闭工单</h5>
+                    <button type="button" class="text-md-on-surface-variant hover:text-md-on-surface p-1 rounded-md transition" data-bs-dismiss="modal">&times;</button>
                 </div>
                 <form method="post" action="{% url 'tickets:ticket_close' ticket.pk %}">
                     {% csrf_token %}
-                    <div class="modal-body">
-                        <p>确定要关闭此工单吗？关闭后将无法继续处理。</p>
-                        <div class="mb-3">
+                    <div class="px-6 py-4 space-y-4">
+                        <p class="text-md-on-surface">确定要关闭此工单吗？关闭后将无法继续处理。</p>
+                        <div>
                             {{ close_form.satisfaction.label_tag }}
                             {{ close_form.satisfaction }}
                         </div>
-                        <div class="mb-3">
+                        <div>
                             {{ close_form.satisfaction_comment.label_tag }}
                             {{ close_form.satisfaction_comment }}
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                        <button type="submit" class="btn btn-danger">关闭工单</button>
+                    <div class="flex justify-end gap-3 px-6 py-4 border-t border-md-outline-variant/30">
+                        <button type="button" class="text-md-on-surface-variant hover:bg-md-surface-container px-4 py-2 rounded-md transition border border-md-outline" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="bg-md-error text-md-on-error px-6 py-3 rounded-md-xl font-medium shadow-lg transition hover:shadow-xl">关闭工单</button>
                     </div>
                 </form>
             </div>
@@ -293,4 +298,32 @@
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[data-bs-toggle="modal"]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var target = document.querySelector(this.getAttribute('data-bs-target'));
+            if (target) target.classList.remove('hidden');
+        });
+    });
+
+    document.querySelectorAll('[data-bs-dismiss="modal"]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var modal = this.closest('[id$="Modal"]');
+            if (modal) modal.classList.add('hidden');
+        });
+    });
+
+    document.querySelectorAll('.fixed.inset-0.z-50').forEach(function(overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === this || e.target.classList.contains('bg-black/50')) {
+                this.classList.add('hidden');
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

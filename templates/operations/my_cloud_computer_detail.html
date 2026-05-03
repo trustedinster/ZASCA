@@ -5,426 +5,127 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/operations.css' %}">
-<style>
-/* 云电脑详情页面MD3样式 */
-.detail-container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 2rem;
-}
-
-.page-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.page-header h1 {
-    font-size: var(--md-sys-typescale-headline-large-size);
-    font-weight: var(--md-sys-typescale-weight-bold);
-    color: var(--md-sys-color-on-surface);
-    margin-bottom: var(--md-sys-spacing-margin-md);
-    line-height: var(--md-sys-typescale-line-height-condensed);
-}
-
-/* 详情卡片 */
-.detail-card {
-    background: var(--md-sys-color-surface);
-    border-radius: var(--md-sys-shape-corner-large);
-    box-shadow: var(--md-sys-elevation-level2);
-    overflow: hidden;
-}
-
-.detail-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--md-sys-spacing-padding-lg) var(--md-sys-spacing-padding-xl);
-    background: var(--md-sys-color-primary-container);
-    color: var(--md-sys-color-on-primary-container);
-    border-bottom: 1px solid var(--md-sys-color-outline-variant);
-}
-
-.detail-card-title {
-    font-size: var(--md-sys-typescale-headline-small-size);
-    font-weight: var(--md-sys-typescale-weight-medium);
-    margin: 0;
-    color: var(--md-sys-color-on-primary-container);
-}
-
-/* 状态徽章 */
-.status-badge {
-    display: inline-block;
-    padding: var(--md-sys-spacing-padding-xs) var(--md-sys-spacing-padding-sm);
-    border-radius: var(--md-sys-shape-corner-full);
-    font-size: var(--md-sys-typescale-label-medium-size);
-    font-weight: var(--md-sys-typescale-weight-medium);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.status-active { 
-    background-color: var(--md-sys-color-success-container); 
-    color: var(--md-sys-color-on-success-container); 
-}
-
-.status-inactive { 
-    background-color: var(--md-sys-color-warning-container); 
-    color: var(--md-sys-color-on-warning-container); 
-}
-
-.status-disabled { 
-    background-color: var(--md-sys-color-error-container); 
-    color: var(--md-sys-color-on-error-container); 
-}
-
-.status-deleted { 
-    background-color: var(--md-sys-color-surface-variant); 
-    color: var(--md-sys-color-on-surface-variant); 
-}
-
-/* 卡片主体 */
-.detail-card-body {
-    padding: var(--md-sys-spacing-padding-xl);
-}
-
-.info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: var(--md-sys-spacing-padding-lg);
-    margin-bottom: var(--md-sys-spacing-margin-xl);
-}
-
-.info-item {
-    margin-bottom: var(--md-sys-spacing-margin-md);
-}
-
-.info-label {
-    font-size: var(--md-sys-typescale-label-large-size);
-    font-weight: var(--md-sys-typescale-weight-medium);
-    color: var(--md-sys-color-on-surface-variant);
-    margin-bottom: var(--md-sys-spacing-margin-xs);
-    display: block;
-}
-
-.info-value {
-    font-size: var(--md-sys-typescale-body-large-size);
-    color: var(--md-sys-color-on-surface);
-    margin: 0;
-}
-
-/* 连接信息区域 */
-.connection-section {
-    background: var(--md-sys-color-surface-variant);
-    border-radius: var(--md-sys-shape-corner-medium);
-    padding: var(--md-sys-spacing-padding-lg);
-    margin-top: var(--md-sys-spacing-margin-lg);
-}
-
-.connection-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: var(--md-sys-spacing-margin-md);
-    color: var(--md-sys-color-on-surface-variant);
-}
-
-.connection-icon {
-    font-size: 20px;
-    margin-right: var(--md-sys-spacing-margin-sm);
-}
-
-.connection-title {
-    font-size: var(--md-sys-typescale-title-medium-size);
-    font-weight: var(--md-sys-typescale-weight-medium);
-    margin: 0;
-}
-
-.connection-details {
-    margin-bottom: var(--md-sys-spacing-margin-lg);
-}
-
-.connection-item {
-    display: flex;
-    margin-bottom: var(--md-sys-spacing-margin-sm);
-}
-
-.connection-label {
-    font-weight: var(--md-sys-typescale-weight-medium);
-    color: var(--md-sys-color-on-surface-variant);
-    min-width: 80px;
-}
-
-.connection-value {
-    color: var(--md-sys-color-on-surface);
-    font-family: monospace;
-}
-
-/* MD3 按钮样式 */
-.md-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    border: none;
-    border-radius: var(--md-sys-shape-corner-full);
-    cursor: pointer;
-    font-family: inherit;
-    text-decoration: none;
-    transition: 
-        background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
-        color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
-        box-shadow var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
-    overflow: hidden;
-    user-select: none;
-    margin-right: var(--md-sys-spacing-margin-sm);
-    margin-bottom: var(--md-sys-spacing-margin-sm);
-}
-
-.md-button__label {
-    position: relative;
-    z-index: 1;
-    font-weight: var(--md-sys-typescale-weight-medium);
-}
-
-.md-button--small {
-    height: 32px;
-    padding: 0 var(--md-sys-spacing-padding-md);
-    font-size: var(--md-sys-typescale-label-large-size);
-}
-
-.md-button--medium {
-    height: 40px;
-    padding: 0 var(--md-sys-spacing-padding-lg);
-    font-size: var(--md-sys-typescale-label-large-size);
-}
-
-.md-button--filled {
-    background-color: var(--md-sys-color-primary);
-    color: var(--md-sys-color-on-primary);
-    box-shadow: var(--md-sys-elevation-level1);
-}
-
-.md-button--filled:hover {
-    background-color: var(--md-sys-color-primary);
-    box-shadow: var(--md-sys-elevation-level2);
-}
-
-.md-button--filled:active {
-    box-shadow: var(--md-sys-elevation-level1);
-}
-
-.md-button--outlined {
-    background-color: transparent;
-    color: var(--md-sys-color-primary);
-    border: 1px solid var(--md-sys-color-outline);
-}
-
-.md-button--outlined:hover {
-    background-color: var(--md-sys-color-primary);
-    color: var(--md-sys-color-on-primary);
-}
-
-.md-button--tonal {
-    background-color: var(--md-sys-color-secondary-container);
-    color: var(--md-sys-color-on-secondary-container);
-}
-
-.md-button--tonal:hover {
-    background-color: var(--md-sys-color-secondary-container);
-    opacity: 0.8;
-}
-
-/* 特殊按钮样式 */
-.btn-show-password {
-    background-color: var(--md-sys-color-primary);
-    color: var(--md-sys-color-on-primary);
-}
-
-.btn-reset-password {
-    background-color: var(--md-sys-color-tertiary-container);
-    color: var(--md-sys-color-on-tertiary-container);
-}
-
-.btn-copy-password {
-    background-color: var(--md-sys-color-success-container);
-    color: var(--md-sys-color-on-success-container);
-}
-
-/* 密码显示区域 */
-.password-display {
-    position: relative;
-    background-color: var(--md-sys-color-surface-variant);
-    border: 1px solid var(--md-sys-color-outline-variant);
-    border-radius: var(--md-sys-shape-corner-medium);
-    padding: var(--md-sys-spacing-padding-md);
-    margin: var(--md-sys-spacing-margin-sm) 0;
-    font-family: monospace;
-    font-size: var(--md-sys-typescale-body-large-size);
-    word-break: break-all;
-    color: var(--md-sys-color-on-surface);
-}
-
-.password-actions {
-    margin-top: var(--md-sys-spacing-margin-md);
-}
-
-.burned-password {
-    color: var(--md-sys-color-outline);
-    font-style: italic;
-    text-align: center;
-    padding: var(--md-sys-spacing-padding-md);
-}
-
-/* 链接样式 */
-.md-link {
-    color: var(--md-sys-color-primary);
-    text-decoration: none;
-    font-weight: var(--md-sys-typescale-weight-medium);
-    transition: color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
-}
-
-.md-link:hover {
-    color: var(--md-sys-color-primary);
-    text-decoration: underline;
-}
-
-/* 返回按钮区域 */
-.footer-actions {
-    margin-top: var(--md-sys-spacing-margin-xl);
-    text-align: right;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-    .detail-container {
-        padding: 1rem;
-    }
-    
-    .info-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .detail-card-header {
-        flex-direction: column;
-        text-align: center;
-        gap: var(--md-sys-spacing-padding-sm);
-    }
-}
-</style>
 {% endblock %}
 
 {% block content %}
-<div class="detail-container">
-    <div class="page-header">
-        <h1>云电脑用户详情</h1>
+<div class="max-w-[800px] mx-auto p-8 sm:p-4">
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-md-on-surface mb-2 leading-tight">云电脑用户详情</h1>
     </div>
 
-    <div class="detail-card">
-        <div class="detail-card-header">
-            <h4 class="detail-card-title">{{ cloud_user.username }}</h4>
-            <span class="status-badge status-{{ cloud_user.status }}">{{ cloud_user.get_status_display }}</span>
+    <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl overflow-hidden">
+        <div class="flex flex-col gap-2 text-center px-6 py-4 sm:px-4 bg-md-primary-container text-md-on-primary-container border-b border-md-outline-variant/30 sm:flex-row sm:justify-between sm:items-center">
+            <h4 class="text-2xl font-medium m-0 text-md-on-primary-container">{{ cloud_user.username }}</h4>
+            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium uppercase tracking-wider 
+                {% if cloud_user.status == 'active' %}bg-md-success-container text-md-on-success-container
+                {% elif cloud_user.status == 'inactive' %}bg-md-warning-container text-md-on-warning-container
+                {% elif cloud_user.status == 'disabled' %}bg-md-error-container text-md-on-error-container
+                {% else %}bg-md-surface-variant text-md-on-surface-variant{% endif %}">
+                {{ cloud_user.get_status_display }}
+            </span>
         </div>
         
-        <div class="detail-card-body">
-            <div class="info-grid">
-                <div class="info-item">
-                    <span class="info-label">用户姓名</span>
-                    <p class="info-value">{{ cloud_user.fullname }}</p>
+        <div class="px-8 py-6 sm:px-4">
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-[repeat(auto-fit,minmax(250px,1fr))] mb-8">
+                <div class="mb-4">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-1">用户姓名</span>
+                    <p class="text-lg text-md-on-surface m-0">{{ cloud_user.fullname }}</p>
                 </div>
                 
-                <div class="info-item">
-                    <span class="info-label">邮箱</span>
-                    <p class="info-value">{{ cloud_user.email }}</p>
+                <div class="mb-4">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-1">邮箱</span>
+                    <p class="text-lg text-md-on-surface m-0">{{ cloud_user.email }}</p>
                 </div>
                 
-                <div class="info-item">
-                    <span class="info-label">所属产品</span>
-                    <p class="info-value">{{ cloud_user.product.display_name }}</p>
+                <div class="mb-4">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-1">所属产品</span>
+                    <p class="text-lg text-md-on-surface m-0">{{ cloud_user.product.display_name }}</p>
                 </div>
                 
-                <div class="info-item">
-                    <span class="info-label">创建时间</span>
-                    <p class="info-value">{{ cloud_user.created_at|date:"Y-m-d H:i:s" }}</p>
+                <div class="mb-4">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-1">创建时间</span>
+                    <p class="text-lg text-md-on-surface m-0">{{ cloud_user.created_at|date:"Y-m-d H:i:s" }}</p>
                 </div>
             </div>
             
-            <div class="info-item">
-                <span class="info-label">用户描述</span>
-                <p class="info-value">{{ cloud_user.description|default:"-" }}</p>
+            <div class="mb-4">
+                <span class="text-sm font-medium text-md-on-surface-variant block mb-1">用户描述</span>
+                <p class="text-lg text-md-on-surface m-0">{{ cloud_user.description|default:"-" }}</p>
             </div>
             
             {% if cloud_user.created_from_request %}
-            <div class="info-item">
-                <span class="info-label">来源申请</span>
-                <p class="info-value">
-                    <a href="{% url 'operations:account_opening_detail' cloud_user.created_from_request.pk %}" class="md-link">
+            <div class="mb-4">
+                <span class="text-sm font-medium text-md-on-surface-variant block mb-1">来源申请</span>
+                <p class="text-lg m-0">
+                    <a href="{% url 'operations:account_opening_detail' cloud_user.created_from_request.pk %}" class="text-md-primary font-medium no-underline hover:underline transition">
                         #{{ cloud_user.created_from_request.id }} - {{ cloud_user.created_from_request.get_status_display }}
                     </a>
                 </p>
             </div>
             {% endif %}
             
-            <div class="connection-section">
-                <div class="connection-header">
-                    <i class="material-icons connection-icon">settings_ethernet</i>
-                    <h6 class="connection-title">连接信息</h6>
+            <div class="bg-md-surface-variant p-6 rounded-md mt-6">
+                <div class="flex items-center mb-4 text-md-on-surface-variant">
+                    <i class="material-icons text-xl mr-2">settings_ethernet</i>
+                    <h6 class="text-lg font-medium m-0">连接信息</h6>
                 </div>
                 
-                <div class="connection-details">
-                    <div class="connection-item">
-                        <span class="connection-label">地址：</span>
-                        <span class="connection-value">{{ cloud_user.product.display_hostname }}</span>
+                <div class="mb-4">
+                    <div class="flex mb-1">
+                        <span class="font-medium text-md-on-surface-variant min-w-[80px]">地址：</span>
+                        <span class="text-md-on-surface font-mono">{{ cloud_user.product.display_hostname }}</span>
                     </div>
-                    <div class="connection-item">
-                        <span class="connection-label">RDP端口：</span>
-                        <span class="connection-value">{{ cloud_user.product.rdp_port }}</span>
+                    <div class="flex mb-1">
+                        <span class="font-medium text-md-on-surface-variant min-w-[80px]">RDP端口：</span>
+                        <span class="text-md-on-surface font-mono">{{ cloud_user.product.rdp_port }}</span>
                     </div>
-                    <div class="connection-item">
-                        <span class="connection-label">用户名：</span>
-                        <span class="connection-value">{{ cloud_user.username }}</span>
+                    <div class="flex mb-1">
+                        <span class="font-medium text-md-on-surface-variant min-w-[80px]">用户名：</span>
+                        <span class="text-md-on-surface font-mono">{{ cloud_user.username }}</span>
                     </div>
                 </div>
                 
                 <!-- RDP连接按钮 -->
-                <div style="margin-top: var(--md-sys-spacing-margin-md);">
-                    <button id="connect-rdp-btn" class="md-button md-button--filled md-button--medium">
-                        <span class="md-button__label">
-                            <i class="material-icons" style="font-size: 18px; margin-right: 8px;">link</i>
+                <div class="mt-4">
+                    <button id="connect-rdp-btn" class="inline-flex items-center justify-center h-10 px-6 bg-md-primary text-md-on-primary rounded-full text-sm font-medium shadow-md transition hover:shadow-lg cursor-pointer border-0">
+                        <span class="relative z-10 font-medium">
+                            <i class="material-icons text-[18px] mr-2">link</i>
                             一键连接到服务器
                         </span>
                     </button>
                 </div>
                 
                 <!-- 密码显示区域 -->
-                <div style="margin-top: var(--md-sys-spacing-margin-lg);">
-                    <div class="connection-header">
-                        <i class="material-icons connection-icon">vpn_key</i>
-                        <h6 class="connection-title">初始密码</h6>
+                <div class="mt-6">
+                    <div class="flex items-center mb-4 text-md-on-surface-variant">
+                        <i class="material-icons text-xl mr-2">vpn_key</i>
+                        <h6 class="text-lg font-medium m-0">初始密码</h6>
                     </div>
                     
                     <div id="password-container">
                         {% if cloud_user.password_viewed %}
-                            <div class="password-display burned-password" id="burned-password-display">
+                            <div class="relative bg-md-surface-variant border border-md-outline-variant rounded-md p-3 my-1 font-mono text-lg text-md-outline italic text-center" id="burned-password-display">
                                 密码已被查看并销毁
                             </div>
                             
                             <!-- 重置密码按钮 -->
-                            <div class="password-actions">
-                                <button id="reset-password-btn" class="md-button md-button--tonal md-button--medium btn-reset-password">
-                                    <span class="md-button__label">
-                                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">refresh</i>
+                            <div class="mt-4">
+                                <button id="reset-password-btn" class="inline-flex items-center justify-center h-10 px-6 bg-md-tertiary-container text-md-on-tertiary-container rounded-full text-sm font-medium transition hover:opacity-80 cursor-pointer border-0">
+                                    <span class="relative z-10 font-medium">
+                                        <i class="material-icons text-[18px] mr-2">refresh</i>
                                         重置密码
                                     </span>
                                 </button>
                             </div>
                         {% else %}
-                            <div class="password-display" id="password-display" style="display: none;">
+                            <div class="relative bg-md-surface-variant border border-md-outline-variant rounded-md p-3 my-1 font-mono text-lg break-all text-md-on-surface hidden" id="password-display">
                                 <!-- 密码将通过JavaScript显示 -->
                             </div>
                             
-                            <div class="password-actions">
-                                <button id="show-password-btn" class="md-button md-button--filled md-button--medium btn-show-password">
-                                    <span class="md-button__label">
-                                        <i class="material-icons" style="font-size: 18px; margin-right: 8px;">visibility</i>
+                            <div class="mt-4">
+                                <button id="show-password-btn" class="inline-flex items-center justify-center h-10 px-6 bg-md-primary text-md-on-primary rounded-full text-sm font-medium shadow-md transition hover:shadow-lg cursor-pointer border-0">
+                                    <span class="relative z-10 font-medium">
+                                        <i class="material-icons text-[18px] mr-2">visibility</i>
                                         显示并销毁密码
                                     </span>
                                 </button>
@@ -432,8 +133,8 @@
                         {% endif %}
                         
                         {% if cloud_user.password_viewed and cloud_user.password_viewed_at %}
-                        <div style="margin-top: var(--md-sys-spacing-margin-sm);">
-                            <small style="color: var(--md-sys-color-on-surface-variant);">
+                        <div class="mt-2">
+                            <small class="text-md-on-surface-variant">
                                 密码已于 {{ cloud_user.password_viewed_at|date:"Y-m-d H:i:s" }} 被查看并销毁
                             </small>
                         </div>
@@ -441,16 +142,16 @@
                     </div>
                 </div>
                 
-                <p style="margin-top: var(--md-sys-spacing-margin-md); color: var(--md-sys-color-on-surface-variant); font-size: var(--md-sys-typescale-body-small-size);">
+                <p class="mt-4 text-md-on-surface-variant text-sm">
                     注意：请妥善保管您的登录凭据，首次登录可能需要更改密码
                 </p>
             </div>
         </div>
     </div>
 
-    <div class="footer-actions">
-        <a href="{% url 'operations:my_cloud_computers' %}" class="md-button md-button--outlined md-button--medium">
-            <span class="md-button__label">返回我的云电脑</span>
+    <div class="mt-8 text-right">
+        <a href="{% url 'operations:my_cloud_computers' %}" class="inline-flex items-center justify-center h-10 px-6 text-md-primary border border-md-outline rounded-full text-sm font-medium transition hover:bg-md-primary/8 hover:border-md-primary cursor-pointer no-underline">
+            <span class="relative z-10 font-medium">返回我的云电脑</span>
         </a>
     </div>
 </div>
@@ -468,7 +169,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // 显示并销毁密码功能
     if (showPasswordBtn) {
         showPasswordBtn.addEventListener('click', function() {
-            // 发送AJAX请求获取密码
             fetch('{% url "operations:get_password_and_burn" cloud_user.pk %}', {
                 method: 'POST',
                 headers: {
@@ -480,38 +180,31 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // 确保passwordDisplay元素存在
                     if (!passwordDisplay) {
-                        // 如果元素不存在，创建一个新的
                         const container = document.getElementById('password-container');
                         const newPasswordDisplay = document.createElement('div');
-                        newPasswordDisplay.className = 'password-display';
+                        newPasswordDisplay.className = 'relative bg-md-surface-variant border border-md-outline-variant rounded-md p-3 my-1 font-mono text-lg break-all text-md-on-surface';
                         newPasswordDisplay.id = 'password-display';
                         container.insertBefore(newPasswordDisplay, container.firstChild);
                         passwordDisplay = newPasswordDisplay;
                     }
                     
-                    // 显示密码
                     passwordDisplay.textContent = data.password;
                     passwordDisplay.style.display = 'block';
                     
-                    // 隐藏"密码已被查看并销毁"的消息（如果存在）
                     if (burnedPasswordDisplay) {
                         burnedPasswordDisplay.style.display = 'none';
                     }
                     
-                    // 隐藏按钮
                     showPasswordBtn.style.display = 'none';
                     
-                    // 添加复制按钮
                     const copyBtn = document.createElement('button');
-                    copyBtn.className = 'md-button md-button--tonal md-button--medium btn-copy-password';
-                    copyBtn.innerHTML = '<span class="md-button__label"><i class="material-icons" style="font-size: 18px; margin-right: 8px;">content_copy</i> 复制密码</span>';
+                    copyBtn.className = 'inline-flex items-center justify-center h-10 px-6 bg-md-success-container text-md-on-success-container rounded-full text-sm font-medium transition cursor-pointer border-0 mr-2 mb-2';
+                    copyBtn.innerHTML = '<span class="relative z-10 font-medium"><i class="material-icons text-[18px] mr-2">content_copy</i> 复制密码</span>';
                     copyBtn.onclick = function() {
                         navigator.clipboard.writeText(data.password).then(function() {
-                            // 临时更改按钮文本提示
                             const originalText = copyBtn.innerHTML;
-                            copyBtn.innerHTML = '<span class="md-button__label"><i class="material-icons" style="font-size: 18px; margin-right: 8px;">check</i> 已复制</span>';
+                            copyBtn.innerHTML = '<span class="relative z-10 font-medium"><i class="material-icons text-[18px] mr-2">check</i> 已复制</span>';
                             setTimeout(() => {
                                 copyBtn.innerHTML = originalText;
                             }, 2000);
@@ -542,7 +235,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // 发送AJAX请求重置密码
             fetch('{% url "operations:get_password_and_burn" cloud_user.pk %}', {
                 method: 'POST',
                 headers: {
@@ -554,38 +246,31 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // 确保passwordDisplay元素存在
                     if (!passwordDisplay) {
-                        // 如果元素不存在，创建一个新的
                         const container = document.getElementById('password-container');
                         const newPasswordDisplay = document.createElement('div');
-                        newPasswordDisplay.className = 'password-display';
+                        newPasswordDisplay.className = 'relative bg-md-surface-variant border border-md-outline-variant rounded-md p-3 my-1 font-mono text-lg break-all text-md-on-surface';
                         newPasswordDisplay.id = 'password-display';
                         container.insertBefore(newPasswordDisplay, container.firstChild);
                         passwordDisplay = newPasswordDisplay;
                     }
                     
-                    // 显示新密码
                     passwordDisplay.textContent = data.password;
                     passwordDisplay.style.display = 'block';
                     
-                    // 隐藏"密码已被查看并销毁"的消息（如果存在）
                     if (burnedPasswordDisplay) {
                         burnedPasswordDisplay.style.display = 'none';
                     }
                     
-                    // 隐藏重置按钮
                     resetPasswordBtn.style.display = 'none';
                     
-                    // 添加复制按钮
                     const copyBtn = document.createElement('button');
-                    copyBtn.className = 'md-button md-button--tonal md-button--medium btn-copy-password';
-                    copyBtn.innerHTML = '<span class="md-button__label"><i class="material-icons" style="font-size: 18px; margin-right: 8px;">content_copy</i> 复制密码</span>';
+                    copyBtn.className = 'inline-flex items-center justify-center h-10 px-6 bg-md-success-container text-md-on-success-container rounded-full text-sm font-medium transition cursor-pointer border-0 mr-2 mb-2';
+                    copyBtn.innerHTML = '<span class="relative z-10 font-medium"><i class="material-icons text-[18px] mr-2">content_copy</i> 复制密码</span>';
                     copyBtn.onclick = function() {
                         navigator.clipboard.writeText(data.password).then(function() {
-                            // 临时更改按钮文本提示
                             const originalText = copyBtn.innerHTML;
-                            copyBtn.innerHTML = '<span class="md-button__label"><i class="material-icons" style="font-size: 18px; margin-right: 8px;">check</i> 已复制</span>';
+                            copyBtn.innerHTML = '<span class="relative z-10 font-medium"><i class="material-icons text-[18px] mr-2">check</i> 已复制</span>';
                             setTimeout(() => {
                                 copyBtn.innerHTML = originalText;
                             }, 2000);
@@ -613,27 +298,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // RDP连接功能
     if (connectRdpBtn) {
         connectRdpBtn.addEventListener('click', function() {
-            // 构建RDP连接字符串，按照指定格式
             const hostname = '{{ cloud_user.product.display_hostname }}';
             const rdpPort = {{ cloud_user.product.rdp_port }};
             const username = '{{ cloud_user.username }}';
             
-            // 编码参数
             const encodedHostname = encodeURIComponent(hostname);
             const encodedUsername = encodeURIComponent(username);
             
-            // 构建RDP连接字符串，按照要求的格式
             const rdpUrl = `rdp://full%20address=s:${encodedHostname}:${rdpPort}&username=s:${encodedUsername}`;
             
-            // 尝试直接打开RDP连接
             if (confirm(`即将打开RDP连接到 ${hostname}:${rdpPort}\n用户名: ${username}\n\n如果弹出安全警告，请确认允许打开连接。`)) {
-                // 创建一个隐藏的iframe来尝试打开RDP协议
                 const iframe = document.createElement('iframe');
                 iframe.style.display = 'none';
                 iframe.src = rdpUrl;
                 document.body.appendChild(iframe);
                 
-                // 一段时间后移除iframe
                 setTimeout(() => {
                     document.body.removeChild(iframe);
                 }, 1000);

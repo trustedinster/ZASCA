@@ -4,286 +4,51 @@
 {% block title %}{{ error_title }} - ZASCA{% endblock %}
 
 {% block content %}
-<style>
-  .error-page-wrapper {
-    min-height: calc(100vh - 64px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-    padding: var(--spacing-8) 0;
-  }
-
-  .error-card {
-    background: var(--bg-glass);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--border-glass);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--glass-shadow-lg);
-    max-width: 600px;
-    width: 100%;
-    padding: var(--spacing-10) var(--spacing-8);
-    text-align: center;
-    animation: errorCardFadeIn 0.5s var(--ease-out);
-  }
-
-  @keyframes errorCardFadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px) scale(0.98);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
-
-  .error-code-display {
-    font-size: 6rem;
-    font-weight: var(--font-weight-bold);
-    line-height: 1;
-    margin-bottom: var(--spacing-4);
-    color: var(--danger-color);
-    animation: errorCodePulse 2s var(--ease-default) infinite;
-  }
-
-  @keyframes errorCodePulse {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.85;
-    }
-  }
-
-  .error-icon-wrapper {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 80px;
-    height: 80px;
-    border-radius: var(--radius-full);
-    background: var(--md-sys-color-error-container);
-    margin-bottom: var(--spacing-6);
-    animation: errorIconBounce 0.6s var(--ease-bounce) 0.2s both;
-  }
-
-  @keyframes errorIconBounce {
-    from {
-      transform: scale(0);
-    }
-    to {
-      transform: scale(1);
-    }
-  }
-
-  .error-icon-wrapper .material-icons {
-    font-size: 40px !important;
-    opacity: 1 !important;
-    color: var(--md-sys-color-on-error-container);
-  }
-
-  .error-title-text {
-    font-size: var(--font-size-3xl);
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-primary);
-    margin-bottom: var(--spacing-3);
-  }
-
-  .error-message-text {
-    font-size: var(--font-size-lg);
-    color: var(--text-secondary);
-    line-height: var(--line-height-relaxed);
-    margin-bottom: var(--spacing-6);
-  }
-
-  .error-support-info {
-    background: var(--md-sys-color-info-container);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-4);
-    margin-bottom: var(--spacing-6);
-    text-align: left;
-    animation: errorInfoSlideIn 0.4s var(--ease-out) 0.3s both;
-  }
-
-  .error-support-info .info-title {
-    font-weight: var(--font-weight-semibold);
-    color: var(--md-sys-color-on-info-container);
-    margin-bottom: var(--spacing-2);
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-2);
-  }
-
-  .error-support-info .info-title .material-icons {
-    font-size: 20px !important;
-    opacity: 1 !important;
-    color: var(--md-sys-color-on-info-container);
-  }
-
-  .error-support-info p {
-    margin: 0;
-    color: var(--md-sys-color-on-info-container);
-    line-height: var(--line-height-relaxed);
-  }
-
-  @keyframes errorInfoSlideIn {
-    from {
-      opacity: 0;
-      transform: translateX(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  .error-meta-info {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-2);
-    margin-bottom: var(--spacing-6);
-    animation: errorInfoSlideIn 0.4s var(--ease-out) 0.4s both;
-  }
-
-  .error-meta-item {
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-sm);
-    padding: var(--spacing-3);
-    font-family: var(--font-family-mono);
-    font-size: var(--font-size-sm);
-    color: var(--text-secondary);
-  }
-
-  .error-meta-item strong {
-    font-family: var(--font-family);
-    color: var(--text-primary);
-  }
-
-  .error-actions {
-    display: flex;
-    gap: var(--spacing-3);
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  .error-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--spacing-2);
-    padding: var(--spacing-3) var(--spacing-6);
-    border-radius: var(--radius-full);
-    font-weight: var(--font-weight-medium);
-    text-decoration: none;
-    transition: all var(--duration-normal) var(--ease-default);
-    cursor: pointer;
-    border: none;
-    font-size: var(--font-size-base);
-    min-height: 44px;
-  }
-
-  .error-btn .material-icons {
-    font-size: 20px !important;
-    opacity: 1 !important;
-  }
-
-  .error-btn-primary {
-    background: var(--primary-color);
-    color: #ffffff;
-    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.3);
-  }
-
-  .error-btn-primary:hover {
-    background: var(--primary-color-light);
-    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.4);
-    transform: translateY(-2px);
-    color: #ffffff;
-  }
-
-  .error-btn-secondary {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-  }
-
-  .error-btn-secondary:hover {
-    background: var(--surface-color-elevated);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
-    color: var(--text-primary);
-  }
-
-  @media (max-width: 768px) {
-    .error-card {
-      padding: var(--spacing-6) var(--spacing-4);
-      margin: var(--spacing-4);
-    }
-
-    .error-code-display {
-      font-size: 4rem;
-    }
-
-    .error-title-text {
-      font-size: var(--font-size-2xl);
-    }
-
-    .error-actions {
-      flex-direction: column;
-    }
-
-    .error-btn {
-      width: 100%;
-      justify-content: center;
-    }
-  }
-</style>
-
-<div class="error-page-wrapper">
-  <div class="error-card">
-    <div class="error-icon-wrapper">
-      <i class="material-icons">construction</i>
+<div class="min-h-[calc(100vh-64px)] flex items-center justify-center bg-gradient-to-br from-md-surface to-md-surface-container py-8">
+  <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl max-w-[600px] w-full p-10 sm:p-8 text-center animate-[fadeIn_0.5s_ease-out]">
+    <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-md-error-container mb-6 animate-[bounce_0.6s_ease-out]">
+      <i class="material-icons text-[40px] text-md-on-error-container">construction</i>
     </div>
 
-    <div class="error-code-display">500</div>
+    <div class="text-[6rem] font-bold leading-none mb-4 text-md-error animate-[pulse_2s_ease-in-out_infinite]">500</div>
 
-    <h1 class="error-title-text">{{ error_title }}</h1>
+    <h1 class="text-3xl font-semibold text-md-on-surface mb-3">{{ error_title }}</h1>
 
-    <p class="error-message-text">
+    <p class="text-lg text-md-on-surface-variant leading-relaxed mb-6">
       {{ error_message }}
     </p>
 
     {% if support_message %}
-    <div class="error-support-info">
-      <div class="info-title">
-        <i class="material-icons">support_agent</i>
+    <div class="bg-md-info-container rounded-md p-4 mb-6 text-left">
+      <div class="font-semibold text-md-on-info-container flex items-center gap-2 mb-2">
+        <i class="material-icons text-[20px] text-md-on-info-container">support_agent</i>
         <span>技术支持</span>
       </div>
-      <p>{{ support_message }}</p>
+      <p class="m-0 text-md-on-info-container leading-relaxed">{{ support_message }}</p>
     </div>
     {% endif %}
 
-    <div class="error-meta-info">
+    <div class="flex flex-col gap-2 mb-6">
       {% if request_id %}
-      <div class="error-meta-item">
-        <strong>请求ID：</strong>{{ request_id }}
+      <div class="bg-md-surface-container-high rounded-md px-3 py-3 font-mono text-sm text-md-on-surface-variant">
+        <strong class="font-sans text-md-on-surface">请求ID：</strong>{{ request_id }}
       </div>
       {% endif %}
 
       {% if trace_id %}
-      <div class="error-meta-item">
-        <strong>追踪ID：</strong>{{ trace_id }}
+      <div class="bg-md-surface-container-high rounded-md px-3 py-3 font-mono text-sm text-md-on-surface-variant">
+        <strong class="font-sans text-md-on-surface">追踪ID：</strong>{{ trace_id }}
       </div>
       {% endif %}
     </div>
 
-    <div class="error-actions">
-      <a href="{% url 'dashboard:index' %}" class="error-btn error-btn-primary">
-        <i class="material-icons">home</i>
+    <div class="flex flex-col gap-3 justify-center flex-wrap sm:flex-row">
+      <a href="{% url 'dashboard:index' %}" class="inline-flex items-center gap-2 bg-md-primary text-md-on-primary px-6 py-3 rounded-md-xl font-medium shadow-lg transition hover:shadow-xl hover:-translate-y-0.5 cursor-pointer no-underline text-base min-h-[44px]">
+        <i class="material-icons text-[20px]">home</i>
         <span>返回首页</span>
       </a>
-      <button onclick="location.reload()" class="error-btn error-btn-secondary">
-        <i class="material-icons">refresh</i>
+      <button onclick="location.reload()" class="inline-flex items-center gap-2 bg-md-surface-container-high text-md-on-surface border border-md-outline px-6 py-3 rounded-md-xl font-medium transition hover:bg-md-surface-container-highest hover:shadow-md hover:-translate-y-0.5 cursor-pointer text-base min-h-[44px]">
+        <i class="material-icons text-[20px]">refresh</i>
         <span>重试</span>
       </button>
     </div>

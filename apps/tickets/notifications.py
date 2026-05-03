@@ -82,20 +82,32 @@ def notify_ticket_created(ticket):
     通知工单创建
     - 通知管理员
     - 通知自动分配的处理人
+    - 通知自动分配的处理组成员
     """
-    # 构建邮件上下文
     context = {
         'ticket': ticket,
         'site_url': _get_site_url(),
     }
 
-    # 通知处理人（如果有自动分配）
+    recipients = []
+
     if ticket.assignee and ticket.assignee.email:
+        recipients.append(ticket.assignee.email)
+
+    if ticket.assigned_group:
+        group_users = ticket.assigned_group.user_set.filter(
+            is_active=True
+        ).exclude(email='')
+        for user in group_users:
+            if user.email not in recipients:
+                recipients.append(user.email)
+
+    if recipients:
         send_ticket_email(
             subject=f'[ZASCA] 新工单分配 - {ticket.ticket_no}',
             template_name='tickets/email/assigned.html',
             context=context,
-            recipient_list=[ticket.assignee.email]
+            recipient_list=recipients
         )
 
 
@@ -103,21 +115,35 @@ def notify_ticket_assigned(ticket, old_assignee=None):
     """
     通知工单分配
     - 通知新的处理人
+    - 通知处理组成员
     """
-    if not ticket.assignee or not ticket.assignee.email:
-        return
-
     context = {
         'ticket': ticket,
         'site_url': _get_site_url(),
         'old_assignee': old_assignee,
     }
 
+    recipients = []
+
+    if ticket.assignee and ticket.assignee.email:
+        recipients.append(ticket.assignee.email)
+
+    if ticket.assigned_group:
+        group_users = ticket.assigned_group.user_set.filter(
+            is_active=True
+        ).exclude(email='')
+        for user in group_users:
+            if user.email not in recipients:
+                recipients.append(user.email)
+
+    if not recipients:
+        return
+
     send_ticket_email(
         subject=f'[ZASCA] 工单分配通知 - {ticket.ticket_no}',
         template_name='tickets/email/assigned.html',
         context=context,
-        recipient_list=[ticket.assignee.email]
+        recipient_list=recipients
     )
 
 
@@ -208,19 +234,33 @@ def notify_overdue_ticket(ticket):
     """
     通知工单即将超时或已超时
     - 通知处理人
+    - 通知处理组成员
     - 通知管理员
     """
-    if not ticket.assignee or not ticket.assignee.email:
-        return
-
     context = {
         'ticket': ticket,
         'site_url': _get_site_url(),
     }
 
+    recipients = []
+
+    if ticket.assignee and ticket.assignee.email:
+        recipients.append(ticket.assignee.email)
+
+    if ticket.assigned_group:
+        group_users = ticket.assigned_group.user_set.filter(
+            is_active=True
+        ).exclude(email='')
+        for user in group_users:
+            if user.email not in recipients:
+                recipients.append(user.email)
+
+    if not recipients:
+        return
+
     send_ticket_email(
         subject=f'[ZASCA] 工单即将超时 - {ticket.ticket_no}',
         template_name='tickets/email/overdue.html',
         context=context,
-        recipient_list=[ticket.assignee.email]
+        recipient_list=recipients
     )

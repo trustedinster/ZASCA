@@ -1,0 +1,213 @@
+{% extends "admin_base/base.html" %}
+
+{% block title %}ZASCA 超级管理员 - {% if is_create %}创建{% else %}编辑{% endif %}主机{% endblock %}
+
+{% block breadcrumb %}
+<a href="{% url 'admin:admin_hosts:host_list' %}" class="text-white/70 hover:text-cyan-400 transition">主机管理</a>
+<span class="material-symbols-rounded text-sm text-white/50">chevron_right</span>
+<span class="text-cyan-400 font-medium">{% if is_create %}创建主机{% else %}编辑主机{% endif %}</span>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-white">{% if is_create %}创建主机{% else %}编辑主机{% endif %}</h1>
+        <p class="text-white/70 text-sm mt-1">
+            {% if is_create %}填写以下信息创建新主机{% else %}修改主机「{{ host.name }}」的信息{% endif %}
+        </p>
+    </div>
+    <a href="{% url 'admin:admin_hosts:host_list' %}" class="inline-flex items-center gap-2 text-cyan-400 hover:text-white hover:bg-cyan-500/10 px-4 py-2 rounded-md transition text-sm font-medium">
+        <span class="material-symbols-rounded text-lg">arrow_back</span>
+        返回列表
+    </a>
+</div>
+
+<!-- Form -->
+<x-admin-card>
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        <!-- Non-field errors -->
+        {% if form.non_field_errors %}
+        <div class="bg-red-900/20 border border-red-500/30 rounded-md p-4">
+            {% for error in form.non_field_errors %}
+            <p class="text-sm text-red-400">{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Basic Info Section -->
+        <div>
+            <h3 class="text-white font-medium mb-4 flex items-center gap-2">
+                <span class="material-symbols-rounded text-cyan-400">dns</span>
+                基本信息
+            </h3>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {% with field=form.name %}
+                <x-admin-input></x-admin-input>
+                {% endwith %}
+
+                {% with field=form.hostname %}
+                <x-admin-input></x-admin-input>
+                {% endwith %}
+
+                {% with field=form.connection_type %}
+                <x-admin-input type="select">
+                    {% for value, label in form.fields.connection_type.choices %}
+                    <option value="{{ value }}" {% if form.connection_type.value == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </x-admin-input>
+                {% endwith %}
+
+                {% with field=form.port %}
+                <x-admin-input type="number"></x-admin-input>
+                {% endwith %}
+
+                {% with field=form.rdp_port %}
+                <x-admin-input type="number"></x-admin-input>
+                {% endwith %}
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-white mb-2">
+                        {{ form.use_ssl.label }}
+                    </label>
+                    <div class="flex items-center gap-3">
+                        <input
+                            type="checkbox"
+                            name="{{ form.use_ssl.html_name }}"
+                            id="{{ form.use_ssl.id_for_label }}"
+                            {% if form.use_ssl.value %}checked{% endif %}
+                            class="w-5 h-5 rounded border-slate-700/50 bg-slate-900/50 text-cyan-400 focus:ring-cyan-500 focus:ring-2 transition cursor-pointer accent-md-primary"
+                        >
+                        <label for="{{ form.use_ssl.id_for_label }}" class="text-sm text-white">使用SSL连接</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auth Section -->
+        <div class="pt-4 border-t border-slate-700/50">
+            <h3 class="text-white font-medium mb-4 flex items-center gap-2">
+                <span class="material-symbols-rounded text-cyan-400">key</span>
+                认证信息
+            </h3>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {% with field=form.username %}
+                <x-admin-input></x-admin-input>
+                {% endwith %}
+
+                {% with field=form.password %}
+                <x-admin-input type="password"></x-admin-input>
+                {% endwith %}
+            </div>
+        </div>
+
+        <!-- Extra Info Section -->
+        <div class="pt-4 border-t border-slate-700/50">
+            <h3 class="text-white font-medium mb-4 flex items-center gap-2">
+                <span class="material-symbols-rounded text-cyan-400">info</span>
+                其他信息
+            </h3>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {% with field=form.os_version %}
+                <x-admin-input></x-admin-input>
+                {% endwith %}
+
+                {% if not is_create %}
+                {% with field=form.status %}
+                <x-admin-input type="select">
+                    {% for value, label in form.fields.status.choices %}
+                    <option value="{{ value }}" {% if form.status.value == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </x-admin-input>
+                {% endwith %}
+                {% endif %}
+
+                <div class="{% if not is_create %}lg:col-span-2{% endif %}">
+                    {% with field=form.description %}
+                    <x-admin-input type="textarea" rows="3"></x-admin-input>
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Providers & Administrators Section -->
+        <div class="pt-4 border-t border-slate-700/50">
+            <h3 class="text-white font-medium mb-4 flex items-center gap-2">
+                <span class="material-symbols-rounded text-cyan-400">group</span>
+                权限分配
+            </h3>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Providers Multi-select -->
+                <div class="mb-4">
+                    <label for="{{ form.providers.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+                        {{ form.providers.label }}
+                        {% if form.providers.field.required %}<span class="text-red-400 ml-1">*</span>{% endif %}
+                    </label>
+                    <select
+                        name="{{ form.providers.html_name }}"
+                        id="{{ form.providers.id_for_label }}"
+                        multiple
+                        size="6"
+                        class="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-md px-4 py-3 text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500 transition min-h-[120px] {% if form.providers.errors %}border-red-500{% endif %}"
+                    >
+                        {% for choice in form.providers %}
+                        {{ choice }}
+                        {% endfor %}
+                    </select>
+                    {% if form.providers.help_text %}
+                    <p class="mt-1 text-sm text-white/70">{{ form.providers.help_text }}</p>
+                    {% endif %}
+                    {% if form.providers.errors %}
+                    <div class="mt-1">
+                        {% for error in form.providers.errors %}
+                        <p class="text-sm text-red-400">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Administrators Multi-select -->
+                <div class="mb-4">
+                    <label for="{{ form.administrators.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+                        {{ form.administrators.label }}
+                        {% if form.administrators.field.required %}<span class="text-red-400 ml-1">*</span>{% endif %}
+                    </label>
+                    <select
+                        name="{{ form.administrators.html_name }}"
+                        id="{{ form.administrators.id_for_label }}"
+                        multiple
+                        size="6"
+                        class="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-md px-4 py-3 text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500 transition min-h-[120px] {% if form.administrators.errors %}border-red-500{% endif %}"
+                    >
+                        {% for choice in form.administrators %}
+                        {{ choice }}
+                        {% endfor %}
+                    </select>
+                    {% if form.administrators.help_text %}
+                    <p class="mt-1 text-sm text-white/70">{{ form.administrators.help_text }}</p>
+                    {% endif %}
+                    {% if form.administrators.errors %}
+                    <div class="mt-1">
+                        {% for error in form.administrators.errors %}
+                        <p class="text-sm text-red-400">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-700/50">
+            <a href="{% url 'admin:admin_hosts:host_list' %}">
+                <x-admin-button variant="outlined" type="button">取消</x-admin-button>
+            </a>
+            <x-admin-button variant="filled" icon="save" type="submit">
+                {% if is_create %}创建{% else %}保存{% endif %}
+            </x-admin-button>
+        </div>
+    </form>
+</x-admin-card>
+{% endblock %}

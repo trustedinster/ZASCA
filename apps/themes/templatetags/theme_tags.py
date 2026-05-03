@@ -166,6 +166,18 @@ def theme_head():
 
 
 @register.filter
+def split(value, delimiter=","):
+    return value.split(delimiter)
+
+
+@register.filter
+def trim(value):
+    if isinstance(value, str):
+        return value.strip()
+    return value
+
+
+@register.filter
 def is_mobile_enabled(config):
     """
     检查是否启用移动端优化

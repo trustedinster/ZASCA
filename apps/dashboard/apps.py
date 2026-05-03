@@ -9,7 +9,3 @@ class DashboardConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'apps.dashboard'
     verbose_name = '仪表盘'
-
-    def ready(self):
-        """应用就绪时注册信号"""
-        import apps.dashboard.signals

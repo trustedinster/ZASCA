@@ -5,446 +5,42 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/operations.css' %}">
-<style>
-/* 我的云电脑页面MD3样式 */
-.my-cloud-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
-}
-
-.page-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.page-header h1 {
-    font-size: var(--md-sys-typescale-headline-large-size);
-    font-weight: var(--md-sys-typescale-weight-bold);
-    color: var(--md-sys-color-on-surface);
-    margin-bottom: var(--md-sys-spacing-margin-md);
-    line-height: var(--md-sys-typescale-line-height-condensed);
-}
-
-.page-subtitle {
-    font-size: var(--md-sys-typescale-body-large-size);
-    color: var(--md-sys-color-on-surface-variant);
-    margin-bottom: var(--md-sys-spacing-margin-xl);
-}
-
-/* 过滤器区域 */
-.filter-card {
-    background: var(--md-sys-color-surface);
-    border-radius: var(--md-sys-shape-corner-medium);
-    box-shadow: var(--md-sys-elevation-level1);
-    padding: var(--md-sys-spacing-padding-lg);
-    margin-bottom: var(--md-sys-spacing-margin-xl);
-}
-
-.filter-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: var(--md-sys-spacing-padding-md);
-    align-items: end;
-}
-
-.filter-item {
-    display: flex;
-    flex-direction: column;
-}
-
-.filter-label {
-    font-size: var(--md-sys-typescale-label-large-size);
-    font-weight: var(--md-sys-typescale-weight-medium);
-    color: var(--md-sys-color-on-surface-variant);
-    margin-bottom: var(--md-sys-spacing-margin-xs);
-}
-
-/* MD3 输入框样式 */
-.md-input {
-    width: 100%;
-    padding: var(--md-sys-spacing-padding-md) var(--md-sys-spacing-padding-lg);
-    border: 1px solid var(--md-sys-color-outline);
-    border-radius: var(--md-sys-shape-corner-extra-large);
-    background: var(--md-sys-color-surface);
-    color: var(--md-sys-color-on-surface);
-    font-size: var(--md-sys-typescale-body-large-size);
-    font-family: inherit;
-    transition: all var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
-    box-sizing: border-box;
-}
-
-.md-input:focus {
-    outline: none;
-    border-color: var(--md-sys-color-primary);
-    box-shadow: 0 0 0 2px var(--md-sys-color-primary);
-}
-
-.md-input:hover {
-    border-color: var(--md-sys-color-on-surface-variant);
-}
-
-/* MD3 按钮样式 */
-.md-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    border: none;
-    border-radius: var(--md-sys-shape-corner-full);
-    cursor: pointer;
-    font-family: inherit;
-    text-decoration: none;
-    transition: 
-        background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
-        color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
-        box-shadow var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
-    overflow: hidden;
-    user-select: none;
-    margin-right: var(--md-sys-spacing-margin-sm);
-    margin-bottom: var(--md-sys-spacing-margin-sm);
-}
-
-.md-button__label {
-    position: relative;
-    z-index: 1;
-    font-weight: var(--md-sys-typescale-weight-medium);
-}
-
-.md-button--medium {
-    height: 40px;
-    padding: 0 var(--md-sys-spacing-padding-lg);
-    font-size: var(--md-sys-typescale-label-large-size);
-}
-
-.md-button--filled {
-    background-color: var(--md-sys-color-primary);
-    color: var(--md-sys-color-on-primary);
-    box-shadow: var(--md-sys-elevation-level1);
-}
-
-.md-button--filled:hover {
-    background-color: var(--md-sys-color-primary);
-    box-shadow: var(--md-sys-elevation-level2);
-}
-
-.md-button--outlined {
-    background-color: transparent;
-    color: var(--md-sys-color-primary);
-    border: 1px solid var(--md-sys-color-outline);
-}
-
-.md-button--outlined:hover {
-    background-color: rgba(var(--primary-color-rgb), 0.08);
-    border-color: var(--md-sys-color-primary);
-    color: var(--md-sys-color-primary);
-}
-
-.md-button--text {
-    background-color: transparent;
-    color: var(--md-sys-color-primary);
-    border: 1px solid var(--md-sys-color-outline);
-}
-
-.md-button--text:hover {
-    background-color: rgba(var(--primary-color-rgb), 0.08);
-    border-color: var(--md-sys-color-primary);
-    color: var(--md-sys-color-primary);
-}
-
-/* 产品分组区域 */
-.product-section {
-    margin-bottom: var(--md-sys-spacing-margin-xl);
-}
-
-.product-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: var(--md-sys-spacing-margin-lg);
-    padding: var(--md-sys-spacing-padding-md) var(--md-sys-spacing-padding-lg);
-    background: var(--md-sys-color-primary-container);
-    border-radius: var(--md-sys-shape-corner-medium);
-    color: var(--md-sys-color-on-primary-container);
-}
-
-.product-icon {
-    font-size: 24px;
-    margin-right: var(--md-sys-spacing-margin-md);
-}
-
-.product-title {
-    font-size: var(--md-sys-typescale-title-large-size);
-    font-weight: var(--md-sys-typescale-weight-medium);
-    margin: 0;
-}
-
-/* 用户卡片网格 */
-.users-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: var(--md-sys-spacing-padding-lg);
-}
-
-/* 用户卡片 */
-.user-card {
-    background: var(--md-sys-color-surface);
-    border-radius: var(--md-sys-shape-corner-large);
-    box-shadow: var(--md-sys-elevation-level1);
-    overflow: hidden;
-    transition: 
-        box-shadow var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
-        transform var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
-}
-
-.user-card:hover {
-    box-shadow: var(--md-sys-elevation-level2);
-    transform: translateY(-2px);
-}
-
-.user-card-header {
-    padding: var(--md-sys-spacing-padding-lg);
-    border-bottom: 1px solid var(--md-sys-color-outline-variant);
-}
-
-.user-card-title {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--md-sys-spacing-margin-sm);
-}
-
-.user-name {
-    font-size: var(--md-sys-typescale-title-large-size);
-    font-weight: var(--md-sys-typescale-weight-medium);
-    color: var(--md-sys-color-on-surface);
-    margin: 0;
-}
-
-.status-badge {
-    display: inline-block;
-    padding: var(--md-sys-spacing-padding-xs) var(--md-sys-spacing-padding-sm);
-    border-radius: var(--md-sys-shape-corner-full);
-    font-size: var(--md-sys-typescale-label-medium-size);
-    font-weight: var(--md-sys-typescale-weight-medium);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.status-active { 
-    background-color: var(--md-sys-color-success-container); 
-    color: var(--md-sys-color-on-success-container); 
-}
-
-.status-inactive { 
-    background-color: var(--md-sys-color-warning-container); 
-    color: var(--md-sys-color-on-warning-container); 
-}
-
-.status-disabled { 
-    background-color: var(--md-sys-color-error-container); 
-    color: var(--md-sys-color-on-error-container); 
-}
-
-.status-deleted { 
-    background-color: var(--md-sys-color-surface-variant); 
-    color: var(--md-sys-color-on-surface-variant); 
-}
-
-.user-card-body {
-    padding: var(--md-sys-spacing-padding-lg);
-}
-
-.info-group {
-    margin-bottom: var(--md-sys-spacing-margin-md);
-}
-
-.info-group:last-child {
-    margin-bottom: 0;
-}
-
-.info-label {
-    font-size: var(--md-sys-typescale-label-large-size);
-    color: var(--md-sys-color-on-surface-variant);
-    margin-bottom: var(--md-sys-spacing-margin-xs);
-    display: block;
-}
-
-.info-value {
-    font-size: var(--md-sys-typescale-body-medium-size);
-    color: var(--md-sys-color-on-surface);
-    margin: 0;
-}
-
-.user-card-footer {
-    padding: var(--md-sys-spacing-padding-md) var(--md-sys-spacing-padding-lg);
-    border-top: 1px solid var(--md-sys-color-outline-variant);
-    text-align: center;
-}
-
-/* 链接样式 */
-.md-link {
-    color: var(--md-sys-color-primary);
-    text-decoration: none;
-    font-weight: var(--md-sys-typescale-weight-medium);
-    transition: color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
-}
-
-.md-link:hover {
-    color: var(--md-sys-color-primary);
-    text-decoration: underline;
-}
-
-/* 空状态 */
-.empty-state {
-    text-align: center;
-    padding: var(--md-sys-spacing-padding-xxl);
-}
-
-.empty-icon {
-    font-size: 48px;
-    color: var(--md-sys-color-outline);
-    margin-bottom: var(--md-sys-spacing-margin-lg);
-}
-
-.empty-title {
-    font-size: var(--md-sys-typescale-headline-small-size);
-    color: var(--md-sys-color-on-surface-variant);
-    margin-bottom: var(--md-sys-spacing-margin-md);
-}
-
-.empty-description {
-    font-size: var(--md-sys-typescale-body-large-size);
-    color: var(--md-sys-color-on-surface-variant);
-    margin-bottom: var(--md-sys-spacing-margin-lg);
-}
-
-/* 深色模式适配 */
-[data-theme="dark"] .empty-icon {
-    color: rgba(255, 255, 255, 0.5);
-}
-
-[data-theme="dark"] .empty-title,
-[data-theme="dark"] .empty-description {
-    color: rgba(255, 255, 255, 0.7);
-}
-
-[data-theme="dark"] .md-button--filled {
-    background: linear-gradient(135deg, var(--md-sys-color-primary), var(--md-sys-color-secondary));
-    color: #ffffff;
-}
-
-[data-theme="dark"] .md-button--filled .md-button__label {
-    color: #ffffff;
-}
-
-[data-theme="dark"] .md-button--outlined {
-    border-color: var(--md-sys-color-outline);
-    color: var(--md-sys-color-primary);
-}
-
-[data-theme="dark"] .md-button--outlined:hover {
-    background-color: rgba(var(--primary-color-rgb), 0.15);
-    border-color: var(--md-sys-color-primary);
-    color: var(--md-sys-color-primary);
-}
-
-[data-theme="dark"] .md-button--text {
-    border-color: var(--md-sys-color-outline);
-    color: var(--md-sys-color-primary);
-}
-
-[data-theme="dark"] .md-button--text:hover {
-    background-color: rgba(var(--primary-color-rgb), 0.15);
-    border-color: var(--md-sys-color-primary);
-    color: var(--md-sys-color-primary);
-}
-
-/* 分页 */
-.pagination {
-    display: flex;
-    justify-content: center;
-    margin-top: var(--md-sys-spacing-margin-xl);
-}
-
-.page-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 40px;
-    height: 40px;
-    padding: 0 var(--md-sys-spacing-padding-md);
-    margin: 0 var(--md-sys-spacing-margin-xs);
-    border: none;
-    border-radius: var(--md-sys-shape-corner-medium);
-    background: var(--md-sys-color-surface);
-    color: var(--md-sys-color-on-surface);
-    font-size: var(--md-sys-typescale-label-large-size);
-    font-weight: var(--md-sys-typescale-weight-medium);
-    text-decoration: none;
-    transition: all var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
-    cursor: pointer;
-}
-
-.page-button:hover {
-    background: var(--md-sys-color-surface-variant);
-}
-
-.page-button.active {
-    background: var(--md-sys-color-primary);
-    color: var(--md-sys-color-on-primary);
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-    .my-cloud-container {
-        padding: 1rem;
-    }
-    
-    .users-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .filter-grid {
-        grid-template-columns: 1fr;
-    }
-}
-</style>
 {% endblock %}
 
 {% block content %}
-<div class="my-cloud-container">
-    <div class="page-header">
-        <h1>我拥有的云电脑</h1>
-        <p class="page-subtitle">显示您通过开户申请创建的所有云电脑用户</p>
+<div class="max-w-[1200px] mx-auto p-8 sm:p-4">
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-md-on-surface mb-2 leading-tight">我拥有的云电脑</h1>
+        <p class="text-lg text-md-on-surface-variant mb-4">显示您通过开户申请创建的所有云电脑用户</p>
     </div>
 
     <!-- 过滤器 -->
-    <div class="filter-card">
+    <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl p-6 mb-8">
         <form method="get" class="filter-form">
-            <div class="filter-grid">
-                <div class="filter-item">
-                    <label class="filter-label">所属产品</label>
-                    <select class="md-input" name="product">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fit,minmax(250px,1fr))] sm:gap-4 sm:items-end">
+                <div class="flex flex-col">
+                    <label class="text-sm font-medium text-md-on-surface-variant mb-1">所属产品</label>
+                    <select class="w-full px-4 py-3 border border-md-outline/50 rounded-md bg-md-surface/50 text-md-on-surface placeholder-md-outline focus:outline-none focus:ring-2 focus:ring-md-primary transition" name="product">
                         <option value="">全部</option>
                         {% for product_name, users in cloud_users_by_product.items %}
                         <option value="{{ product_name }}" {% if request.GET.product == product_name %}selected{% endif %}>{{ product_name }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="filter-item">
-                    <label class="filter-label">搜索</label>
+                <div class="flex flex-col">
+                    <label class="text-sm font-medium text-md-on-surface-variant mb-1">搜索</label>
                     <input type="text" 
-                           class="md-input" 
+                           class="w-full px-4 py-3 border border-md-outline/50 rounded-md bg-md-surface/50 text-md-on-surface placeholder-md-outline focus:outline-none focus:ring-2 focus:ring-md-primary transition" 
                            name="search" 
                            value="{{ request.GET.search|default:'' }}"
                            placeholder="按用户名、姓名或邮箱搜索">
                 </div>
-                <div class="filter-item">
-                    <button type="submit" class="md-button md-button--outlined md-button--medium">
-                        <span class="md-button__label">搜索</span>
+                <div class="flex gap-2 items-end">
+                    <button type="submit" class="inline-flex items-center justify-center h-10 px-6 text-md-primary border border-md-outline rounded-full text-sm font-medium transition hover:bg-md-primary/8 hover:border-md-primary cursor-pointer">
+                        <span class="relative z-10 font-medium">搜索</span>
                     </button>
-                    <a href="{% url 'operations:my_cloud_computers' %}" class="md-button md-button--text md-button--medium">
-                        <span class="md-button__label">重置</span>
+                    <a href="{% url 'operations:my_cloud_computers' %}" class="inline-flex items-center justify-center h-10 px-6 text-md-primary border border-md-outline rounded-full text-sm font-medium transition hover:bg-md-primary/8 hover:border-md-primary cursor-pointer no-underline">
+                        <span class="relative z-10 font-medium">重置</span>
                     </a>
                 </div>
             </div>
@@ -454,63 +50,69 @@
     <!-- 按产品分组显示用户列表 -->
     {% if cloud_users_by_product %}
         {% for product_name, users in cloud_users_by_product.items %}
-        <div class="product-section">
-            <div class="product-header">
-                <i class="material-icons product-icon">computer</i>
-                <h3 class="product-title">{{ product_name }}</h3>
+        <div class="mb-8">
+            <div class="flex items-center mb-6 px-4 py-3 bg-md-primary-container text-md-on-primary-container rounded-md">
+                <i class="material-icons text-2xl mr-3">computer</i>
+                <h3 class="text-xl font-medium m-0">{{ product_name }}</h3>
             </div>
             
-            <div class="users-grid">
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-[repeat(auto-fill,minmax(350px,1fr))]">
                 {% for user in users %}
-                <div class="user-card">
-                    <div class="user-card-header">
-                        <div class="user-card-title">
-                            <h4 class="user-name">{{ user.username }}</h4>
-                            <span class="status-badge status-{{ user.status }}">{{ user.get_status_display }}</span>
+                <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl overflow-hidden transition hover:shadow-2xl hover:-translate-y-0.5">
+                    <div class="px-6 py-4 border-b border-md-outline-variant/30">
+                        <div class="flex justify-between items-center mb-1">
+                            <h4 class="text-xl font-medium text-md-on-surface m-0">{{ user.username }}</h4>
+                            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium uppercase tracking-wider 
+                                {% if user.status == 'active' %}bg-md-success-container text-md-on-success-container
+                                {% elif user.status == 'inactive' %}bg-md-warning-container text-md-on-warning-container
+                                {% elif user.status == 'disabled' %}bg-md-error-container text-md-on-error-container
+                                {% else %}bg-md-surface-variant text-md-on-surface-variant{% endif %}">
+                                {{ user.get_status_display }}
+                            </span>
                         </div>
                     </div>
                     
-                    <div class="user-card-body">
-                        <div class="info-group">
-                            <span class="info-label">用户姓名</span>
-                            <p class="info-value">{{ user.fullname }}</p>
+                    <div class="p-6">
+                        <div class="mb-4">
+                            <span class="text-sm text-md-on-surface-variant block mb-1">用户姓名</span>
+                            <p class="text-base text-md-on-surface m-0">{{ user.fullname }}</p>
                         </div>
                         
-                        <div class="info-group">
-                            <span class="info-label">邮箱</span>
-                            <p class="info-value">{{ user.email }}</p>
+                        <div class="mb-4">
+                            <span class="text-sm text-md-on-surface-variant block mb-1">邮箱</span>
+                            <p class="text-base text-md-on-surface m-0">{{ user.email }}</p>
                         </div>
                         
-                        <div class="info-group">
-                            <span class="info-label">描述</span>
-                            <p class="info-value">{{ user.description|default:'-' }}</p>
+                        <div class="mb-4">
+                            <span class="text-sm text-md-on-surface-variant block mb-1">描述</span>
+                            <p class="text-base text-md-on-surface m-0">{{ user.description|default:'-' }}</p>
                         </div>
                         
-                        <div class="info-group">
-                            <span class="info-label">创建时间</span>
-                            <p class="info-value">{{ user.created_at|date:"Y-m-d H:i:s" }}</p>
+                        <div class="mb-4">
+                            <span class="text-sm text-md-on-surface-variant block mb-1">创建时间</span>
+                            <p class="text-base text-md-on-surface m-0">{{ user.created_at|date:"Y-m-d H:i:s" }}</p>
                         </div>
                         
                         {% if user.created_from_request %}
-                        <div class="info-group">
-                            <span class="info-label">来源申请</span>
-                            <p class="info-value">
-                                <a href="{% url 'operations:account_opening_detail' user.created_from_request.pk %}" class="md-link">
+                        <div class="mb-4">
+                            <span class="text-sm text-md-on-surface-variant block mb-1">来源申请</span>
+                            <p class="text-base m-0">
+                                <a href="{% url 'operations:account_opening_detail' user.created_from_request.pk %}" class="text-md-primary font-medium no-underline hover:underline transition">
                                     #{{ user.created_from_request.id }} - {{ user.created_from_request.get_status_display }}
                                 </a>
                             </p>
                         </div>
                         {% endif %}
                         
-                        <div class="info-group">
-                            <span class="info-label">连接信息</span>
-                            <p class="info-value">地址：{{ user.product.display_hostname }}:{{ user.product.rdp_port }}</p>
+                        <div class="mb-4">
+                            <span class="text-sm text-md-on-surface-variant block mb-1">连接信息</span>
+                            <p class="text-base text-md-on-surface m-0">地址：{{ user.product.display_hostname }}:{{ user.product.rdp_port }}</p>
                         </div>
                     </div>
                     
-                    <div class="user-card-footer">
-                        <a href="{% url 'operations:my_cloud_computer_detail' user.pk %}" class="md-button md-button--filled md-button--medium">
-                            <span class="md-button__label">查看详情</span>
+                    <div class="px-6 py-3 border-t border-md-outline-variant/30 text-center">
+                        <a href="{% url 'operations:my_cloud_computer_detail' user.pk %}" class="inline-flex items-center justify-center h-10 px-6 bg-md-primary text-md-on-primary rounded-full text-sm font-medium shadow-md transition hover:shadow-lg">
+                            <span class="relative z-10 font-medium">查看详情</span>
                         </a>
                     </div>
                 </div>
@@ -519,29 +121,29 @@
         </div>
         {% endfor %}
     {% else %}
-    <div class="empty-state">
-        <i class="material-icons empty-icon">desktop_windows</i>
-        <h3 class="empty-title">暂无云电脑用户</h3>
-        <p class="empty-description">您还没有通过开户申请创建任何云电脑用户</p>
-        <a href="{% url 'dashboard:index' %}" class="md-button md-button--filled md-button--medium">
-            <span class="md-button__label">立即申请云电脑</span>
+    <div class="text-center py-16">
+        <i class="material-icons text-[48px] text-md-outline mb-4">desktop_windows</i>
+        <h3 class="text-2xl text-md-on-surface-variant mb-2">暂无云电脑用户</h3>
+        <p class="text-lg text-md-on-surface-variant mb-4">您还没有通过开户申请创建任何云电脑用户</p>
+        <a href="{% url 'dashboard:index' %}" class="inline-flex items-center justify-center h-10 px-6 bg-md-primary text-md-on-primary rounded-full text-sm font-medium shadow-md transition hover:shadow-lg">
+            <span class="relative z-10 font-medium">立即申请云电脑</span>
         </a>
     </div>
     {% endif %}
 
     <!-- 分页 -->
     {% if is_paginated and paginator.num_pages > 1 %}
-    <div class="pagination">
+    <div class="flex justify-center mt-8">
         {% if page_obj.has_previous %}
-        <a class="page-button" href="?{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}page={{ page_obj.previous_page_number }}">
+        <a class="inline-flex items-center justify-center min-w-[40px] h-10 px-4 mx-1 rounded-md bg-md-surface text-md-on-surface text-sm font-medium no-underline transition hover:bg-md-surface-variant" href="?{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}page={{ page_obj.previous_page_number }}">
             <i class="material-icons">chevron_left</i>
         </a>
         {% endif %}
 
-        <span class="page-button active">{{ page_obj.number }} / {{ paginator.num_pages }}</span>
+        <span class="inline-flex items-center justify-center min-w-[40px] h-10 px-4 mx-1 rounded-md bg-md-primary text-md-on-primary text-sm font-medium">{{ page_obj.number }} / {{ paginator.num_pages }}</span>
 
         {% if page_obj.has_next %}
-        <a class="page-button" href="?{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}page={{ page_obj.next_page_number }}">
+        <a class="inline-flex items-center justify-center min-w-[40px] h-10 px-4 mx-1 rounded-md bg-md-surface text-md-on-surface text-sm font-medium no-underline transition hover:bg-md-surface-variant" href="?{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}page={{ page_obj.next_page_number }}">
             <i class="material-icons">chevron_right</i>
         </a>
         {% endif %}

@@ -181,7 +181,7 @@ class WinrmClient:
         self.session = Session(
             self.endpoint,
             auth=(self.username, self.password),
-            transport='basic',
+            transport='ntlm',
             server_cert_validation=self.server_cert_validation,
             ca_trust_path=self.ca_trust_path or None,
             cert_pem=self.client_cert_pem,

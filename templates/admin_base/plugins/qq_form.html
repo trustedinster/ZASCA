@@ -1,0 +1,252 @@
+{% extends "admin_base/base.html" %}
+
+{% block title %}ZASCA 超管后台 - {% if is_create %}创建QQ验证配置{% else %}编辑QQ验证配置{% endif %}{% endblock %}
+
+{% block breadcrumb %}
+<span class="text-white/70">超级管理员</span>
+<span class="material-symbols-rounded text-sm text-white/50">chevron_right</span>
+<a href="{% url 'admin:admin_plugins:qq_list' %}" class="text-white/70 hover:text-cyan-400 transition">QQ验证配置</a>
+<span class="material-symbols-rounded text-sm text-white/50">chevron_right</span>
+<span class="text-cyan-400 font-medium">{% if is_create %}创建{% else %}编辑{% endif %}</span>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-white">{% if is_create %}创建QQ验证配置{% else %}编辑QQ验证配置{% endif %}</h1>
+    <p class="text-white/70 text-sm mt-1">
+        {% if is_create %}填写以下信息为产品添加QQ群验证功能{% else %}修改 {{ config.product.display_name }} 的QQ验证配置{% endif %}
+    </p>
+</div>
+
+<!-- Form -->
+<x-admin-card icon="{% if is_create %}add_circle{% else %}edit{% endif %}" title="{% if is_create %}QQ验证配置{% else %}编辑QQ验证配置{% endif %}">
+    <form method="post" novalidate x-data="{ botMode: '{{ form.bot_server_mode.value|default:"default" }}' }">
+        {% csrf_token %}
+
+        <!-- Basic Config Section -->
+        <div class="mb-6">
+            <h3 class="text-white font-medium mb-4 flex items-center gap-2">
+                <span class="material-symbols-rounded text-cyan-400">link</span>
+                关联配置
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
+                <!-- Product -->
+                <div class="mb-4">
+                    <label for="id_product" class="block text-sm font-medium text-white mb-2">
+                        关联产品 <span class="text-red-400 ml-1">*</span>
+                    </label>
+                    <div class="relative">
+                        {{ form.product }}
+                        <span class="material-symbols-rounded absolute right-3 top-1/2 -translate-y-1/2 text-white/50 pointer-events-none">expand_more</span>
+                    </div>
+                    {% if form.product.help_text %}
+                    <p class="mt-1 text-sm text-white/70">{{ form.product.help_text }}</p>
+                    {% endif %}
+                    {% if form.product.errors %}
+                    <div class="mt-1">
+                        {% for error in form.product.errors %}
+                        <p class="text-sm text-red-400">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Bot Server Section -->
+        <div class="mb-6 pt-4 border-t border-slate-700/50">
+            <h3 class="text-white font-medium mb-4 flex items-center gap-2">
+                <span class="material-symbols-rounded text-cyan-400">smart_toy</span>
+                机器人服务器
+            </h3>
+
+            <!-- Bot Server Mode Select -->
+            <div class="mb-4">
+                <label for="id_bot_server_mode" class="block text-sm font-medium text-white mb-2">
+                    服务器配置 <span class="text-red-400 ml-1">*</span>
+                </label>
+                <div class="relative">
+                    {{ form.bot_server_mode }}
+                    <span class="material-symbols-rounded absolute right-3 top-1/2 -translate-y-1/2 text-white/50 pointer-events-none">expand_more</span>
+                </div>
+                {% if form.bot_server_mode.help_text %}
+                <p class="mt-1 text-sm text-white/70">{{ form.bot_server_mode.help_text }}</p>
+                {% endif %}
+                {% if form.bot_server_mode.errors %}
+                <div class="mt-1">
+                    {% for error in form.bot_server_mode.errors %}
+                    <p class="text-sm text-red-400">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Default mode hint -->
+            <div x-show="botMode === 'default'" x-cloak class="mb-4">
+                <div class="bg-cyan-500/5 border border-cyan-500/20 rounded-md px-4 py-3">
+                    <div class="flex items-start gap-2">
+                        <span class="material-symbols-rounded text-cyan-400 text-lg mt-0.5">info</span>
+                        <p class="text-sm text-white/70">将使用系统配置中的默认机器人服务器地址、端口和访问令牌。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Custom mode fields -->
+            <div x-show="botMode === 'custom'" x-cloak>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
+                    <!-- Host -->
+                    <div class="mb-4">
+                        <label for="id_host" class="block text-sm font-medium text-white mb-2">
+                            服务器地址 <span class="text-red-400 ml-1">*</span>
+                        </label>
+                        {{ form.host }}
+                        {% if form.host.help_text %}
+                        <p class="mt-1 text-sm text-white/70">{{ form.host.help_text }}</p>
+                        {% endif %}
+                        {% if form.host.errors %}
+                        <div class="mt-1">
+                            {% for error in form.host.errors %}
+                            <p class="text-sm text-red-400">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Port -->
+                    <div class="mb-4">
+                        <label for="id_port" class="block text-sm font-medium text-white mb-2">
+                            服务器端口 <span class="text-red-400 ml-1">*</span>
+                        </label>
+                        {{ form.port }}
+                        {% if form.port.help_text %}
+                        <p class="mt-1 text-sm text-white/70">{{ form.port.help_text }}</p>
+                        {% endif %}
+                        {% if form.port.errors %}
+                        <div class="mt-1">
+                            {% for error in form.port.errors %}
+                            <p class="text-sm text-red-400">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Token -->
+                    <div class="mb-4">
+                        <label for="id_token" class="block text-sm font-medium text-white mb-2">
+                            访问令牌 <span class="text-red-400 ml-1">*</span>
+                        </label>
+                        {{ form.token }}
+                        {% if form.token.help_text %}
+                        <p class="mt-1 text-sm text-white/70">{{ form.token.help_text }}</p>
+                        {% endif %}
+                        {% if form.token.errors %}
+                        <div class="mt-1">
+                            {% for error in form.token.errors %}
+                            <p class="text-sm text-red-400">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QQ Group IDs Section -->
+        <div class="mb-6 pt-4 border-t border-slate-700/50">
+            <h3 class="text-white font-medium mb-4 flex items-center gap-2">
+                <span class="material-symbols-rounded text-cyan-400">group</span>
+                验证群号
+            </h3>
+            <div class="mb-4">
+                <label for="id_group_ids" class="block text-sm font-medium text-white mb-2">
+                    QQ群号 <span class="text-red-400 ml-1">*</span>
+                </label>
+                {{ form.group_ids }}
+                {% if form.group_ids.help_text %}
+                <p class="mt-1 text-sm text-white/70">{{ form.group_ids.help_text }}</p>
+                {% endif %}
+                {% if form.group_ids.errors %}
+                <div class="mt-1">
+                    {% for error in form.group_ids.errors %}
+                    <p class="text-sm text-red-400">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Verification Config Section -->
+        <div class="mb-6 pt-4 border-t border-slate-700/50">
+            <h3 class="text-white font-medium mb-4 flex items-center gap-2">
+                <span class="material-symbols-rounded text-cyan-400">verified_user</span>
+                验证策略
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
+                <!-- Enable Status -->
+                <div class="mb-4">
+                    <label for="id_enable_status" class="block text-sm font-medium text-white mb-2">
+                        启用状态
+                    </label>
+                    <div class="relative">
+                        {{ form.enable_status }}
+                        <span class="material-symbols-rounded absolute right-3 top-1/2 -translate-y-1/2 text-white/50 pointer-events-none">expand_more</span>
+                    </div>
+                    {% if form.enable_status.help_text %}
+                    <p class="mt-1 text-sm text-white/70">{{ form.enable_status.help_text }}</p>
+                    {% endif %}
+                    {% if form.enable_status.errors %}
+                    <div class="mt-1">
+                        {% for error in form.enable_status.errors %}
+                        <p class="text-sm text-red-400">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Non QQ Email Handling -->
+                <div class="mb-4">
+                    <label for="id_non_qq_email_handling" class="block text-sm font-medium text-white mb-2">
+                        非QQ邮箱处理策略
+                    </label>
+                    <div class="relative">
+                        {{ form.non_qq_email_handling }}
+                        <span class="material-symbols-rounded absolute right-3 top-1/2 -translate-y-1/2 text-white/50 pointer-events-none">expand_more</span>
+                    </div>
+                    {% if form.non_qq_email_handling.help_text %}
+                    <p class="mt-1 text-sm text-white/70">{{ form.non_qq_email_handling.help_text }}</p>
+                    {% endif %}
+                    {% if form.non_qq_email_handling.errors %}
+                    <div class="mt-1">
+                        {% for error in form.non_qq_email_handling.errors %}
+                        <p class="text-sm text-red-400">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Non-field errors -->
+        {% if form.non_field_errors %}
+        <div class="mb-4">
+            {% for error in form.non_field_errors %}
+            <x-admin-alert type="error">{{ error }}</x-admin-alert>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Form Actions -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-700/50">
+            <a href="{% url 'admin:admin_plugins:qq_list' %}">
+                <x-admin-button variant="outlined">
+                    取消
+                </x-admin-button>
+            </a>
+            <x-admin-button icon="save" type="submit">
+                {% if is_create %}创建配置{% else %}保存修改{% endif %}
+            </x-admin-button>
+        </div>
+    </form>
+</x-admin-card>
+{% endblock %}

@@ -20,8 +20,10 @@ from apps.operations.models import (
     CloudComputerUser,
     Product,
     ProductGroup,
+    ProductAccessGrant,
 )
-from .models import DashboardWidget, UserActivity, SystemConfig
+from apps.audit.models import AuditLog
+from .models import DashboardWidget, SystemConfig
 from .forms import SystemConfigForm
 from utils.helpers import get_client_ip
 
@@ -70,6 +72,44 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         elif auto_approval_filter == "false":
             products_qs = products_qs.filter(auto_approval=False)
 
+        # 邀请访问权限过滤
+        user = self.request.user
+        if not user.is_staff and not user.is_superuser:
+            # 获取用户有效的产品授权
+            granted_product_ids = set(
+                ProductAccessGrant.objects.filter(
+                    user=user,
+                    product__isnull=False,
+                    is_revoked=False,
+                ).exclude(
+                    expires_at__lt=timezone.now()
+                ).values_list('product_id', flat=True)
+            )
+            # 获取用户有效的产品组授权
+            granted_group_ids = set(
+                ProductAccessGrant.objects.filter(
+                    user=user,
+                    product_group__isnull=False,
+                    is_revoked=False,
+                ).exclude(
+                    expires_at__lt=timezone.now()
+                ).values_list('product_group_id', flat=True)
+            )
+            # 提供商可以看到自己创建的所有产品
+            provider_created_ids = set()
+            if hasattr(user, 'created_products'):
+                provider_created_ids = set(
+                    Product.objects.filter(created_by=user).values_list('id', flat=True)
+                )
+
+            # 过滤：公开产品 或 已授权产品 或 已授权产品组下的产品 或 提供商自己创建的产品
+            products_qs = products_qs.filter(
+                Q(visibility='public') |
+                Q(id__in=granted_product_ids) |
+                Q(product_group_id__in=granted_group_ids) |
+                Q(id__in=provider_created_ids)
+            )
+
         all_products = list(products_qs.order_by("-created_at"))
 
         grouped_products: list[dict[str, Any]] = []
@@ -95,7 +135,6 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context["group_filter"] = group_filter
         context["auto_approval_filter"] = auto_approval_filter
 
-        from django.db.models import Count, Q
         stats = AccountOpeningRequest.objects.aggregate(
             pending_count=Count("id", filter=Q(status="pending")),
         )
@@ -116,9 +155,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             ).order_by("-created_at")[:5]
 
         try:
-            UserActivity.objects.create(
+            AuditLog.objects.create(
                 user=self.request.user,
-                activity_type="dashboard_view",
+                action="dashboard_view",
                 description="访问仪表盘",
                 ip_address=get_client_ip(self.request),
                 user_agent=self.request.META.get("HTTP_USER_AGENT", ""),
@@ -249,9 +288,9 @@ class SystemConfigView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             form.save()
             messages.success(request, "系统配置已更新")
 
-            UserActivity.objects.create(
+            AuditLog.objects.create(
                 user=request.user,
-                activity_type="system_config_update",
+                action="system_config_update",
                 description="更新系统配置",
                 ip_address=get_client_ip(request),
                 user_agent=request.META.get("HTTP_USER_AGENT", ""),

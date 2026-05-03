@@ -4,265 +4,41 @@
 {% block title %}{{ error_title }} - ZASCA{% endblock %}
 
 {% block content %}
-<style>
-  .error-page-wrapper {
-    min-height: calc(100vh - 64px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-    padding: var(--spacing-8) 0;
-  }
-
-  .error-card {
-    background: var(--bg-glass);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--border-glass);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--glass-shadow-lg);
-    max-width: 600px;
-    width: 100%;
-    padding: var(--spacing-10) var(--spacing-8);
-    text-align: center;
-    animation: errorCardFadeIn 0.5s var(--ease-out);
-  }
-
-  @keyframes errorCardFadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px) scale(0.98);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
-
-  .error-code-display {
-    font-size: 6rem;
-    font-weight: var(--font-weight-bold);
-    line-height: 1;
-    margin-bottom: var(--spacing-4);
-    color: var(--warning-color);
-    animation: errorCodePulse 2s var(--ease-default) infinite;
-  }
-
-  @keyframes errorCodePulse {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.85;
-    }
-  }
-
-  .error-icon-wrapper {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 80px;
-    height: 80px;
-    border-radius: var(--radius-full);
-    background: var(--md-sys-color-warning-container);
-    margin-bottom: var(--spacing-6);
-    animation: errorIconBounce 0.6s var(--ease-bounce) 0.2s both;
-  }
-
-  @keyframes errorIconBounce {
-    from {
-      transform: scale(0);
-    }
-    to {
-      transform: scale(1);
-    }
-  }
-
-  .error-icon-wrapper .material-icons {
-    font-size: 40px !important;
-    opacity: 1 !important;
-    color: var(--md-sys-color-on-warning-container);
-  }
-
-  .error-title-text {
-    font-size: var(--font-size-3xl);
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-primary);
-    margin-bottom: var(--spacing-3);
-  }
-
-  .error-message-text {
-    font-size: var(--font-size-lg);
-    color: var(--text-secondary);
-    line-height: var(--line-height-relaxed);
-    margin-bottom: var(--spacing-6);
-  }
-
-  .error-request-id {
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-sm);
-    padding: var(--spacing-3);
-    margin-bottom: var(--spacing-6);
-    font-family: var(--font-family-mono);
-    font-size: var(--font-size-sm);
-    color: var(--text-secondary);
-    animation: errorInfoSlideIn 0.4s var(--ease-out) 0.3s both;
-  }
-
-  @keyframes errorInfoSlideIn {
-    from {
-      opacity: 0;
-      transform: translateX(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  .error-suggestion-box {
-    background: var(--md-sys-color-warning-container);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-4);
-    margin-bottom: var(--spacing-6);
-    text-align: left;
-    animation: errorInfoSlideIn 0.4s var(--ease-out) 0.4s both;
-  }
-
-  .error-suggestion-box .info-title {
-    font-weight: var(--font-weight-semibold);
-    color: var(--md-sys-color-on-warning-container);
-    margin-bottom: var(--spacing-2);
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-2);
-  }
-
-  .error-suggestion-box .info-title .material-icons {
-    font-size: 20px !important;
-    opacity: 1 !important;
-    color: var(--md-sys-color-on-warning-container);
-  }
-
-  .error-suggestion-box p {
-    margin: 0;
-    color: var(--md-sys-color-on-warning-container);
-    line-height: var(--line-height-relaxed);
-  }
-
-  .error-actions {
-    display: flex;
-    gap: var(--spacing-3);
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  .error-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--spacing-2);
-    padding: var(--spacing-3) var(--spacing-6);
-    border-radius: var(--radius-full);
-    font-weight: var(--font-weight-medium);
-    text-decoration: none;
-    transition: all var(--duration-normal) var(--ease-default);
-    cursor: pointer;
-    border: none;
-    font-size: var(--font-size-base);
-    min-height: 44px;
-  }
-
-  .error-btn .material-icons {
-    font-size: 20px !important;
-    opacity: 1 !important;
-  }
-
-  .error-btn-primary {
-    background: var(--primary-color);
-    color: #ffffff;
-    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.3);
-  }
-
-  .error-btn-primary:hover {
-    background: var(--primary-color-light);
-    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.4);
-    transform: translateY(-2px);
-    color: #ffffff;
-  }
-
-  .error-btn-secondary {
-    background: var(--secondary-color);
-    color: #ffffff;
-    box-shadow: 0 2px 8px rgba(var(--secondary-color-rgb), 0.3);
-  }
-
-  .error-btn-secondary:hover {
-    background: var(--secondary-color-light);
-    box-shadow: 0 4px 12px rgba(var(--secondary-color-rgb), 0.4);
-    transform: translateY(-2px);
-    color: #ffffff;
-  }
-
-  @media (max-width: 768px) {
-    .error-card {
-      padding: var(--spacing-6) var(--spacing-4);
-      margin: var(--spacing-4);
-    }
-
-    .error-code-display {
-      font-size: 4rem;
-    }
-
-    .error-title-text {
-      font-size: var(--font-size-2xl);
-    }
-
-    .error-actions {
-      flex-direction: column;
-    }
-
-    .error-btn {
-      width: 100%;
-      justify-content: center;
-    }
-  }
-</style>
-
-<div class="error-page-wrapper">
-  <div class="error-card">
-    <div class="error-icon-wrapper">
-      <i class="material-icons">lock</i>
+<div class="min-h-[calc(100vh-64px)] flex items-center justify-center bg-gradient-to-br from-md-surface to-md-surface-container py-8">
+  <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl max-w-[600px] w-full p-10 sm:p-8 text-center animate-[fadeIn_0.5s_ease-out]">
+    <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-md-warning-container mb-6 animate-[bounce_0.6s_ease-out]">
+      <i class="material-icons text-[40px] text-md-on-warning-container">lock</i>
     </div>
 
-    <div class="error-code-display">403</div>
+    <div class="text-[6rem] font-bold leading-none mb-4 text-md-warning animate-[pulse_2s_ease-in-out_infinite]">403</div>
 
-    <h1 class="error-title-text">{{ error_title }}</h1>
+    <h1 class="text-3xl font-semibold text-md-on-surface mb-3">{{ error_title }}</h1>
 
-    <p class="error-message-text">
+    <p class="text-lg text-md-on-surface-variant leading-relaxed mb-6">
       {{ error_message }}
     </p>
 
     {% if request_id %}
-    <div class="error-request-id">
+    <div class="bg-md-surface-container-high rounded-md px-3 py-3 mb-6 font-mono text-sm text-md-on-surface-variant">
       <strong>请求ID：</strong>{{ request_id }}
     </div>
     {% endif %}
 
-    <div class="error-suggestion-box">
-      <div class="info-title">
-        <i class="material-icons">lightbulb</i>
+    <div class="bg-md-warning-container rounded-md p-4 mb-6 text-left">
+      <div class="font-semibold text-md-on-warning-container flex items-center gap-2 mb-2">
+        <i class="material-icons text-[20px] text-md-on-warning-container">lightbulb</i>
         <span>建议操作</span>
       </div>
-      <p>您没有权限访问此资源。如果您认为这是一个错误，请联系系统管理员获取相应权限，或登录后重试。</p>
+      <p class="m-0 text-md-on-warning-container leading-relaxed">您没有权限访问此资源。如果您认为这是一个错误，请联系系统管理员获取相应权限，或登录后重试。</p>
     </div>
 
-    <div class="error-actions">
-      <a href="{% url 'dashboard:index' %}" class="error-btn error-btn-primary">
-        <i class="material-icons">home</i>
+    <div class="flex flex-col gap-3 justify-center flex-wrap sm:flex-row">
+      <a href="{% url 'dashboard:index' %}" class="inline-flex items-center gap-2 bg-md-primary text-md-on-primary px-6 py-3 rounded-md-xl font-medium shadow-lg transition hover:shadow-xl hover:-translate-y-0.5 cursor-pointer no-underline text-base min-h-[44px]">
+        <i class="material-icons text-[20px]">home</i>
         <span>返回首页</span>
       </a>
-      <a href="{% url 'accounts:login' %}" class="error-btn error-btn-secondary">
-        <i class="material-icons">login</i>
+      <a href="{% url 'accounts:login' %}" class="inline-flex items-center gap-2 bg-md-secondary text-md-on-secondary px-6 py-3 rounded-md-xl font-medium shadow-lg transition hover:shadow-xl hover:-translate-y-0.5 cursor-pointer no-underline text-base min-h-[44px]">
+        <i class="material-icons text-[20px]">login</i>
         <span>登录系统</span>
       </a>
     </div>

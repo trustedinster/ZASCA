@@ -24,6 +24,18 @@
 
 html {
   scroll-behavior: smooth;
+  color-scheme: dark;
+}
+
+select option {
+  background-color: #1e293b;
+  color: #ffffff;
+}
+
+select option:hover,
+select option:checked {
+  background-color: #334155;
+  color: #ffffff;
 }
 
 body {

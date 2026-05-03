@@ -119,18 +119,16 @@ class LoginView(TemplateView):
         context['form'] = UserLoginForm()
         from apps.dashboard.models import SystemConfig
         sc = SystemConfig.get_config()
-        # 使用与后端验证相同的逻辑来确定captcha_id
         captcha_id, _ = geetest_utils._get_runtime_keys()
         context['GEETEST_ID'] = captcha_id
         context['CAPTCHA_PROVIDER'] = sc.captcha_provider
-        # 仅在turnstile模式下提供turnstile的site key
         if sc.captcha_provider == 'turnstile':
-            context['TURNSTILE_SITE_KEY'] = sc.captcha_id  # 使用统一的captcha_id字段
+            context['TURNSTILE_SITE_KEY'] = sc.captcha_id
         else:
             context['TURNSTILE_SITE_KEY'] = None
         
-        # 传递DEMO模式标志到模板
         context['is_demo_mode'] = getattr(self.request, 'is_demo_mode', False)
+        context['next'] = self.request.POST.get('next') or self.request.GET.get('next', '')
         
         context.update(get_theme_context())
         
@@ -174,7 +172,9 @@ class LoginView(TemplateView):
                     request.session.set_expiry(60 * 60 * 24 * 7)  # 7天
 
                 messages.success(request, f'欢迎回来，{user.username}！')
-                # 检查用户是否为管理员，如果是则跳转到admin页面
+                next_url = request.POST.get('next') or request.GET.get('next')
+                if next_url:
+                    return redirect(next_url)
                 if user.is_staff or user.is_superuser:
                     return redirect('/admin/')
                 return redirect('dashboard:index')
@@ -401,27 +401,35 @@ def send_register_email_code(request):
 
     email_suffix = '@' + email.split('@')[1] if '@' in email else ''
 
-    cache_key = f'email_suffixes:{config.pk}:{config.email_suffix_mode}'
-    suffix_list = cache.get(cache_key)
-    if suffix_list is None:
-        suffix_list = []
-        if config.email_suffix_list:
-            suffix_list = [
-                suffix.strip()
-                for suffix in config.email_suffix_list.strip().split('\n')
-                if suffix.strip()
+    cache_key = f'email_suffixes:{config.pk}'
+    suffix_data = cache.get(cache_key)
+    if suffix_data is None:
+        whitelist = []
+        if config.email_suffix_whitelist:
+            whitelist = [
+                s.strip()
+                for s in config.email_suffix_whitelist.strip().split('\n')
+                if s.strip()
             ]
-        cache.set(cache_key, suffix_list, timeout=300)
+        blacklist = []
+        if config.email_suffix_blacklist:
+            blacklist = [
+                s.strip()
+                for s in config.email_suffix_blacklist.strip().split('\n')
+                if s.strip()
+            ]
+        suffix_data = {'whitelist': whitelist, 'blacklist': blacklist}
+        cache.set(cache_key, suffix_data, timeout=300)
 
-    if config.email_suffix_mode == 'whitelist':
-        if email_suffix not in suffix_list:
+    if suffix_data['whitelist']:
+        if email_suffix not in suffix_data['whitelist']:
             return JsonResponse(
                 {'status': 'error',
                  'message': f'邮箱后缀 {email_suffix} 不在允许的列表中'},
                 status=400
             )
-    elif config.email_suffix_mode == 'blacklist':
-        if email_suffix in suffix_list:
+    elif suffix_data['blacklist']:
+        if email_suffix in suffix_data['blacklist']:
             return JsonResponse(
                 {'status': 'error',
                  'message': f'邮箱后缀 {email_suffix} 已被禁止使用'},

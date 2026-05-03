@@ -10,6 +10,21 @@ from config.demo_middleware import is_demo_mode
 
 User = get_user_model()
 
+MD_INPUT_CLASS = (
+    'w-full bg-md-surface/50 border border-md-outline/50 rounded-md px-4 py-3 '
+    'text-md-on-surface placeholder-md-outline focus:outline-none focus:ring-2 '
+    'focus:ring-md-primary transition'
+)
+MD_SELECT_CLASS = (
+    'w-full bg-md-surface/50 border border-md-outline/50 rounded-md px-4 py-3 '
+    'text-md-on-surface appearance-none focus:outline-none focus:ring-2 '
+    'focus:ring-md-primary transition cursor-pointer'
+)
+MD_CHECKBOX_CLASS = (
+    'w-5 h-5 rounded border-md-outline/50 bg-md-surface/50 text-md-primary '
+    'focus:ring-md-primary focus:ring-2 transition cursor-pointer accent-md-primary'
+)
+
 
 class UserRegistrationForm(UserCreationForm):
     """用户注册表单"""
@@ -18,7 +33,7 @@ class UserRegistrationForm(UserCreationForm):
         required=True,
         label=_('邮箱'),
         widget=forms.EmailInput(attrs={
-            'class': 'form-control',
+            'class': MD_INPUT_CLASS,
             'placeholder': _('请输入邮箱地址')
         })
     )
@@ -26,7 +41,7 @@ class UserRegistrationForm(UserCreationForm):
         required=True,
         label=_('邮箱验证码'),
         widget=forms.TextInput(attrs={
-            'class': 'form-control',
+            'class': MD_INPUT_CLASS,
             'placeholder': _('请输入邮箱收到的验证码')
         })
     )
@@ -35,7 +50,7 @@ class UserRegistrationForm(UserCreationForm):
         required=True,
         label=_('我已阅读并同意服务条款和隐私政策'),
         widget=forms.CheckboxInput(attrs={
-            'class': 'form-check-input'
+            'class': MD_CHECKBOX_CLASS
         })
     )
 
@@ -44,7 +59,7 @@ class UserRegistrationForm(UserCreationForm):
         fields = ('username', 'email', 'password1', 'password2')
         widgets = {
             'username': forms.TextInput(attrs={
-                'class': 'form-control',
+                'class': MD_INPUT_CLASS,
                 'placeholder': _('请输入用户名')
             }),
         }
@@ -80,29 +95,25 @@ class UserRegistrationForm(UserCreationForm):
         """验证邮箱后缀"""
         email = self.cleaned_data.get('email')
         
-        # 获取系统配置
         from apps.dashboard.models import SystemConfig
         config = SystemConfig.get_config()
         
-        # 邮箱后缀验证逻辑
         email_suffix = '@' + email.split('@')[1] if '@' in email else ''
         
-        if config.email_suffix_mode == 'whitelist':
-            # 白名单模式：只有在列表中的后缀才允许
-            allowed_suffixes = []
-            if config.email_suffix_list:
-                allowed_suffixes = [suffix.strip() for suffix in config.email_suffix_list.strip().split('\n') if suffix.strip()]
-            if email_suffix not in allowed_suffixes:
+        whitelist = []
+        if config.email_suffix_whitelist:
+            whitelist = [s.strip() for s in config.email_suffix_whitelist.strip().split('\n') if s.strip()]
+        blacklist = []
+        if config.email_suffix_blacklist:
+            blacklist = [s.strip() for s in config.email_suffix_blacklist.strip().split('\n') if s.strip()]
+        
+        if whitelist:
+            if email_suffix not in whitelist:
                 raise forms.ValidationError(f'邮箱后缀 {email_suffix} 不在允许的列表中')
-        elif config.email_suffix_mode == 'blacklist':
-            # 黑名单模式：在列表中的后缀不允许
-            blocked_suffixes = []
-            if config.email_suffix_list:
-                blocked_suffixes = [suffix.strip() for suffix in config.email_suffix_list.strip().split('\n') if suffix.strip()]
-            if email_suffix in blocked_suffixes:
+        elif blacklist:
+            if email_suffix in blacklist:
                 raise forms.ValidationError(f'邮箱后缀 {email_suffix} 已被禁止使用')
         
-        # 验证邮箱格式
         from django.core.validators import validate_email
         from django.core.exceptions import ValidationError
         try:
@@ -110,7 +121,6 @@ class UserRegistrationForm(UserCreationForm):
         except ValidationError:
             raise forms.ValidationError('请输入有效的邮箱地址')
         
-        # 检查邮箱是否已存在
         from django.contrib.auth import get_user_model
         User = get_user_model()
         if User.objects.filter(email=email).exists():
@@ -145,11 +155,11 @@ class UserUpdateForm(forms.ModelForm):
         fields = ('username', 'email')
         widgets = {
             'username': forms.TextInput(attrs={
-                'class': 'form-control',
+                'class': MD_INPUT_CLASS,
                 'readonly': 'readonly'
             }),
             'email': forms.EmailInput(attrs={
-                'class': 'form-control',
+                'class': MD_INPUT_CLASS,
                 'readonly': 'readonly'  # 邮箱不允许修改
             }),
         }
@@ -183,14 +193,14 @@ class UserLoginForm(forms.Form):
     username = forms.CharField(
         label=_('用户名'),
         widget=forms.TextInput(attrs={
-            'class': 'form-control',
+            'class': MD_INPUT_CLASS,
             'placeholder': _('请输入用户名')
         })
     )
     password = forms.CharField(
         label=_('密码'),
         widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
+            'class': MD_INPUT_CLASS,
             'placeholder': _('请输入密码')
         })
     )
@@ -198,7 +208,7 @@ class UserLoginForm(forms.Form):
         required=False,
         label=_('记住我'),
         widget=forms.CheckboxInput(attrs={
-            'class': 'form-check-input'
+            'class': MD_CHECKBOX_CLASS
         })
     )
 
@@ -211,30 +221,30 @@ class UserProfileForm(forms.ModelForm):
         fields = ('nickname', 'gender', 'birthday', 'location', 'bio', 'email_notification', 'system_notification')
         widgets = {
             'nickname': forms.TextInput(attrs={
-                'class': 'form-control',
+                'class': MD_INPUT_CLASS,
                 'placeholder': _('请输入昵称')
             }),
             'gender': forms.Select(attrs={
-                'class': 'form-select'
+                'class': MD_SELECT_CLASS
             }),
             'birthday': forms.DateInput(attrs={
-                'class': 'form-control',
+                'class': MD_INPUT_CLASS,
                 'type': 'date'
             }),
             'location': forms.TextInput(attrs={
-                'class': 'form-control',
+                'class': MD_INPUT_CLASS,
                 'placeholder': _('请输入所在地')
             }),
             'bio': forms.Textarea(attrs={
-                'class': 'form-control',
+                'class': MD_INPUT_CLASS,
                 'rows': 4,
                 'placeholder': _('请输入个人简介')
             }),
             'email_notification': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
+                'class': MD_CHECKBOX_CLASS
             }),
             'system_notification': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
+                'class': MD_CHECKBOX_CLASS
             }),
         }
 
@@ -245,14 +255,14 @@ class PasswordChangeForm(forms.Form):
     old_password = forms.CharField(
         label=_('当前密码'),
         widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
+            'class': MD_INPUT_CLASS,
             'placeholder': _('请输入当前密码')
         })
     )
     new_password = forms.CharField(
         label=_('新密码'),
         widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
+            'class': MD_INPUT_CLASS,
             'placeholder': _('请输入新密码')
         }),
         min_length=8
@@ -260,7 +270,7 @@ class PasswordChangeForm(forms.Form):
     confirm_password = forms.CharField(
         label=_('确认密码'),
         widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
+            'class': MD_INPUT_CLASS,
             'placeholder': _('请再次输入新密码')
         }),
         min_length=8

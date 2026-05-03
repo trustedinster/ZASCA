@@ -3,154 +3,114 @@
 {% block title %}工单仪表盘 - ZASCA{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h1 class="h3 mb-0">
-                <i class="material-icons" style="vertical-align: middle;">dashboard</i>
+<div class="max-w-7xl mx-auto px-4 lg:px-6 py-6">
+    <div class="flex flex-wrap items-center justify-between mb-6">
+        <div class="mb-2 sm:mb-0">
+            <h1 class="text-2xl font-semibold text-md-on-surface mb-0 flex items-center gap-2">
+                <i class="material-icons align-middle">dashboard</i>
                 工单仪表盘
             </h1>
-            <p class="text-muted mb-0">工单统计概览</p>
+            <p class="text-md-on-surface-variant mb-0">工单统计概览</p>
         </div>
-        <div class="col-md-4 text-end">
-            <a href="{% url 'tickets:ticket_create' %}" class="btn btn-primary">
-                <i class="material-icons" style="font-size: 18px; vertical-align: middle;">add</i>
+        <div>
+            <a href="{% url 'tickets:ticket_create' %}" class="inline-flex items-center gap-1 bg-md-primary text-md-on-primary px-6 py-3 rounded-md-xl font-medium shadow-lg transition hover:shadow-xl">
+                <i class="material-icons text-[18px] align-middle">add</i>
                 创建工单
             </a>
         </div>
     </div>
 
     <!-- 统计卡片 -->
-    <div class="row mb-4">
-        <div class="col-md-2 col-6 mb-3">
-            <div class="card text-center h-100">
-                <div class="card-body">
-                    <h2 class="text-primary">{{ total_tickets }}</h2>
-                    <small class="text-muted">总工单数</small>
-                </div>
-            </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl p-5 text-center">
+            <h2 class="text-3xl font-bold text-md-primary mb-1">{{ total_tickets }}</h2>
+            <small class="text-md-on-surface-variant">总工单数</small>
         </div>
-        <div class="col-md-2 col-6 mb-3">
-            <div class="card text-center h-100">
-                <div class="card-body">
-                    <h2 class="text-warning">{{ pending_count }}</h2>
-                    <small class="text-muted">待处理</small>
-                </div>
-            </div>
+        <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl p-5 text-center">
+            <h2 class="text-3xl font-bold text-md-warning mb-1">{{ pending_count }}</h2>
+            <small class="text-md-on-surface-variant">待处理</small>
         </div>
-        <div class="col-md-2 col-6 mb-3">
-            <div class="card text-center h-100">
-                <div class="card-body">
-                    <h2 class="text-info">{{ processing_count }}</h2>
-                    <small class="text-muted">处理中</small>
-                </div>
-            </div>
+        <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl p-5 text-center">
+            <h2 class="text-3xl font-bold text-md-info mb-1">{{ processing_count }}</h2>
+            <small class="text-md-on-surface-variant">处理中</small>
         </div>
-        <div class="col-md-2 col-6 mb-3">
-            <div class="card text-center h-100">
-                <div class="card-body">
-                    <h2 class="text-success">{{ resolved_count }}</h2>
-                    <small class="text-muted">已解决</small>
-                </div>
-            </div>
+        <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl p-5 text-center">
+            <h2 class="text-3xl font-bold text-md-success mb-1">{{ resolved_count }}</h2>
+            <small class="text-md-on-surface-variant">已解决</small>
         </div>
-        <div class="col-md-2 col-6 mb-3">
-            <div class="card text-center h-100">
-                <div class="card-body">
-                    <h2 class="text-secondary">{{ closed_count }}</h2>
-                    <small class="text-muted">已关闭</small>
-                </div>
-            </div>
+        <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl p-5 text-center">
+            <h2 class="text-3xl font-bold text-md-on-surface-variant mb-1">{{ closed_count }}</h2>
+            <small class="text-md-on-surface-variant">已关闭</small>
         </div>
         {% if user.is_staff or user.is_superuser %}
-        <div class="col-md-2 col-6 mb-3">
-            <div class="card text-center h-100">
-                <div class="card-body">
-                    <h2 class="text-danger">{{ overdue_count }}</h2>
-                    <small class="text-muted">已超时</small>
-                </div>
-            </div>
+        <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl p-5 text-center">
+            <h2 class="text-3xl font-bold text-md-error mb-1">{{ overdue_count }}</h2>
+            <small class="text-md-on-surface-variant">已超时</small>
         </div>
         {% endif %}
     </div>
 
     <!-- 优先级分布 -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">优先级分布</h5>
+    <div class="flex flex-wrap -mx-3 mb-6">
+        <div class="w-full lg:w-1/2 px-3 mb-6">
+            <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl overflow-hidden">
+                <div class="bg-md-surface-container-high px-5 py-4 border-b border-md-outline-variant/30">
+                    <h5 class="text-md-on-surface font-medium m-0 text-lg">优先级分布</h5>
                 </div>
-                <div class="card-body">
+                <div class="p-6">
                     <canvas id="priorityChart"></canvas>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">最近工单</h5>
+        <div class="w-full lg:w-1/2 px-3 mb-6">
+            <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl overflow-hidden">
+                <div class="bg-md-surface-container-high px-5 py-4 border-b border-md-outline-variant/30">
+                    <h5 class="text-md-on-surface font-medium m-0 text-lg">最近工单</h5>
                 </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush">
-                        {% for ticket in tickets %}
-                        <a href="{% url 'tickets:ticket_detail' ticket.pk %}" class="list-group-item list-group-item-action">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <span class="font-monospace small text-primary">{{ ticket.ticket_no }}</span>
-                                    <span class="ms-2">{{ ticket.title|truncatechars:25 }}</span>
-                                </div>
-                                <span class="badge {{ ticket.status_badge_class }}">{{ ticket.get_status_display }}</span>
-                            </div>
-                        </a>
-                        {% empty %}
-                        <div class="list-group-item text-center py-4">
-                            <p class="text-muted mb-0">暂无工单</p>
+                <div class="divide-y divide-md-outline-variant/30">
+                    {% for ticket in tickets %}
+                    <a href="{% url 'tickets:ticket_detail' ticket.pk %}" class="flex justify-between items-center px-5 py-3 hover:bg-md-surface-container transition no-underline">
+                        <div>
+                            <span class="font-mono text-sm text-md-primary">{{ ticket.ticket_no }}</span>
+                            <span class="ml-2 text-md-on-surface">{{ ticket.title|truncatechars:25 }}</span>
                         </div>
-                        {% endfor %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium {{ ticket.status_badge_class }}">{{ ticket.get_status_display }}</span>
+                    </a>
+                    {% empty %}
+                    <div class="text-center py-8">
+                        <p class="text-md-on-surface-variant mb-0">暂无工单</p>
                     </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
     </div>
 
     <!-- 快速链接 -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">快速操作</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3 mb-2">
-                            <a href="{% url 'tickets:my_tickets' %}" class="btn btn-outline-primary w-100">
-                                <i class="material-icons" style="font-size: 18px; vertical-align: middle;">confirmation_number</i>
-                                我的工单
-                            </a>
-                        </div>
-                        {% if user.is_staff or user.is_superuser %}
-                        <div class="col-md-3 mb-2">
-                            <a href="{% url 'tickets:pending_tickets' %}" class="btn btn-outline-warning w-100">
-                                <i class="material-icons" style="font-size: 18px; vertical-align: middle;">pending_actions</i>
-                                待处理工单
-                            </a>
-                        </div>
-                        <div class="col-md-3 mb-2">
-                            <a href="{% url 'tickets:ticket_list' %}" class="btn btn-outline-info w-100">
-                                <i class="material-icons" style="font-size: 18px; vertical-align: middle;">list</i>
-                                全部工单
-                            </a>
-                        </div>
-                        {% endif %}
-                        <div class="col-md-3 mb-2">
-                            <a href="{% url 'tickets:ticket_create' %}" class="btn btn-outline-success w-100">
-                                <i class="material-icons" style="font-size: 18px; vertical-align: middle;">add</i>
-                                创建工单
-                            </a>
-                        </div>
-                    </div>
-                </div>
+    <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl overflow-hidden">
+        <div class="bg-md-surface-container-high px-5 py-4 border-b border-md-outline-variant/30">
+            <h5 class="text-md-on-surface font-medium m-0 text-lg">快速操作</h5>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <a href="{% url 'tickets:my_tickets' %}" class="inline-flex items-center justify-center gap-2 text-md-primary hover:bg-md-primary/10 px-4 py-2 rounded-md transition border border-md-primary text-sm no-underline">
+                    <i class="material-icons text-[18px] align-middle">confirmation_number</i>
+                    我的工单
+                </a>
+                {% if user.is_staff or user.is_superuser %}
+                <a href="{% url 'tickets:pending_tickets' %}" class="inline-flex items-center justify-center gap-2 text-md-warning hover:bg-md-warning/10 px-4 py-2 rounded-md transition border border-md-warning text-sm no-underline">
+                    <i class="material-icons text-[18px] align-middle">pending_actions</i>
+                    待处理工单
+                </a>
+                <a href="{% url 'tickets:ticket_list' %}" class="inline-flex items-center justify-center gap-2 text-md-info hover:bg-md-info/10 px-4 py-2 rounded-md transition border border-md-info text-sm no-underline">
+                    <i class="material-icons text-[18px] align-middle">list</i>
+                    全部工单
+                </a>
+                {% endif %}
+                <a href="{% url 'tickets:ticket_create' %}" class="inline-flex items-center justify-center gap-2 text-md-success hover:bg-md-success/10 px-4 py-2 rounded-md transition border border-md-success text-sm no-underline">
+                    <i class="material-icons text-[18px] align-middle">add</i>
+                    创建工单
+                </a>
             </div>
         </div>
     </div>

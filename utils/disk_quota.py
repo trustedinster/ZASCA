@@ -135,23 +135,31 @@ try {{
     }}
 
     if (-not $vol.QuotasEnabled) {{
-        Set-CimInstance -InputObject $vol -Property @{{QuotasEnabled=$true; QuotaVolumeName=$drive}} -ErrorAction Stop
+        $enforceOutput = & fsutil quota enforce $drive 2>&1
+        if ($LASTEXITCODE -ne 0) {{
+            Write-Error "启用配额失败: $enforceOutput"
+            exit 1
+        }}
+        $vol = Get-CimInstance Win32_Volume -Filter "DriveLetter='$drive'" -ErrorAction Stop
+        if (-not $vol.QuotasEnabled) {{
+            Write-Error "无法启用卷 $drive 的磁盘配额"
+            exit 1
+        }}
     }}
 
-    $account = New-Object System.Security.Principal.NTAccount($username)
-    $sid = $account.Translate([System.Security.Principal.SecurityIdentifier])
+    $user = Get-LocalUser -Name $username -ErrorAction SilentlyContinue
+    if (-not $user) {{
+        $user = Get-CimInstance Win32_UserAccount -Filter "Name='$username'" -ErrorAction SilentlyContinue
+        if (-not $user) {{
+            Write-Error "用户 $username 不存在"
+            exit 1
+        }}
+    }}
 
-    $existing = Get-CimInstance Win32_DiskQuota -Filter "VolumePath='$drive\\' AND UserSID='$($sid.Value)'" -ErrorAction SilentlyContinue
-    if ($existing) {{
-        Set-CimInstance -InputObject $existing -Property @{{Limit=$quotaBytes; WarningLimit=$warningBytes}} -ErrorAction Stop
-    }} else {{
-        New-CimInstance -ClassName Win32_DiskQuota -Property @{{
-            VolumePath="$drive\\"
-            UserSID=$sid.Value
-            Limit=$quotaBytes
-            WarningLimit=$warningBytes
-            Status=2
-        }} -ErrorAction Stop
+    $modifyOutput = & fsutil quota modify $drive $warningBytes $quotaBytes $username 2>&1
+    if ($LASTEXITCODE -ne 0) {{
+        Write-Error "设置用户配额失败: $modifyOutput"
+        exit 1
     }}
 
     Write-Output "SUCCESS"

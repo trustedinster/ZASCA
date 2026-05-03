@@ -426,18 +426,6 @@ wheels = [
 ]
 
 [[package]]
-name = "django-bootstrap5"
-version = "24.3"
-source = { registry = "https://mirrors.aliyun.com/pypi/simple" }
-dependencies = [
-    { name = "django" },
-]
-sdist = { url = "https://mirrors.aliyun.com/pypi/packages/64/ef/c37f1c2f5a40919217251ad6b2c825bfcec0e8ed5024b5c6df874cbc8caf/django_bootstrap5-24.3.tar.gz", hash = "sha256:ca5ec5568fc2a3fc239f0cb8ce41a7df3802b8c4af930d7f64451784ec7ddc16" }
-wheels = [
-    { url = "https://mirrors.aliyun.com/pypi/packages/e8/11/e5ab1d37bae5bd4e10e240c99601f450db618f6d370d75e742f9104778b9/django_bootstrap5-24.3-py3-none-any.whl", hash = "sha256:98f7916f9f7f9c34dfe157f7c062a28ebf6d17ff95307bef260ba794ba34e2a0" },
-]
-
-[[package]]
 name = "django-cors-headers"
 version = "4.3.1"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple" }
@@ -448,6 +436,30 @@ dependencies = [
 sdist = { url = "https://mirrors.aliyun.com/pypi/packages/8a/04/a280a98256602d3f4fffae37a9410711fb80f9d6cf199679f6e93bbdb8b3/django-cors-headers-4.3.1.tar.gz", hash = "sha256:0bf65ef45e606aff1994d35503e6b677c0b26cafff6506f8fd7187f3be840207" }
 wheels = [
     { url = "https://mirrors.aliyun.com/pypi/packages/fe/6a/3428ab5d1ec270e845f4ef064a7cefbf1339b4454788d77c00d36caa828c/django_cors_headers-4.3.1-py3-none-any.whl", hash = "sha256:0b1fd19297e37417fc9f835d39e45c8c642938ddba1acce0c1753d3edef04f36" },
+]
+
+[[package]]
+name = "django-cotton"
+version = "2.6.2"
+source = { registry = "https://mirrors.aliyun.com/pypi/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://mirrors.aliyun.com/pypi/packages/49/bf/56875c0a31f601bd1e6d19eecd58a8e40ec6cf793e8d12043b6dc8196b06/django_cotton-2.6.2.tar.gz", hash = "sha256:d4131517d8ec1080495a4779fb8d984264d671e6c850f4fa34c14822817dd693" }
+wheels = [
+    { url = "https://mirrors.aliyun.com/pypi/packages/0b/b0/be3e3d8654196f69390ed0a2a459e80066a345e184d8364b178fdf149dcd/django_cotton-2.6.2-py3-none-any.whl", hash = "sha256:292d35ad2d2c1da4ae21e688cc44aa18f84716ab64a619ff7b7296e0e30275fc" },
+]
+
+[[package]]
+name = "django-formtools"
+version = "2.5.1"
+source = { registry = "https://mirrors.aliyun.com/pypi/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://mirrors.aliyun.com/pypi/packages/73/f8/bb9b228fc33230186f3612a6fc96274a81bab3509817498f2632d7aa6367/django-formtools-2.5.1.tar.gz", hash = "sha256:47cb34552c6efca088863d693284d04fc36eaaf350eb21e1a1d935e0df523c93" }
+wheels = [
+    { url = "https://mirrors.aliyun.com/pypi/packages/12/63/91a107e3aaaf3987bad036494dfd8cc2675f4a66d22e65ffd6711f84ba70/django_formtools-2.5.1-py3-none-any.whl", hash = "sha256:bce9b64eda52cc1eef6961cc649cf75aacd1a707c2fff08d6c3efcbc8e7e761a" },
 ]
 
 [[package]]
@@ -1333,8 +1345,9 @@ dependencies = [
     { name = "click-repl" },
     { name = "cryptography" },
     { name = "django" },
-    { name = "django-bootstrap5" },
     { name = "django-cors-headers" },
+    { name = "django-cotton" },
+    { name = "django-formtools" },
     { name = "djangorestframework" },
     { name = "gssapi" },
     { name = "idna" },
@@ -1401,8 +1414,9 @@ requires-dist = [
     { name = "click-repl", specifier = "==0.3.0" },
     { name = "cryptography", specifier = "==46.0.3" },
     { name = "django", specifier = "==4.2.27" },
-    { name = "django-bootstrap5", specifier = "==24.3" },
     { name = "django-cors-headers", specifier = "==4.3.1" },
+    { name = "django-cotton", specifier = ">=2.6.2" },
+    { name = "django-formtools", specifier = ">=2.5.1" },
     { name = "djangorestframework", specifier = "==3.15.2" },
     { name = "flake8", marker = "extra == 'dev'" },
     { name = "gssapi", specifier = ">=1.11.1" },

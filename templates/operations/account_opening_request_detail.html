@@ -5,346 +5,159 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/operations.css' %}">
-<style>
-/* 开户申请详情MD3样式 */
-.detail-container {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 2rem;
-}
-
-/* 移动端优化 */
-@media (max-width: 768px) {
-    .detail-container {
-        padding: 1rem;
-        width: 100%;
-        max-width: 100%;
-    }
-    
-    .detail-header {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: stretch;
-    }
-    
-    .detail-header h1 {
-        font-size: var(--md-sys-typescale-headline-medium-size);
-    }
-    
-    /* 确保所有内容都不会溢出 */
-    .detail-card,
-    .detail-card-body,
-    .detail-grid,
-    .detail-item,
-    .detail-value,
-    .detail-label {
-        max-width: 100%;
-        box-sizing: border-box;
-    }
-}
-
-.detail-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-}
-
-.detail-header h1 {
-    margin: 0;
-    font-size: var(--md-sys-typescale-headline-large-size);
-    font-weight: var(--md-sys-typescale-weight-bold);
-    color: var(--md-sys-color-on-surface);
-    line-height: var(--md-sys-typescale-line-height-condensed);
-}
-
-.detail-card {
-    background: var(--md-sys-color-surface);
-    border-radius: var(--md-sys-shape-corner-medium);
-    box-shadow: var(--md-sys-elevation-1);
-    margin-bottom: 1.5rem;
-    overflow: hidden;
-}
-
-.detail-card-header {
-    background: var(--md-sys-color-surface-variant);
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid var(--md-sys-color-outline-variant);
-}
-
-@media (max-width: 768px) {
-    .detail-card-header {
-        padding: 1rem;
-    }
-    
-    .detail-card-header h2 {
-        font-size: var(--md-sys-typescale-title-medium-size);
-    }
-}
-
-.detail-card-header h2 {
-    margin: 0;
-    font-size: var(--md-sys-typescale-title-large-size);
-    font-weight: var(--md-sys-typescale-weight-medium);
-    color: var(--md-sys-color-on-surface-variant);
-    line-height: var(--md-sys-typescale-line-height-default);
-}
-
-.detail-card-body {
-    padding: 1.5rem 2rem;
-}
-
-@media (max-width: 768px) {
-    .detail-card-body {
-        padding: 1rem;
-    }
-}
-
-.detail-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
-}
-
-@media (max-width: 768px) {
-    .detail-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-}
-
-.detail-item {
-    margin-bottom: 1.25rem;
-}
-
-.detail-label {
-    font-size: var(--md-sys-typescale-label-large-size);
-    font-weight: var(--md-sys-typescale-weight-medium);
-    color: var(--md-sys-color-on-surface-variant);
-    margin-bottom: 0.5rem;
-    display: block;
-    line-height: var(--md-sys-typescale-line-height-default);
-}
-
-@media (max-width: 768px) {
-    .detail-label {
-        font-size: var(--md-sys-typescale-label-medium-size);
-        margin-bottom: 0.3rem;
-    }
-}
-
-.detail-value {
-    font-size: var(--md-sys-typescale-body-large-size);
-    font-weight: var(--md-sys-typescale-weight-regular);
-    color: var(--md-sys-color-on-surface);
-    padding: 0.75rem;
-    background: var(--md-sys-color-surface-variant);
-    border-radius: var(--md-sys-shape-corner-small);
-    border-left: 3px solid var(--md-sys-color-primary);
-    line-height: var(--md-sys-typescale-line-height-default);
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-}
-
-@media (max-width: 768px) {
-    .detail-value {
-        padding: 0.6rem;
-        font-size: var(--md-sys-typescale-body-medium-size);
-        /* 确保在小屏幕上完整显示 */
-        min-width: 0;
-        max-width: 100%;
-        /* 处理长文本 */
-        word-break: break-word;
-        hyphens: auto;
-        /* 确保不会溢出容器 */
-        box-sizing: border-box;
-    }
-}
-
-/* 极小屏幕优化 */
-@media (max-width: 480px) {
-    .detail-container {
-        padding: 0.5rem;
-    }
-    
-    .detail-card-body {
-        padding: 0.75rem;
-    }
-    
-    .detail-value {
-        padding: 0.5rem;
-        font-size: var(--md-sys-typescale-body-small-size);
-    }
-    
-    .detail-label {
-        font-size: var(--md-sys-typescale-label-small-size);
-    }
-}
-
-.status-display {
-    display: inline-block;
-    padding: 0.5rem 1rem;
-    border-radius: var(--md-sys-shape-corner-full);
-    font-size: var(--md-sys-typescale-label-large-size);
-    font-weight: var(--md-sys-typescale-weight-medium);
-    text-transform: uppercase;
-    line-height: var(--md-sys-typescale-line-height-condensed);
-    letter-spacing: 0.1em;
-}
-
-.status-pending { 
-    background-color: var(--md-sys-color-warning-container); 
-    color: var(--md-sys-color-on-warning-container); 
-}
-
-.status-approved { 
-    background-color: var(--md-sys-color-success-container); 
-    color: var(--md-sys-color-on-success-container); 
-}
-
-.status-rejected { 
-    background-color: var(--md-sys-color-error-container); 
-    color: var(--md-sys-color-on-error-container); 
-}
-
-.status-processing { 
-    background-color: var(--md-sys-color-info-container); 
-    color: var(--md-sys-color-on-info-container); 
-}
-
-.status-completed { 
-    background-color: var(--md-sys-color-primary-container); 
-    color: var(--md-sys-color-on-primary-container); 
-}
-
-.status-failed { 
-    background-color: var(--md-sys-color-inverse-surface); 
-    color: var(--md-sys-color-inverse-on-surface); 
-}
-
-.text-danger {
-    color: var(--md-sys-color-error) !important;
-}
-
-.detail-footer {
-    text-align: center;
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--md-sys-color-outline-variant);
-}
-
-.empty-value {
-    color: var(--md-sys-color-outline) !important;
-    font-style: italic;
-}
-</style>
 {% endblock %}
 
 {% block content %}
-<div class="detail-container">
+<div class="max-w-[1000px] mx-auto p-8 sm:p-4">
     {% if messages %}
         {% for message in messages %}
             {% include 'components/alert.html' with message=message.tags content=message %}
         {% endfor %}
     {% endif %}
 
-    <div class="detail-header">
-        <h1>申请详情</h1>
+    <div class="flex flex-col gap-4 items-stretch mb-8 sm:flex-row sm:justify-between sm:items-center">
+        <h1 class="text-3xl font-bold text-md-on-surface m-0 leading-tight">申请详情</h1>
         {% url 'operations:account_opening_list' as account_opening_list_url %}
         {% include 'components/button.html' with href=account_opening_list_url variant="outlined" text="返回列表" icon="arrow_back" %}
     </div>
 
-    <div class="detail-card">
-        <div class="detail-card-header">
-            <h2>申请信息</h2>
+    <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl mb-6 overflow-hidden">
+        <div class="bg-md-surface-variant px-6 py-5 border-b border-md-outline-variant sm:px-4 sm:py-4">
+            <h2 class="text-xl font-medium text-md-on-surface-variant m-0 leading-normal">申请信息</h2>
         </div>
-        <div class="detail-card-body">
-            <div class="detail-grid">
-                <div class="detail-item">
-                    <span class="detail-label">申请人</span>
-                    <div class="detail-value">{{ request.applicant.username }}</div>
+        <div class="px-8 py-6 sm:px-4 sm:py-4">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fit,minmax(300px,1fr))] sm:gap-6">
+                <div class="mb-5">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-2 leading-normal">申请人</span>
+                    <div class="text-lg text-md-on-surface p-3 bg-md-surface-variant rounded-md border-l-[3px] border-l-md-primary break-words leading-normal">{{ request.applicant.username }}</div>
                 </div>
                 
-                <div class="detail-item">
-                    <span class="detail-label">联系邮箱</span>
-                    <div class="detail-value">{{ request.applicant.email }}</div>
+                <div class="mb-5">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-2 leading-normal">联系邮箱</span>
+                    <div class="text-lg text-md-on-surface p-3 bg-md-surface-variant rounded-md border-l-[3px] border-l-md-primary break-words leading-normal">{{ request.applicant.email }}</div>
                 </div>
                 
-                <div class="detail-item">
-                    <span class="detail-label">主机连接用户名</span>
-                    <div class="detail-value">{{ request.username }}</div>
+                <div class="mb-5">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-2 leading-normal">主机连接用户名</span>
+                    <div class="text-lg text-md-on-surface p-3 bg-md-surface-variant rounded-md border-l-[3px] border-l-md-primary break-words leading-normal">{{ request.username }}</div>
                 </div>
                 
-                <div class="detail-item">
-                    <span class="detail-label">主机显示用户名</span>
-                    <div class="detail-value">{{ request.user_fullname }}</div>
+                <div class="mb-5">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-2 leading-normal">主机显示用户名</span>
+                    <div class="text-lg text-md-on-surface p-3 bg-md-surface-variant rounded-md border-l-[3px] border-l-md-primary break-words leading-normal">{{ request.user_fullname }}</div>
                 </div>
                 
-                <div class="detail-item">
-                    <span class="detail-label">用户邮箱</span>
-                    <div class="detail-value">{{ request.user_email }}</div>
+                <div class="mb-5">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-2 leading-normal">用户邮箱</span>
+                    <div class="text-lg text-md-on-surface p-3 bg-md-surface-variant rounded-md border-l-[3px] border-l-md-primary break-words leading-normal">{{ request.user_email }}</div>
                 </div>
                 
-                <div class="detail-item">
-                    <span class="detail-label">用户描述</span>
-                    <div class="detail-value {% if not request.user_description %}empty-value{% endif %}">
+                <div class="mb-5">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-2 leading-normal">用户描述</span>
+                    <div class="text-lg text-md-on-surface p-3 bg-md-surface-variant rounded-md border-l-[3px] border-l-md-primary break-words leading-normal {% if not request.user_description %}!text-md-outline italic{% endif %}">
                         {{ request.user_description|default:"暂无描述" }}
                     </div>
                 </div>
                 
-                <div class="detail-item">
-                    <span class="detail-label">目标产品</span>
-                    <div class="detail-value">{{ request.target_product.display_name }}</div>
+                <div class="mb-5">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-2 leading-normal">目标产品</span>
+                    <div class="text-lg text-md-on-surface p-3 bg-md-surface-variant rounded-md border-l-[3px] border-l-md-primary break-words leading-normal">{{ request.target_product.display_name }}</div>
                 </div>
                 
-                <div class="detail-item">
-                    <span class="detail-label">申请理由</span>
-                    <div class="detail-value">{{ request.user_description }}</div>
+                <div class="mb-5">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-2 leading-normal">申请理由</span>
+                    <div class="text-lg text-md-on-surface p-3 bg-md-surface-variant rounded-md border-l-[3px] border-l-md-primary break-words leading-normal">{{ request.user_description }}</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="detail-card">
-        <div class="detail-card-header">
-            <h2>审核信息</h2>
+    <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl mb-6 overflow-hidden">
+        <div class="bg-md-surface-variant px-6 py-5 border-b border-md-outline-variant sm:px-4 sm:py-4">
+            <h2 class="text-xl font-medium text-md-on-surface-variant m-0 leading-normal">状态时间线</h2>
         </div>
-        <div class="detail-card-body">
-            <div class="detail-grid">
-                <div class="detail-item">
-                    <span class="detail-label">申请状态</span>
-                    <div class="detail-value">
-                        <span class="status-display status-{{ request.status }}">
+        <div class="px-8 py-6 sm:px-4 sm:py-4">
+            <div class="space-y-0">
+                {% for step in timeline %}
+                <div class="flex gap-3 {% if not forloop.last %}pb-6{% endif %}">
+                    <div class="flex flex-col items-center">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0
+                            {% if step.done %}
+                                bg-md-primary-container
+                            {% else %}
+                                bg-md-surface-variant
+                            {% endif %}">
+                            <span class="material-symbols-rounded text-lg
+                                {% if step.done %}text-md-on-primary-container{% else %}text-md-on-surface-variant{% endif %}">
+                                {% if step.done %}check_circle{% else %}radio_button_unchecked{% endif %}
+                            </span>
+                        </div>
+                        {% if not forloop.last %}
+                        <div class="w-0.5 flex-1
+                            {% if step.done %}bg-md-primary/30{% else %}bg-md-outline-variant{% endif %}"></div>
+                        {% endif %}
+                    </div>
+                    <div class="pt-1 min-w-0">
+                        <p class="text-sm font-medium text-md-on-surface">{{ step.label }}</p>
+                        {% if step.time %}
+                        <p class="text-xs text-md-on-surface-variant mt-0.5">{{ step.time|date:"Y-m-d H:i" }}</p>
+                        {% endif %}
+                        {% if step.detail %}
+                        <p class="text-xs text-md-on-surface-variant mt-0.5">{{ step.detail }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl mb-6 overflow-hidden">
+        <div class="bg-md-surface-variant px-6 py-5 border-b border-md-outline-variant sm:px-4 sm:py-4">
+            <h2 class="text-xl font-medium text-md-on-surface-variant m-0 leading-normal">审核信息</h2>
+        </div>
+        <div class="px-8 py-6 sm:px-4 sm:py-4">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fit,minmax(300px,1fr))] sm:gap-6">
+                <div class="mb-5">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-2 leading-normal">申请状态</span>
+                    <div class="text-lg text-md-on-surface p-3 bg-md-surface-variant rounded-md border-l-[3px] border-l-md-primary break-words leading-normal">
+                        <span class="inline-block px-4 py-2 rounded-full text-sm font-medium uppercase tracking-[0.1em] leading-tight
+                            {% if request.status == 'pending' %}bg-md-warning-container text-md-on-warning-container
+                            {% elif request.status == 'approved' %}bg-md-success-container text-md-on-success-container
+                            {% elif request.status == 'rejected' %}bg-md-error-container text-md-on-error-container
+                            {% elif request.status == 'processing' %}bg-md-info-container text-md-on-info-container
+                            {% elif request.status == 'completed' %}bg-md-primary-container text-md-on-primary-container
+                            {% else %}bg-md-inverse-surface text-md-inverse-on-surface{% endif %}">
                             {{ request.get_status_display }}
                         </span>
                     </div>
                 </div>
                 
                 {% if request.approved_by %}
-                <div class="detail-item">
-                    <span class="detail-label">审核人</span>
-                    <div class="detail-value">{{ request.approved_by.username }}</div>
+                <div class="mb-5">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-2 leading-normal">审核人</span>
+                    <div class="text-lg text-md-on-surface p-3 bg-md-surface-variant rounded-md border-l-[3px] border-l-md-primary break-words leading-normal">{{ request.approved_by.username }}</div>
                 </div>
                 {% endif %}
                 
                 {% if request.approval_date %}
-                <div class="detail-item">
-                    <span class="detail-label">审核时间</span>
-                    <div class="detail-value">{{ request.approval_date|date:"Y-m-d H:i:s" }}</div>
+                <div class="mb-5">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-2 leading-normal">审核时间</span>
+                    <div class="text-lg text-md-on-surface p-3 bg-md-surface-variant rounded-md border-l-[3px] border-l-md-primary break-words leading-normal">{{ request.approval_date|date:"Y-m-d H:i:s" }}</div>
                 </div>
                 {% endif %}
                 
                 {% if request.approval_notes %}
-                <div class="detail-item">
-                    <span class="detail-label">审核备注</span>
-                    <div class="detail-value">{{ request.approval_notes }}</div>
+                <div class="mb-5">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-2 leading-normal">审核备注</span>
+                    <div class="text-lg text-md-on-surface p-3 bg-md-surface-variant rounded-md border-l-[3px] border-l-md-primary break-words leading-normal">{{ request.approval_notes }}</div>
                 </div>
                 {% endif %}
                 
                 {% if request.status == 'rejected' %}
-                <div class="detail-item">
-                    <span class="detail-label text-danger">拒绝原因</span>
-                    <div class="detail-value text-danger">
+                <div class="mb-5">
+                    <span class="text-sm font-medium text-md-error block mb-2 leading-normal">拒绝原因</span>
+                    <div class="text-lg text-md-error p-3 bg-md-surface-variant rounded-md border-l-[3px] border-l-md-error break-words leading-normal">
                         {% if request.approval_notes %}
                             {{ request.approval_notes }}
                         {% else %}
@@ -355,9 +168,9 @@
                 {% endif %}
                 
                 {% if request.result_message %}
-                <div class="detail-item">
-                    <span class="detail-label">处理结果</span>
-                    <div class="detail-value">{{ request.result_message }}</div>
+                <div class="mb-5">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-2 leading-normal">处理结果</span>
+                    <div class="text-lg text-md-on-surface p-3 bg-md-surface-variant rounded-md border-l-[3px] border-l-md-primary break-words leading-normal">{{ request.result_message }}</div>
                 </div>
                 {% endif %}
             </div>
@@ -365,20 +178,20 @@
     </div>
 
     {% if request.status == 'completed' %}
-    <div class="detail-card">
-        <div class="detail-card-header">
-            <h2>账户信息</h2>
+    <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl mb-6 overflow-hidden">
+        <div class="bg-md-surface-variant px-6 py-5 border-b border-md-outline-variant sm:px-4 sm:py-4">
+            <h2 class="text-xl font-medium text-md-on-surface-variant m-0 leading-normal">账户信息</h2>
         </div>
-        <div class="detail-card-body">
-            <div class="detail-grid">
-                <div class="detail-item">
-                    <span class="detail-label">云电脑用户ID</span>
-                    <div class="detail-value">{{ request.cloud_user_id }}</div>
+        <div class="px-8 py-6 sm:px-4 sm:py-4">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fit,minmax(300px,1fr))] sm:gap-6">
+                <div class="mb-5">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-2 leading-normal">云电脑用户ID</span>
+                    <div class="text-lg text-md-on-surface p-3 bg-md-surface-variant rounded-md border-l-[3px] border-l-md-primary break-words leading-normal">{{ request.cloud_user_id }}</div>
                 </div>
                 
-                <div class="detail-item">
-                    <span class="detail-label">初始密码</span>
-                    <div class="detail-value empty-value">
+                <div class="mb-5">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-2 leading-normal">初始密码</span>
+                    <div class="text-lg !text-md-outline italic p-3 bg-md-surface-variant rounded-md border-l-[3px] border-l-md-primary break-words leading-normal">
                         出于安全考虑，密码不在此显示
                     </div>
                 </div>
@@ -387,58 +200,28 @@
     </div>
     {% endif %}
 
-    <div class="detail-card">
-        <div class="detail-card-header">
-            <h2>时间信息</h2>
+    <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl mb-6 overflow-hidden">
+        <div class="bg-md-surface-variant px-6 py-5 border-b border-md-outline-variant sm:px-4 sm:py-4">
+            <h2 class="text-xl font-medium text-md-on-surface-variant m-0 leading-normal">时间信息</h2>
         </div>
-        <div class="detail-card-body">
-            <div class="detail-grid">
-                <div class="detail-item">
-                    <span class="detail-label">创建时间</span>
-                    <div class="detail-value">{{ request.created_at|date:"Y-m-d H:i:s" }}</div>
+        <div class="px-8 py-6 sm:px-4 sm:py-4">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fit,minmax(300px,1fr))] sm:gap-6">
+                <div class="mb-5">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-2 leading-normal">创建时间</span>
+                    <div class="text-lg text-md-on-surface p-3 bg-md-surface-variant rounded-md border-l-[3px] border-l-md-primary break-words leading-normal">{{ request.created_at|date:"Y-m-d H:i:s" }}</div>
                 </div>
                 
-                <div class="detail-item">
-                    <span class="detail-label">更新时间</span>
-                    <div class="detail-value">{{ request.updated_at|date:"Y-m-d H:i:s" }}</div>
+                <div class="mb-5">
+                    <span class="text-sm font-medium text-md-on-surface-variant block mb-2 leading-normal">更新时间</span>
+                    <div class="text-lg text-md-on-surface p-3 bg-md-surface-variant rounded-md border-l-[3px] border-l-md-primary break-words leading-normal">{{ request.updated_at|date:"Y-m-d H:i:s" }}</div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="detail-footer">
+    <div class="text-center mt-8 pt-6 border-t border-md-outline-variant">
         {% url 'operations:account_opening_list' as account_opening_list_url %}
         {% include 'components/button.html' with href=account_opening_list_url variant="outlined" text="返回列表" icon="arrow_back" %}
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<style>
-.status-badge {
-    display: inline-block;
-    padding: 0.25em 0.5em;
-    border-radius: 0.25rem;
-    font-size: 0.75em;
-    font-weight: 500;
-}
-.status-pending { background-color: #ffc107; color: #212529; }
-.status-approved { background-color: #28a745; color: white; }
-.status-rejected { background-color: #dc3545; color: white; }
-.status-processing { background-color: #17a2b8; color: white; }
-.status-completed { background-color: #20c997; color: white; }
-.status-failed { background-color: #6c757d; color: white; }
-
-.form-control-plaintext {
-    display: block;
-    width: 100%;
-    padding: 0.375rem 0;
-    margin-bottom: 0;
-    line-height: 1.5;
-    color: #212529;
-    background-color: transparent;
-    border: solid transparent;
-    border-width: 1px 0;
-}
-</style>
 {% endblock %}

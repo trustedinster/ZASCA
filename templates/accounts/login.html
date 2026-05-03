@@ -1,482 +1,125 @@
+{% load static cotton %}
 <!DOCTYPE html>
 <html lang="zh-CN" {% if is_demo_mode %}data-demo-mode="true"{% endif %}>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>登录 - ZASCA</title>
-    
-    <!-- Material Icons Font -->
     <link rel="stylesheet" href="/static/vendor/material-icons/material-icons.css">
-    
-    <!-- MD3 Theme -->
-    <link rel="stylesheet" href="/static/css/theme.css">
-    
-    <!-- Favicon -->
+    <link rel="stylesheet" href="/static/vendor/material-symbols-rounded/material-symbols-rounded.css">
+    <link href="/static/css/provider.css" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
-    
-    <style>
-        /* 隐藏图标直到字体加载完成 */
-        .material-icons {
-            font-display: block;
-            opacity: 0;
-            transition: opacity 0.1s ease-in;
-        }
-        
-        .material-icons.material-icons-loaded {
-            opacity: 1;
-        }
-        
-        /* ==================== 浅色模式 (默认) ==================== */
-        :root {
-            --login-bg-gradient: linear-gradient(135deg, #1e3a5f 0%, #10b981 100%);
-            --login-card-bg: rgba(255, 255, 255, 0.85);
-            --login-card-border: rgba(255, 255, 255, 0.3);
-            --login-card-shadow: 0 8px 32px rgba(30, 58, 95, 0.15);
-            --login-text-primary: #0f172a;
-            --login-text-secondary: #475569;
-            --login-input-bg: rgba(241, 245, 249, 0.8);
-            --login-input-border: rgba(148, 163, 184, 0.3);
-            --login-accent: #1e3a5f;
-        }
-        
-        /* ==================== 深色模式 ==================== */
-        [data-theme="dark"] {
-            --login-bg-gradient: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
-            --login-card-bg: rgba(15, 23, 42, 0.75);
-            --login-card-border: rgba(16, 185, 129, 0.2);
-            --login-card-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            --login-text-primary: #f1f5f9;
-            --login-text-secondary: #94a3b8;
-            --login-input-bg: rgba(30, 41, 59, 0.8);
-            --login-input-border: rgba(71, 85, 105, 0.5);
-            --login-accent: #10b981;
-        }
-        
-        body {
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            background: var(--login-bg-gradient);
-            font-family: var(--md-sys-typescale-body-large-font-family, 'Roboto', sans-serif);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.3s ease;
-        }
-        
-        /* 主题切换按钮 */
-        .theme-toggle-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            border: none;
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            z-index: 1000;
-        }
-        
-        .theme-toggle-btn:hover {
-            transform: scale(1.1);
-            background: rgba(255, 255, 255, 0.3);
-        }
-        
-        .theme-toggle-btn .material-icons {
-            font-size: 24px;
-            color: #ffffff;
-        }
-        
-        [data-theme="dark"] .theme-toggle-btn {
-            background: rgba(16, 185, 129, 0.2);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-        
-        [data-theme="dark"] .theme-toggle-btn:hover {
-            background: rgba(16, 185, 129, 0.3);
-        }
-        
-        .login-container {
-            width: 100%;
-            max-width: 420px;
-            padding: 24px;
-        }
-        
-        /* 毛玻璃卡片 */
-        .login-card {
-            background: var(--login-card-bg);
-            border-radius: 24px;
-            padding: 40px;
-            box-shadow: var(--login-card-shadow);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--login-card-border);
-            transition: all 0.3s ease;
-        }
-        
-        .login-header {
-            text-align: center;
-            margin-bottom: 32px;
-        }
-        
-        .login-logo {
-            text-align: center;
-            margin-bottom: 8px;
-        }
-        
-        .login-logo img {
-            height: 48px;
-            width: auto;
-        }
-        
-        .login-title {
-            font-size: 1.5rem;
-            font-weight: 500;
-            color: var(--login-text-primary);
-            margin-bottom: 8px;
-        }
-        
-        .login-subtitle {
-            font-size: 0.9rem;
-            color: var(--login-text-secondary);
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        /* 修复MD3输入框文字重叠问题 */
-        .md-input-wrapper {
-            margin-bottom: 16px !important;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        /* 填充式输入框样式 */
-        .md-input-wrapper--filled {
-            background-color: var(--login-input-bg);
-            border-top-left-radius: 16px;
-            border-top-right-radius: 16px;
-            border-bottom: 2px solid var(--login-input-border);
-            min-height: 56px;
-            transition: all 0.3s ease;
-        }
-        
-        .md-input-wrapper--filled:focus-within {
-            border-bottom-color: var(--login-accent);
-            background-color: var(--login-input-bg);
-        }
-        
-        .md-input-wrapper--filled .md-input {
-            padding: 24px 16px 8px 48px !important;
-            padding-top: 32px !important;
-            box-sizing: border-box;
-            width: 100%;
-            border: none;
-            outline: none;
-            background: transparent;
-            font-family: inherit;
-            font-size: 16px;
-            color: var(--login-text-primary);
-            line-height: 1.4;
-        }
-        
-        .md-input-wrapper--filled .md-input[type="password"] {
-            padding-right: 48px !important;
-        }
-        
-        .md-input-wrapper--filled .md-input__label {
-            position: absolute;
-            top: 24px;
-            left: 48px !important;
-            right: 16px !important;
-            color: var(--login-text-secondary);
-            font-size: 16px;
-            pointer-events: none;
-            transition: all 0.2s ease;
-            z-index: 3;
-        }
-        
-        /* 焦点状态和有值状态 - 标签上浮 */
-        .md-input-wrapper--filled .md-input:focus ~ .md-input__label,
-        .md-input-wrapper--filled .md-input:not(:placeholder-shown) ~ .md-input__label,
-        .md-input-wrapper[data-has-value="true"] .md-input__label {
-            top: 8px !important;
-            font-size: 12px !important;
-            color: var(--login-accent) !important;
-        }
-        
-        .md-input__icon {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--login-text-secondary);
-            font-size: 20px;
-            z-index: 2;
-            pointer-events: auto;
-        }
-        
-        .md-input__icon--leading {
-            left: 16px;
-        }
-        
-        .md-input__icon--trailing {
-            right: 16px;
-            cursor: pointer;
-        }
-        
-        .login-card {
-            overflow: hidden;
-        }
-        
-        .form-group {
-            max-width: 100%;
-            overflow: hidden;
-        }
-        
-        .md-input-wrapper {
-            max-width: 100%;
-            box-sizing: border-box;
-        }
-        
-        .form-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .remember-me {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .remember-me input {
-            width: 18px;
-            height: 18px;
-            accent-color: var(--login-accent);
-        }
-        
-        .remember-me label {
-            font-size: 14px;
-            color: var(--login-text-secondary);
-        }
-        
-        .forgot-password {
-            font-size: 14px;
-            color: var(--login-accent);
-            text-decoration: none;
-            transition: opacity 0.2s;
-        }
-        
-        .forgot-password:hover {
-            opacity: 0.8;
-        }
-        
-        .switch-link {
-            text-align: center;
-            padding-top: 20px;
-            border-top: 1px solid var(--login-input-border);
-            margin-top: 24px;
-        }
-        
-        .switch-link p {
-            color: var(--login-text-secondary);
-            font-size: 14px;
-            margin: 0;
-        }
-        
-        .switch-link a {
-            color: var(--login-accent);
-            text-decoration: none;
-            font-weight: 500;
-        }
-        
-        .switch-link a:hover {
-            text-decoration: underline;
-        }
-        
-        /* Demo模式样式 */
-        .demo-selector {
-            margin-bottom: 20px;
-        }
-        
-        .demo-selector select {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            border: 1px solid var(--login-input-border);
-            background: var(--login-input-bg);
-            color: var(--login-text-primary);
-            font-size: 14px;
-            cursor: pointer;
-        }
-        
-        /* 登录按钮样式 */
-        .login-btn {
-            width: 100%;
-            padding: 14px 24px;
-            border-radius: 12px;
-            border: none;
-            background: linear-gradient(135deg, var(--login-accent), #10b981);
-            color: #ffffff;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-        }
-        
-        .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-        }
-        
-        .login-btn:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        /* 加载动画 */
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        
-        /* 响应式设计 */
-        @media (max-width: 480px) {
-            .login-container {
-                padding: 16px;
-            }
-            
-            .login-card {
-                padding: 24px;
-            }
-            
-            .form-footer {
-                flex-direction: column;
-                gap: 12px;
-                align-items: flex-start;
-            }
-            
-            .theme-toggle-btn {
-                top: 12px;
-                right: 12px;
-                width: 40px;
-                height: 40px;
-            }
-        }
-    </style>
 </head>
-<body>
-    <!-- 主题切换按钮 -->
-    <button class="theme-toggle-btn" id="themeToggle" title="切换主题">
-        <span class="material-icons" id="themeIcon">dark_mode</span>
+<body class="min-h-screen flex items-center justify-center bg-fixed bg-center bg-cover transition-[background] duration-300 bg-[url('/static/img/bgimg.jpg')]">
+    <div class="fixed inset-0 pointer-events-none z-0 bg-gradient-to-br from-slate-950/70 via-slate-900/50 to-slate-950/80"></div>
+
+    <button class="fixed top-5 right-5 w-12 h-12 rounded-full border-none bg-white/20 backdrop-blur-xl cursor-pointer flex items-center justify-center shadow-lg transition hover:scale-110 hover:bg-white/30 dark:bg-[#10b981]/20 dark:border dark:border-[#10b981]/30 dark:hover:bg-[#10b981]/30 z-[1000]" id="themeToggle" title="切换主题">
+        <span class="material-icons text-2xl text-white" id="themeIcon">dark_mode</span>
     </button>
-    
-    <div class="login-container">
-        <div class="login-card">
-            <!-- 头部 -->
-            <div class="login-header">
-                <div class="login-logo"><img src="/static/img/favicon.svg" alt="ZASCA" style="height: 48px; width: auto;"></div>
-                <h1 class="login-title">欢迎回来</h1>
-                <p class="login-subtitle">登录您的账户以继续</p>
+
+    <div class="relative z-10 w-full max-w-[420px] p-6 sm:p-4">
+        <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl p-10 sm:p-6 overflow-hidden transition">
+            <div class="text-center mb-8">
+                <div class="text-center mb-2">
+                    <img src="/static/img/favicon.svg" alt="ZASCA" class="h-12 w-auto mx-auto">
+                </div>
+                <h1 class="text-2xl font-medium text-md-on-surface mb-2">欢迎回来</h1>
+                <p class="text-sm text-md-on-surface-variant">登录您的账户以继续</p>
             </div>
-            
-            <!-- 消息提示 -->
+
             {% if messages %}
                 {% for message in messages %}
-                    {% include 'components/alert.html' with type=message.tags|default:"info" dismissible=true content=message %}
+                    <x-md-alert variant="{{ message.tags|default:'info' }}" dismissible="true">{{ message }}</x-md-alert>
                 {% endfor %}
             {% endif %}
-            
-            <!-- 表单 -->
-            <form method="post" action="{% url 'accounts:login' %}" class="signin-form" id="loginForm" novalidate>
+
+            <form method="post" action="{% url 'accounts:login' %}" class="login-form space-y-5 max-w-full overflow-hidden" id="loginForm" novalidate>
                 {% csrf_token %}
-                
-                <!-- Demo用户选择器 -->
+                <input type="hidden" name="next" value="{{ next }}">
+
                 {% if is_demo_mode %}
-                <div class="demo-selector">
-                    <select id="user-selector" class="form-control">
+                <div>
+                    <select id="user-selector" class="w-full bg-md-surface/50 border border-md-outline/50 rounded-md px-4 py-3 text-md-on-surface text-sm cursor-pointer transition focus:outline-none focus:ring-2 focus:ring-md-primary">
                         <option value="">-- 选择DEMO用户 (留空则手动输入) --</option>
                         <option value="User">User (demo)</option>
                         <option value="Admin">Admin (demo)</option>
                     </select>
                 </div>
                 {% endif %}
-                
-                <!-- 用户名输入 -->
-                <div class="form-group">
-                    {% include 'components/input.html' with type="text" name=form.username.html_name id="username-field" label="用户名" placeholder=" " value=form.username.value|default:'' error=form.username.errors|first icon="person" required=true variant="filled" %}
-                </div>
-                
-                <!-- 密码输入 -->
-                <div class="form-group">
-                    {% include 'components/input.html' with type="password" name=form.password.html_name id="password-field" label="密码" placeholder=" " error=form.password.errors|first icon="lock" trailing_icon="visibility" required=true variant="filled" %}
-                </div>
-                
-                <!-- 记住我和忘记密码 -->
-                <div class="form-footer">
-                    <div class="remember-me">
-                        <input type="checkbox" 
-                               name="{{ form.remember.html_name }}" 
-                               id="remember-checkbox"
-                               {% if form.remember.value %}checked{% endif %}>
-                        <label for="remember-checkbox">记住我</label>
+
+                <div>
+                    <div class="relative">
+                        <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-md-outline text-xl pointer-events-none">person</span>
+                        <input type="text" name="{{ form.username.html_name }}" id="username-field" value="{{ form.username.value|default:'' }}" placeholder="用户名" required class="w-full bg-md-surface/50 border border-md-outline/50 rounded-md pl-10 pr-4 py-3 text-md-on-surface placeholder-md-outline focus:outline-none focus:ring-2 focus:ring-md-primary transition {% if form.username.errors %}border-md-error{% endif %}">
                     </div>
-                    <a href="{% url 'accounts:forgot_password' %}" class="forgot-password">忘记密码？</a>
-                </div>
-                
-                <!-- 登录按钮 -->
-                <div class="form-group">
-                    {% if CAPTCHA_PROVIDER == 'geetest' %}
-                        {% include 'components/button.html' with variant="filled" type="submit" text="登录" classes="w-100" icon="login" attributes='data-geetest-trigger="true"' %}
-                    {% elif CAPTCHA_PROVIDER == 'turnstile' %}
-                        {% include 'components/button.html' with variant="filled" type="submit" text="登录" classes="w-100" icon="login" %}
-                    {% elif CAPTCHA_PROVIDER == 'local' %}
-                        {% include 'components/button.html' with variant="filled" type="button" text="登录" classes="w-100" icon="login" id="login-button" %}
-                    {% else %}
-                        {% include 'components/button.html' with variant="filled" type="submit" text="登录" classes="w-100" icon="login" %}
+                    {% if form.username.errors %}
+                    <p class="mt-1 text-sm text-md-error">{{ form.username.errors.0 }}</p>
                     {% endif %}
                 </div>
-                
-                <!-- 隐藏字段 -->
+
+                <div>
+                    <div class="relative">
+                        <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-md-outline text-xl pointer-events-none">lock</span>
+                        <input type="password" name="{{ form.password.html_name }}" id="password-field" placeholder="密码" required class="w-full bg-md-surface/50 border border-md-outline/50 rounded-md pl-10 pr-10 py-3 text-md-on-surface placeholder-md-outline focus:outline-none focus:ring-2 focus:ring-md-primary transition {% if form.password.errors %}border-md-error{% endif %}">
+                        <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-md-outline hover:text-md-on-surface transition cursor-pointer bg-transparent border-none p-0" onclick="togglePasswordVisibility(this)">
+                            <span class="material-icons text-xl">visibility</span>
+                        </button>
+                    </div>
+                    {% if form.password.errors %}
+                    <p class="mt-1 text-sm text-md-error">{{ form.password.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="flex justify-between items-center max-sm:flex-col max-sm:gap-3 max-sm:items-start">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" name="{{ form.remember.html_name }}" id="remember-checkbox" class="w-[18px] h-[18px] accent-[#1e3a5f] dark:accent-[#10b981]" {% if form.remember.value %}checked{% endif %}>
+                        <label for="remember-checkbox" class="text-sm text-md-on-surface-variant">记住我</label>
+                    </div>
+                    <a href="{% url 'accounts:forgot_password' %}" class="text-sm text-md-primary no-underline transition hover:underline">忘记密码？</a>
+                </div>
+
+                <div>
+                    {% if CAPTCHA_PROVIDER == 'geetest' %}
+                    <button type="submit" class="inline-flex items-center justify-center gap-2 bg-md-primary text-md-on-primary rounded-md px-6 py-3 hover:bg-md-primary/90 transition font-medium w-full focus:outline-none focus:ring-2 focus:ring-md-primary disabled:opacity-50 disabled:cursor-not-allowed" data-geetest-trigger="true">
+                        <span class="material-icons text-xl">login</span>
+                        <span>登录</span>
+                    </button>
+                    {% elif CAPTCHA_PROVIDER == 'turnstile' %}
+                    <button type="submit" class="inline-flex items-center justify-center gap-2 bg-md-primary text-md-on-primary rounded-md px-6 py-3 hover:bg-md-primary/90 transition font-medium w-full focus:outline-none focus:ring-2 focus:ring-md-primary disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span class="material-icons text-xl">login</span>
+                        <span>登录</span>
+                    </button>
+                    {% elif CAPTCHA_PROVIDER == 'local' %}
+                    <button type="button" class="inline-flex items-center justify-center gap-2 bg-md-primary text-md-on-primary rounded-md px-6 py-3 hover:bg-md-primary/90 transition font-medium w-full focus:outline-none focus:ring-2 focus:ring-md-primary disabled:opacity-50 disabled:cursor-not-allowed" id="login-button">
+                        <span class="material-icons text-xl">login</span>
+                        <span>登录</span>
+                    </button>
+                    {% else %}
+                    <button type="submit" class="inline-flex items-center justify-center gap-2 bg-md-primary text-md-on-primary rounded-md px-6 py-3 hover:bg-md-primary/90 transition font-medium w-full focus:outline-none focus:ring-2 focus:ring-md-primary disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span class="material-icons text-xl">login</span>
+                        <span>登录</span>
+                    </button>
+                    {% endif %}
+                </div>
+
                 <input type="hidden" name="lot_number" id="lot_number_login">
                 <input type="hidden" name="captcha_output" id="captcha_output_login">
                 <input type="hidden" name="pass_token" id="pass_token_login">
                 <input type="hidden" name="gen_time" id="gen_time_login">
                 <input type="hidden" name="captcha_id" id="captcha_id_login" value="{{ GEETEST_ID }}">
             </form>
-            
-            <!-- 切换链接 -->
-            <div class="switch-link">
-                <p>没有账户？ <a href="{% url 'accounts:register' %}">立即注册</a></p>
+
+            <div class="text-center pt-5 border-t border-md-outline-variant mt-6">
+                <p class="text-sm text-md-on-surface-variant m-0">没有账户？ <a href="{% url 'accounts:register' %}" class="text-md-primary no-underline font-medium hover:underline">立即注册</a></p>
             </div>
         </div>
     </div>
 
-    <!-- JavaScript -->
     <script src="/static/vendor/jquery-3.6.0/jquery.min.js"></script>
     <script src="/static/js/base.js"></script>
     <script src="/static/js/accounts.js"></script>
     <script src="/static/js/gt4.js"></script>
-    
-    <!-- 设置验证码变量 -->
+
     <script>
         window.CAPTCHA_PROVIDER = '{{ CAPTCHA_PROVIDER|escapejs }}';
         {% if CAPTCHA_PROVIDER == 'geetest' %}
@@ -485,8 +128,7 @@
         window.TURNSTILE_SITE_KEY = '{{ TURNSTILE_SITE_KEY|escapejs }}';
         {% endif %}
     </script>
-    
-    <!-- 验证码适配器 -->
+
     {% if CAPTCHA_PROVIDER == 'geetest' %}
     <script src="/static/js/geetest_v4_adapter.js"></script>
     {% elif CAPTCHA_PROVIDER == 'local' %}
@@ -494,88 +136,61 @@
     {% elif CAPTCHA_PROVIDER == 'turnstile' %}
     <script src="/static/js/turnstile_adapter.js"></script>
     {% endif %}
-    
     <script src="/static/js/email_code.js"></script>
 
     <script>
-        // ==================== 主题管理器 ====================
-        const LoginThemeManager = {
-            init: function() {
-                const savedTheme = localStorage.getItem('theme');
-                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                
-                if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-                    document.documentElement.setAttribute('data-theme', 'dark');
-                    this.updateIcon('dark');
-                } else {
-                    document.documentElement.removeAttribute('data-theme');
-                    this.updateIcon('light');
-                }
-                
-                this.bindEvents();
-            },
-            
-            toggle: function() {
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                updateThemeIcon('dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                updateThemeIcon('light');
+            }
+
+            document.getElementById('themeToggle').addEventListener('click', function() {
                 const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-                
                 if (isDark) {
                     document.documentElement.removeAttribute('data-theme');
                     localStorage.setItem('theme', 'light');
-                    this.updateIcon('light');
+                    updateThemeIcon('light');
                 } else {
                     document.documentElement.setAttribute('data-theme', 'dark');
                     localStorage.setItem('theme', 'dark');
-                    this.updateIcon('dark');
+                    updateThemeIcon('dark');
                 }
-            },
-            
-            updateIcon: function(theme) {
-                const icon = document.getElementById('themeIcon');
-                if (icon) {
-                    icon.textContent = theme === 'dark' ? 'light_mode' : 'dark_mode';
-                }
-            },
-            
-            bindEvents: function() {
-                const toggleBtn = document.getElementById('themeToggle');
-                if (toggleBtn) {
-                    toggleBtn.addEventListener('click', () => this.toggle());
-                }
-                
-                // 监听系统主题变化
-                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-                    if (!localStorage.getItem('theme')) {
-                        if (e.matches) {
-                            document.documentElement.setAttribute('data-theme', 'dark');
-                            this.updateIcon('dark');
-                        } else {
-                            document.documentElement.removeAttribute('data-theme');
-                            this.updateIcon('light');
-                        }
-                    }
-                });
-            }
-        };
-        
-        // 初始化主题
-        LoginThemeManager.init();
-        
-        // 字体加载检测 - 防止图标闪烁
-        document.fonts.ready.then(function() {
-            document.querySelectorAll('.material-icons').forEach(function(icon) {
-                icon.classList.add('material-icons-loaded');
             });
-        });
-        
-        // Demo模式处理
-        const isDemoMode = document.documentElement.getAttribute('data-demo-mode') === 'true';
-        
-        if (isDemoMode) {
+
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+                if (!localStorage.getItem('theme')) {
+                    if (e.matches) {
+                        document.documentElement.setAttribute('data-theme', 'dark');
+                        updateThemeIcon('dark');
+                    } else {
+                        document.documentElement.removeAttribute('data-theme');
+                        updateThemeIcon('light');
+                    }
+                }
+            });
+
+            function updateThemeIcon(theme) {
+                const icon = document.getElementById('themeIcon');
+                if (icon) icon.textContent = theme === 'dark' ? 'light_mode' : 'dark_mode';
+            }
+
+            document.fonts.ready.then(function() {
+                document.querySelectorAll('.material-icons').forEach(function(icon) {
+                    icon.classList.add('material-icons-loaded');
+                });
+            });
+
+            {% if is_demo_mode %}
             const demoPasswords = {
                 'User': 'demo_user_password',
                 'Admin': 'demo_admin_password'
             };
-
             $('#user-selector').on('change', function() {
                 const selectedUser = $(this).val();
                 if (selectedUser) {
@@ -586,40 +201,31 @@
                     $('#password-field').val('');
                 }
             });
+            {% endif %}
+
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                const submitBtn = this.querySelector('[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    const icon = submitBtn.querySelector('.material-icons');
+                    const label = submitBtn.querySelector('span:last-child');
+                    if (icon) icon.textContent = 'hourglass_empty';
+                    if (label) label.textContent = '登录中...';
+                }
+            });
+        })();
+
+        function togglePasswordVisibility(btn) {
+            const input = btn.closest('.relative').querySelector('input');
+            const icon = btn.querySelector('.material-icons');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.textContent = 'visibility_off';
+            } else {
+                input.type = 'password';
+                icon.textContent = 'visibility';
+            }
         }
-
-        // 密码可见性切换
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('md-input__icon--trailing')) {
-                const input = e.target.closest('.md-input-wrapper').querySelector('.md-input');
-                const icon = e.target;
-                
-                if (input.type === 'password') {
-                    input.type = 'text';
-                    icon.textContent = 'visibility_off';
-                } else {
-                    input.type = 'password';
-                    icon.textContent = 'visibility';
-                }
-            }
-        });
-
-        // 表单提交处理
-        document.getElementById('loginForm')?.addEventListener('submit', function(e) {
-            const submitBtn = this.querySelector('[type="submit"]');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                const label = submitBtn.querySelector('.md-button__label');
-                const icon = submitBtn.querySelector('.md-button__icon');
-                if (icon) {
-                    icon.textContent = 'hourglass_empty';
-                    icon.style.animation = 'spin 1s linear infinite';
-                }
-                if (label) {
-                    label.textContent = ' 登录中...';
-                }
-            }
-        });
     </script>
 </body>
 </html>

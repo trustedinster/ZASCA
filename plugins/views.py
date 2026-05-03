@@ -5,7 +5,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.http import JsonResponse
-from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.http import require_POST
 from .models import PluginRecord
 from . import plugin_manager
@@ -36,7 +36,8 @@ def plugin_detail(request, plugin_id):
     return render(request, 'plugins/detail.html', context)
 
 
-@staff_member_required
+@user_passes_test(lambda u: u.is_staff)
+@login_required
 @require_POST
 def toggle_plugin(request, plugin_id):
     """
@@ -72,7 +73,8 @@ def toggle_plugin(request, plugin_id):
         }, status=400)
 
 
-@staff_member_required
+@user_passes_test(lambda u: u.is_staff)
+@login_required
 def sync_plugins(request):
     """
     同步插件状态视图

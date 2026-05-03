@@ -31,4 +31,7 @@ urlpatterns = [
     # 磁盘配额相关API
     path('api/product/<int:product_id>/disk-config/', views.get_product_disk_config, name='product_disk_config'),
     path('api/host/<int:host_id>/disk-info/', views.get_host_disk_info, name='host_disk_info'),
+
+    # 邀请链接相关URL
+    path('invite/<str:token>/', views.product_invite_view, name='product_invite'),
 ]

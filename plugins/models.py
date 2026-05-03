@@ -41,28 +41,41 @@ class QQVerificationConfig(models.Model):
     )
     
     # 基本配置
+    use_default_bot = models.BooleanField(
+        default=True,
+        verbose_name='使用系统默认机器人服务器',
+        help_text='启用后使用系统配置中的默认机器人服务器地址、端口和令牌'
+    )
+
     host = models.CharField(
         max_length=255,
+        blank=True,
+        null=True,
         verbose_name='机器人服务器地址',
         help_text='QQ机器人服务器的主机地址'
     )
-    
+
     port = models.CharField(
         max_length=20,
+        blank=True,
+        null=True,
         verbose_name='机器人服务器端口',
         help_text='QQ机器人服务器的端口号'
     )
-    
+
     token = models.CharField(
         max_length=255,
+        blank=True,
+        null=True,
         verbose_name='访问令牌',
         help_text='用于认证的访问令牌'
     )
-    
-    group_id = models.CharField(
-        max_length=20,
+
+    group_ids = models.TextField(
+        blank=True,
+        null=True,
         verbose_name='验证群号',
-        help_text='用于验证QQ号是否在群内的群号'
+        help_text='用于验证QQ号是否在群内的群号，每行一个QQ群号'
     )
     
     # 验证启用状态
@@ -95,6 +108,40 @@ class QQVerificationConfig(models.Model):
 
     def __str__(self):
         return f"{self.product.display_name} - QQ验证配置"
+
+    @property
+    def effective_host(self):
+        if self.use_default_bot:
+            from apps.dashboard.models import SystemConfig
+            config = SystemConfig.get_config()
+            return config.qq_bot_host
+        return self.host
+
+    @property
+    def effective_port(self):
+        if self.use_default_bot:
+            from apps.dashboard.models import SystemConfig
+            config = SystemConfig.get_config()
+            return config.qq_bot_port
+        return self.port
+
+    @property
+    def effective_token(self):
+        if self.use_default_bot:
+            from apps.dashboard.models import SystemConfig
+            config = SystemConfig.get_config()
+            return config.qq_bot_token
+        return self.token
+
+    @property
+    def group_id_list(self):
+        if not self.group_ids:
+            return []
+        return [
+            gid.strip()
+            for gid in self.group_ids.split('\n')
+            if gid.strip()
+        ]
 
     @property
     def is_require_group_enabled(self):

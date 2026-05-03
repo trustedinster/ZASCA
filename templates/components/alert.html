@@ -1,5 +1,4 @@
 {# Material Design 3 警告框组件 #}
-{# Material Design 3 警告框组件 #}
 <!--{% comment %}-->
 使用示例:
 {% include 'components/alert.html' with 
@@ -16,9 +15,9 @@
 {# 设置默认值 #}
 {% with type=type|default:"info" dismissible=dismissible|default:False icon=icon|default:True classes=classes|default:"" %}
 
-<div class="md-alert md-alert--{{ type }} {{ classes }}" role="alert">
+<div class="md-alert md-alert-{{ type }} {{ classes }}" role="alert">
     {% if icon %}
-        <div class="md-alert__icon">
+        <div class="md-alert-icon">
             {% if type == "info" %}
                 <span class="material-icons">info</span>
             {% elif type == "success" %}
@@ -31,17 +30,17 @@
         </div>
     {% endif %}
     
-    <div class="md-alert__content">
+    <div class="md-alert-content">
         {% if title %}
-            <div class="md-alert__title">{{ title }}</div>
+            <div class="md-alert-title">{{ title }}</div>
         {% endif %}
-        <div class="md-alert__message">
+        <div class="md-alert-message">
             {{ content }}
         </div>
     </div>
     
     {% if dismissible %}
-        <button class="md-alert__close" type="button" aria-label="关闭">
+        <button class="md-alert-close" type="button" aria-label="关闭">
             <span class="material-icons">close</span>
         </button>
     {% endif %}
@@ -52,13 +51,12 @@
 <script>
 // 警告框关闭功能
 document.addEventListener('DOMContentLoaded', function() {
-    const closeButtons = document.querySelectorAll('.md-alert__close');
+    const closeButtons = document.querySelectorAll('.md-alert-close');
     
     closeButtons.forEach(button => {
         button.addEventListener('click', function() {
             const alert = this.closest('.md-alert');
-            alert.style.opacity = '0';
-            alert.style.transform = 'translateY(-100%)';
+            alert.classList.add('md-alert-closing');
             
             setTimeout(() => {
                 alert.remove();
@@ -67,149 +65,3 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
-<style>
-/* MD3 警告框样式 */
-.md-alert {
-    display: flex;
-    align-items: flex-start;
-    padding: 16px 20px;
-    margin: 12px 0;
-    border-radius: var(--md-sys-shape-corner-medium, 12px);
-    transition: 
-        opacity var(--md-sys-motion-duration-medium2, 250ms) var(--md-sys-motion-easing-standard, ease),
-        transform var(--md-sys-motion-duration-medium2, 250ms) var(--md-sys-motion-easing-standard, ease);
-}
-
-/* 警告框变体 */
-.md-alert--info {
-    background-color: rgba(59, 130, 246, 0.12);
-    color: #1e40af;
-    border: 1px solid rgba(59, 130, 246, 0.3);
-}
-
-.md-alert--success {
-    background-color: rgba(16, 185, 129, 0.12);
-    color: #065f46;
-    border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.md-alert--warning {
-    background-color: rgba(245, 158, 11, 0.12);
-    color: #92400e;
-    border: 1px solid rgba(245, 158, 11, 0.3);
-}
-
-.md-alert--error {
-    background-color: rgba(239, 68, 68, 0.12);
-    color: #991b1b;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    border-left: 4px solid #ef4444;
-}
-
-/* 图标区域 */
-.md-alert__icon {
-    flex-shrink: 0;
-    margin-right: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.md-alert__icon .material-icons {
-    font-size: 24px;
-}
-
-/* 内容区域 */
-.md-alert__content {
-    flex: 1;
-    min-width: 0;
-}
-
-/* 标题样式 */
-.md-alert__title {
-    font-weight: var(--md-sys-typescale-weight-bold);
-    font-size: var(--md-sys-typescale-title-small-size);
-    margin-bottom: 4px;
-    line-height: 1.4;
-}
-
-/* 消息样式 */
-.md-alert__message {
-    font-size: var(--md-sys-typescale-body-medium-size);
-    line-height: 1.5;
-}
-
-/* 关闭按钮 */
-.md-alert__close {
-    flex-shrink: 0;
-    margin-left: 12px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
-}
-
-.md-alert__close .material-icons {
-    font-size: 18px;
-}
-
-.md-alert__close:hover {
-    background-color: color-mix(in srgb, currentColor 8%, transparent);
-}
-
-.md-alert__close:focus {
-    outline: 2px solid currentColor;
-    outline-offset: 2px;
-}
-
-/* 响应式设计 */
-@media (max-width: 599px) {
-    .md-alert {
-        padding: 12px 16px;
-        margin: 8px 0;
-    }
-    
-    .md-alert__icon {
-        margin-right: 8px;
-    }
-    
-    .md-alert__icon .material-icons {
-        font-size: 20px;
-    }
-    
-    .md-alert__close {
-        margin-left: 8px;
-    }
-    
-    .md-alert__close .material-icons {
-        font-size: 16px;
-    }
-}
-
-/* 动画效果 */
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.md-alert {
-    animation: slideIn 0.3s ease-out;
-}
-
-/* 特殊情况：无图标时的布局调整 */
-.md-alert:not(.md-alert__icon) .md-alert__content {
-    margin-left: 0;
-}
-</style>

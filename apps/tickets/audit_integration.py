@@ -70,18 +70,23 @@ def log_ticket_updated(ticket, user, ip_address=None, changes=None):
     )
 
 
-def log_ticket_assigned(ticket, user, old_assignee, new_assignee, ip_address=None):
+def log_ticket_assigned(ticket, user, old_assignee, new_assignee,
+                        old_assigned_group=None, new_assigned_group=None,
+                        ip_address=None):
     """记录工单分配"""
+    details = {
+        'action': '分配工单',
+        'old_assignee': str(old_assignee) if old_assignee else None,
+        'new_assignee': str(new_assignee) if new_assignee else None,
+        'old_assigned_group': str(old_assigned_group) if old_assigned_group else None,
+        'new_assigned_group': str(new_assigned_group) if new_assigned_group else None,
+    }
     log_ticket_action(
         ticket=ticket,
         user=user,
         action='assign_ticket',
         ip_address=ip_address,
-        details={
-            'action': '分配工单',
-            'old_assignee': str(old_assignee) if old_assignee else None,
-            'new_assignee': str(new_assignee) if new_assignee else None,
-        }
+        details=details
     )
 
 

@@ -43,6 +43,8 @@ class AuditLog(models.Model):
         ('change_ticket_status', '变更工单状态'),
         ('close_ticket', '关闭工单'),
         ('add_ticket_comment', '添加工单评论'),
+        ('dashboard_view', '访问仪表盘'),
+        ('system_config_update', '更新系统配置'),
     ]
 
     user = models.ForeignKey(
@@ -68,6 +70,10 @@ class AuditLog(models.Model):
         null=True, 
         blank=True,
         verbose_name="操作IP地址"
+    )
+    user_agent = models.TextField(
+        blank=True,
+        verbose_name="用户代理"
     )
     timestamp = models.DateTimeField(auto_now_add=True, verbose_name="操作时间")
     success = models.BooleanField(default=True, verbose_name="操作成功")

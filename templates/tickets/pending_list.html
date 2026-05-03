@@ -3,106 +3,96 @@
 {% block title %}待处理工单 - ZASCA{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h1 class="h3 mb-0">
-                <i class="material-icons" style="vertical-align: middle;">pending_actions</i>
-                待处理工单
-            </h1>
-            <p class="text-muted mb-0">查看需要处理的工单</p>
-        </div>
+<div class="max-w-7xl mx-auto px-4 lg:px-6 py-6">
+    <div class="mb-6">
+        <h1 class="text-2xl font-semibold text-md-on-surface mb-0 flex items-center gap-2">
+            <i class="material-icons align-middle">pending_actions</i>
+            待处理工单
+        </h1>
+        <p class="text-md-on-surface-variant mb-0">查看需要处理的工单</p>
     </div>
 
     <!-- 工单列表 -->
-    <div class="card">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>工单编号</th>
-                            <th>标题</th>
-                            <th>状态</th>
-                            <th>优先级</th>
-                            <th>创建者</th>
-                            <th>截止时间</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for ticket in tickets %}
-                        <tr {% if ticket.is_overdue %}class="table-danger"{% endif %}>
-                            <td>
-                                <span class="font-monospace text-primary">{{ ticket.ticket_no }}</span>
-                            </td>
-                            <td>
-                                <a href="{% url 'tickets:ticket_detail' ticket.pk %}">
-                                    {{ ticket.title|truncatechars:30 }}
-                                </a>
-                            </td>
-                            <td>
-                                <span class="badge {{ ticket.status_badge_class }}">
-                                    {{ ticket.get_status_display }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge {{ ticket.priority_badge_class }}">
-                                    {{ ticket.get_priority_display }}
-                                </span>
-                            </td>
-                            <td style="color: var(--text-primary);">{{ ticket.creator.username }}</td>
-                            <td>
-                                {% if ticket.due_at %}
-                                    {% if ticket.is_overdue %}
-                                    <span class="text-danger">{{ ticket.due_at|date:"m-d H:i" }} (已超时)</span>
-                                    {% else %}
-                                    {{ ticket.due_at|date:"m-d H:i" }}
-                                    {% endif %}
+    <div class="bg-md-surface-container/70 backdrop-blur-xl border border-white/10 rounded-md-lg shadow-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left min-w-[600px]">
+                <thead class="bg-md-surface-container-high text-md-on-surface-variant text-xs font-medium uppercase">
+                    <tr>
+                        <th class="px-4 py-3">工单编号</th>
+                        <th class="px-4 py-3">标题</th>
+                        <th class="px-4 py-3">状态</th>
+                        <th class="px-4 py-3">优先级</th>
+                        <th class="px-4 py-3">创建者</th>
+                        <th class="px-4 py-3">截止时间</th>
+                        <th class="px-4 py-3">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ticket in tickets %}
+                    <tr class="border-b border-md-outline-variant/50 hover:bg-md-surface-container transition {% if ticket.is_overdue %}bg-md-error-container/30{% endif %}">
+                        <td class="px-4 py-3">
+                            <span class="font-mono text-md-primary text-sm">{{ ticket.ticket_no }}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <a href="{% url 'tickets:ticket_detail' ticket.pk %}" class="text-md-primary hover:underline">
+                                {{ ticket.title|truncatechars:30 }}
+                            </a>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium {{ ticket.status_badge_class }}">
+                                {{ ticket.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium {{ ticket.priority_badge_class }}">
+                                {{ ticket.get_priority_display }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-md-on-surface">{{ ticket.creator.username }}</td>
+                        <td class="px-4 py-3">
+                            {% if ticket.due_at %}
+                                {% if ticket.is_overdue %}
+                                <span class="text-md-error">{{ ticket.due_at|date:"m-d H:i" }} (已超时)</span>
                                 {% else %}
-                                <span class="text-muted">-</span>
+                                <span class="text-md-on-surface">{{ ticket.due_at|date:"m-d H:i" }}</span>
                                 {% endif %}
-                            </td>
-                            <td>
-                                <a href="{% url 'tickets:ticket_detail' ticket.pk %}" class="btn btn-sm btn-outline-primary">
-                                    处理
-                                </a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="7" class="text-center py-4">
-                                <i class="material-icons" style="font-size: 48px; color: #ccc;">check_circle</i>
-                                <p class="text-muted mt-2">暂无待处理工单</p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                            {% else %}
+                            <span class="text-md-on-surface-variant">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3">
+                            <a href="{% url 'tickets:ticket_detail' ticket.pk %}" class="inline-flex items-center text-md-primary hover:bg-md-primary/10 px-4 py-2 rounded-md transition border border-md-primary text-sm no-underline">
+                                处理
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-8">
+                            <i class="material-icons text-[48px] text-md-outline">check_circle</i>
+                            <p class="text-md-on-surface-variant mt-3">暂无待处理工单</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
     <!-- 分页 -->
     {% if is_paginated %}
-    <nav aria-label="Page navigation" class="mt-3">
-        <ul class="pagination justify-content-center">
+    <nav aria-label="Page navigation" class="mt-6">
+        <div class="flex justify-center items-center gap-2">
             {% if page_obj.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">上一页</a>
-            </li>
+            <a class="px-4 py-2 rounded-md border border-md-outline text-md-on-surface hover:bg-md-surface-container transition text-sm no-underline" href="?page={{ page_obj.previous_page_number }}">上一页</a>
             {% endif %}
             
-            <li class="page-item active">
-                <span class="page-link">第 {{ page_obj.number }} 页，共 {{ paginator.num_pages }} 页</span>
-            </li>
+            <span class="px-4 py-2 rounded-md bg-md-primary text-md-on-primary text-sm">第 {{ page_obj.number }} 页，共 {{ paginator.num_pages }} 页</span>
             
             {% if page_obj.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}">下一页</a>
-            </li>
+            <a class="px-4 py-2 rounded-md border border-md-outline text-md-on-surface hover:bg-md-surface-container transition text-sm no-underline" href="?page={{ page_obj.next_page_number }}">下一页</a>
             {% endif %}
-        </ul>
+        </div>
     </nav>
     {% endif %}
 </div>

@@ -1,0 +1,32 @@
+{% if attrs.variant == "success" %}
+<div class="flex items-start gap-3 bg-green-500/10 backdrop-blur-xl border border-green-500/20 rounded p-4">
+    <span class="material-symbols-rounded text-green-400 text-xl shrink-0">check_circle</span>
+    <div class="flex-1">
+        {{ slot }}
+    </div>
+</div>
+
+{% elif attrs.variant == "error" %}
+<div class="flex items-start gap-3 bg-red-500/10 backdrop-blur-xl border border-red-500/20 rounded p-4">
+    <span class="material-symbols-rounded text-red-400 text-xl shrink-0">error</span>
+    <div class="flex-1">
+        {{ slot }}
+    </div>
+</div>
+
+{% elif attrs.variant == "warning" %}
+<div class="flex items-start gap-3 bg-amber-500/10 backdrop-blur-xl border border-amber-500/20 rounded p-4">
+    <span class="material-symbols-rounded text-amber-400 text-xl shrink-0">warning</span>
+    <div class="flex-1">
+        {{ slot }}
+    </div>
+</div>
+
+{% else %}
+<div class="flex items-start gap-3 bg-cyan-500/10 backdrop-blur-xl border border-cyan-500/20 rounded p-4">
+    <span class="material-symbols-rounded text-cyan-400 text-xl shrink-0">info</span>
+    <div class="flex-1">
+        {{ slot }}
+    </div>
+</div>
+{% endif %}

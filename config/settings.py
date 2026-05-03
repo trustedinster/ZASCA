@@ -64,7 +64,6 @@ else:
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -74,7 +73,9 @@ INSTALLED_APPS = [
     # 第三方应用
     'rest_framework',
     'corsheaders',
-    'django_bootstrap5',
+
+    # 模板组件框架（必须在本地应用之前，确保 cotton 模板优先发现）
+    'django_cotton',
 
     # 本地应用
     'apps.accounts',
@@ -88,6 +89,8 @@ INSTALLED_APPS = [
     'apps.themes',  # 主题系统
     'apps.tunnel',  # 隧道管理
     'apps.tickets',  # 工单系统
+    'apps.provider',  # 提供商后台（新版 Tailwind/MD3）
+    'apps.provider_backend',  # 提供商后台（旧版，保留中间件和API）
     'plugins',
 ]
 
