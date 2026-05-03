@@ -50,7 +50,7 @@ dependencies = [
     "pymysql>=1.1.2",
     "gssapi>=1.11.1",
     "krb5>=0.9.0",
-    "django-cotton>=2.6.2",
+    "django-cotton @ git+https://github.com/trustedinster/django-cotton.git@feature/x-prefix-tag-support",
     "django-formtools>=2.5.1",
 ]
 
@@ -75,6 +75,9 @@ dev = [
     "django-stubs>=6.0.2",
     "pyrefly>=0.60.0",
 ]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["."]

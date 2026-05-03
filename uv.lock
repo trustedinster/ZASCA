@@ -441,13 +441,9 @@ wheels = [
 [[package]]
 name = "django-cotton"
 version = "2.6.2"
-source = { registry = "https://mirrors.aliyun.com/pypi/simple" }
+source = { git = "https://github.com/trustedinster/django-cotton.git?rev=feature%2Fx-prefix-tag-support#46b6a93f9b7a7e77212ae43bd2957c35b10b04dc" }
 dependencies = [
     { name = "django" },
-]
-sdist = { url = "https://mirrors.aliyun.com/pypi/packages/49/bf/56875c0a31f601bd1e6d19eecd58a8e40ec6cf793e8d12043b6dc8196b06/django_cotton-2.6.2.tar.gz", hash = "sha256:d4131517d8ec1080495a4779fb8d984264d671e6c850f4fa34c14822817dd693" }
-wheels = [
-    { url = "https://mirrors.aliyun.com/pypi/packages/0b/b0/be3e3d8654196f69390ed0a2a459e80066a345e184d8364b178fdf149dcd/django_cotton-2.6.2-py3-none-any.whl", hash = "sha256:292d35ad2d2c1da4ae21e688cc44aa18f84716ab64a619ff7b7296e0e30275fc" },
 ]
 
 [[package]]
@@ -1415,7 +1411,7 @@ requires-dist = [
     { name = "cryptography", specifier = "==46.0.3" },
     { name = "django", specifier = "==4.2.27" },
     { name = "django-cors-headers", specifier = "==4.3.1" },
-    { name = "django-cotton", specifier = ">=2.6.2" },
+    { name = "django-cotton", git = "https://github.com/trustedinster/django-cotton.git?rev=feature%2Fx-prefix-tag-support" },
     { name = "django-formtools", specifier = ">=2.5.1" },
     { name = "djangorestframework", specifier = "==3.15.2" },
     { name = "flake8", marker = "extra == 'dev'" },
