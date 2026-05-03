@@ -62,6 +62,43 @@ python manage.py migrate
 python manage.py createsuperuser
 ```
 
+7. 安装 Tailwind CSS CLI（前端样式开发需要）
+
+Tailwind CSS 的 standalone CLI 可执行文件未纳入 git 仓库（超过 GitHub 文件大小限制），首次 clone 后需手动下载：
+
+```bash
+# Linux x64
+curl -fSL -o static/vendor/tailwindcss https://github.com/tailwindlabs/tailwindcss/releases/download/v4.2.4/tailwindcss-linux-x64
+chmod +x static/vendor/tailwindcss
+
+# Linux ARM64
+curl -fSL -o static/vendor/tailwindcss https://github.com/tailwindlabs/tailwindcss/releases/download/v4.2.4/tailwindcss-linux-arm64
+chmod +x static/vendor/tailwindcss
+
+# macOS ARM64 (Apple Silicon)
+curl -fSL -o static/vendor/tailwindcss https://github.com/tailwindlabs/tailwindcss/releases/download/v4.2.4/tailwindcss-macos-arm64
+chmod +x static/vendor/tailwindcss
+
+# macOS x64 (Intel)
+curl -fSL -o static/vendor/tailwindcss https://github.com/tailwindlabs/tailwindcss/releases/download/v4.2.4/tailwindcss-macos-x64
+chmod +x static/vendor/tailwindcss
+```
+
+或者直接运行构建脚本，它会自动检测平台并提示下载：
+
+```bash
+./scripts/tailwind-build.sh
+```
+
+构建 Tailwind CSS 样式文件：
+
+```bash
+./scripts/tailwind-build.sh          # 一次性构建
+./scripts/tailwind-build.sh --watch  # 监听模式（开发时推荐）
+```
+
+> **注意**：如果只是运行项目而不修改 Tailwind 样式，无需下载 CLI。`static/css/provider.css` 已包含构建后的样式，Django 可直接使用。
+
 ## 代码规范
 
 ### Python 代码规范
