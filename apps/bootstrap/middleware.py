@@ -19,7 +19,7 @@ class SessionValidationMiddleware:
         user_agent = request.META.get('HTTP_USER_AGENT', 'Unknown')
         auth_header = request.META.get('HTTP_AUTHORIZATION', '')
         
-        logger.info(f"Session validation middleware processing request: path={request.path}, method={request.method}, client_ip={client_ip}, user_agent={user_agent[:50]}...")
+        logger.debug(f"Session validation middleware processing request: path={request.path}, method={request.method}")
         
         # 检查是否需要验证会话的API端点
         # 仅对需要认证的API端点进行验证
@@ -47,26 +47,19 @@ class SessionValidationMiddleware:
             # 检查Authorization头部
             if auth_header.startswith('Bearer '):
                 session_token = auth_header.split(' ')[1]
-                logger.debug(f"Found Bearer token, validating session: {session_token[:8]}...")
+                logger.debug("Found Bearer token, validating session")
                 
                 # 验证会话有效性
                 is_valid, result = self.check_session_validity(request, session_token)
                 
                 if not is_valid:
                     logger.warning(f"Session validation failed for request {request.path}: {result}")
-                    logger.warning(f"Request details - IP: {client_ip}, User-Agent: {user_agent[:100]}..., Token: {session_token[:8]}...")
                     return JsonResponse({
                         'success': False,
-                        'error': result,
-                        'details': {
-                            'client_ip': client_ip,
-                            'user_agent': user_agent[:100] + '...' if len(user_agent) > 100 else user_agent,
-                            'request_path': request.path,
-                            'timestamp': timezone.now().isoformat()
-                        }
+                        'error': 'Access denied',
                     }, status=403)
                 else:
-                    logger.info(f"Session validation successful for token: {session_token[:8]}...")
+                    logger.debug("Session validation successful")
             else:
                 logger.debug("No valid Bearer authorization header found")
         else:

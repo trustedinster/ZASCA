@@ -18,11 +18,54 @@
 import logging
 import subprocess
 import os
+import re
 from dataclasses import dataclass
 from typing import Optional, Dict, Any
 from django.conf import settings
 
 logger = logging.getLogger("zasca")
+
+USERNAME_PATTERN = re.compile(r'^[a-zA-Z0-9_]{1,150}$')
+GROUPNAME_PATTERN = re.compile(r'^[a-zA-Z0-9_\-\s]{1,256}$')
+MAX_STRING_LENGTH = 4096
+
+
+class CommandInjectionError(Exception):
+    pass
+
+
+def validate_username(username: str) -> str:
+    if not username:
+        raise CommandInjectionError("用户名不能为空")
+    if len(username) > 150:
+        raise CommandInjectionError("用户名长度不能超过150个字符")
+    if not USERNAME_PATTERN.match(username):
+        raise CommandInjectionError("用户名格式无效: 只允许字母、数字和下划线")
+    return username
+
+
+def validate_groupname(group: str) -> str:
+    if not group:
+        raise CommandInjectionError("组名不能为空")
+    if len(group) > 256:
+        raise CommandInjectionError("组名长度不能超过256个字符")
+    if not GROUPNAME_PATTERN.match(group):
+        raise CommandInjectionError("组名格式无效: 只允许字母、数字、下划线、连字符和空格")
+    return group
+
+
+def validate_string_length(s: str, max_length: int = MAX_STRING_LENGTH, field_name: str = "输入") -> str:
+    if s and len(s) > max_length:
+        raise CommandInjectionError(f"{field_name}长度不能超过{max_length}个字符")
+    return s
+
+
+def _escape_ps_string(s: str) -> str:
+    if not s:
+        return s
+    if len(s) > MAX_STRING_LENGTH:
+        raise CommandInjectionError(f"字符串长度超过最大限制 {MAX_STRING_LENGTH}")
+    return s.replace('\x00', '').replace('`', '``').replace('"', '`"').replace('$', '`$').replace('\n', '`n').replace('\r', '`r')
 
 
 @dataclass
@@ -250,16 +293,21 @@ class LocalWinServerClient:
         返回:
             LocalWinServerResult对象，包含执行结果
         """
-        desc = description or ''
-        # 使用变量存储密码，避免在日志中暴露
+        validate_username(username)
+        validate_string_length(password, field_name="密码")
+        desc = _escape_ps_string(description or '')
+        escaped_password = _escape_ps_string(password)
+        escaped_username = _escape_ps_string(username)
         script = f'''
-        $password = ConvertTo-SecureString "{password}" -AsPlainText -Force
-        $user = New-LocalUser -Name "{username}" -Password $password -Description "{desc}" -ErrorAction Stop
+        $password = ConvertTo-SecureString "{escaped_password}" -AsPlainText -Force
+        $user = New-LocalUser -Name "{escaped_username}" -Password $password -Description "{desc}" -ErrorAction Stop
         '''
 
         if group:
+            validate_groupname(group)
+            escaped_group = _escape_ps_string(group)
             script = script + f'''
-            Add-LocalGroupMember -Group "{group}" -Member "{username}" -ErrorAction Stop
+            Add-LocalGroupMember -Group "{escaped_group}" -Member "{escaped_username}" -ErrorAction Stop
             '''
 
         logger.info(f"创建本地用户: {username}, 组: {group}")
@@ -282,8 +330,10 @@ class LocalWinServerClient:
         返回:
             LocalWinServerResult对象，包含执行结果
         """
+        validate_username(username)
+        escaped_username = _escape_ps_string(username)
         script = f'''
-        Remove-LocalUser -Name "{username}" -ErrorAction Stop
+        Remove-LocalUser -Name "{escaped_username}" -ErrorAction Stop
         '''
 
         logger.info(f"删除本地用户: {username}")
@@ -306,8 +356,10 @@ class LocalWinServerClient:
         返回:
             LocalWinServerResult对象，包含执行结果
         """
+        validate_username(username)
+        escaped_username = _escape_ps_string(username)
         script = f'''
-        Enable-LocalUser -Name "{username}" -ErrorAction Stop
+        Enable-LocalUser -Name "{escaped_username}" -ErrorAction Stop
         '''
 
         logger.info(f"启用本地用户: {username}")
@@ -328,8 +380,10 @@ class LocalWinServerClient:
         返回:
             LocalWinServerResult对象，包含执行结果
         """
+        validate_username(username)
+        escaped_username = _escape_ps_string(username)
         script = f'''
-        Disable-LocalUser -Name "{username}" -ErrorAction Stop
+        Disable-LocalUser -Name "{escaped_username}" -ErrorAction Stop
         '''
 
         logger.info(f"禁用本地用户: {username}")
@@ -350,8 +404,10 @@ class LocalWinServerClient:
         返回:
             LocalWinServerResult对象，包含用户信息的JSON格式数据
         """
+        validate_username(username)
+        escaped_username = _escape_ps_string(username)
         script = f'''
-        Get-LocalUser -Name "{username}" | ConvertTo-Json
+        Get-LocalUser -Name "{escaped_username}" | ConvertTo-Json
         '''
 
         logger.info(f"获取本地用户信息: {username}")
@@ -382,8 +438,10 @@ class LocalWinServerClient:
             bool: 用户存在返回True，否则返回False
         """
         try:
+            validate_username(username)
+            escaped_username = _escape_ps_string(username)
             script = f'''
-            $user = Get-LocalUser -Name "{username}" -ErrorAction Stop
+            $user = Get-LocalUser -Name "{escaped_username}" -ErrorAction Stop
             $true
             '''
             result = self.execute_powershell(script)
@@ -513,7 +571,9 @@ class LocalWinServerClient:
             bool: 是否成功授予权限
         """
         try:
-            script = f'net localgroup Administrators {username} /add'
+            validate_username(username)
+            escaped_username = _escape_ps_string(username)
+            script = f'net localgroup Administrators "{escaped_username}" /add'
             result = self.execute_powershell(script)
             if result.success:
                 logger.info(f"为本地用户{username}授予管理员权限成功")
@@ -536,7 +596,9 @@ class LocalWinServerClient:
             bool: 是否成功撤销权限
         """
         try:
-            script = f'net localgroup Administrators {username} /delete'
+            validate_username(username)
+            escaped_username = _escape_ps_string(username)
+            script = f'net localgroup Administrators "{escaped_username}" /delete'
             result = self.execute_powershell(script)
             if result.success:
                 logger.info(f"撤销本地用户{username}的管理员权限成功")

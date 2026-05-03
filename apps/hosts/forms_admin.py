@@ -58,8 +58,8 @@ class AdminHostForm(forms.ModelForm):
         model = Host
         fields = [
             'name', 'hostname', 'connection_type', 'port', 'rdp_port',
-            'use_ssl', 'username', 'os_version', 'status', 'description',
-            'providers', 'administrators',
+            'use_ssl', 'username',
+            'providers',
         ]
         widgets = {
             'name': forms.TextInput(attrs={
@@ -85,26 +85,10 @@ class AdminHostForm(forms.ModelForm):
                 'class': INPUT_CLASS,
                 'placeholder': '输入连接用户名',
             }),
-            'os_version': forms.TextInput(attrs={
-                'class': INPUT_CLASS,
-                'placeholder': '例如: Windows Server 2022',
-            }),
-            'status': forms.Select(attrs={
-                'class': SELECT_CLASS,
-            }),
-            'description': forms.Textarea(attrs={
-                'class': INPUT_CLASS + ' resize-y',
-                'rows': 3,
-                'placeholder': '输入主机描述（可选）',
-            }),
             'use_ssl': forms.CheckboxInput(attrs={
                 'class': CHECKBOX_CLASS,
             }),
             'providers': forms.SelectMultiple(attrs={
-                'class': MULTI_SELECT_CLASS,
-                'size': '6',
-            }),
-            'administrators': forms.SelectMultiple(attrs={
                 'class': MULTI_SELECT_CLASS,
                 'size': '6',
             }),
@@ -117,33 +101,21 @@ class AdminHostForm(forms.ModelForm):
             'rdp_port': 'RDP端口',
             'use_ssl': '使用SSL',
             'username': '用户名',
-            'os_version': '操作系统版本',
-            'status': '状态',
-            'description': '描述',
             'providers': '管理提供商',
-            'administrators': '授权管理员',
         }
         help_texts = {
             'providers': '按住 Ctrl / Cmd 可多选提供商',
-            'administrators': '按住 Ctrl / Cmd 可多选管理员',
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # providers: 所有提供商组用户
         provider_users = User.objects.filter(
             groups__name='提供商',
             is_staff=True,
             is_superuser=False,
         ).order_by('username')
         self.fields['providers'].queryset = provider_users
-
-        # administrators: 所有 staff 用户
-        admin_users = User.objects.filter(
-            is_staff=True,
-        ).order_by('username')
-        self.fields['administrators'].queryset = admin_users
 
         # 编辑模式下密码提示
         if self.instance.pk:

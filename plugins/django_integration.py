@@ -5,7 +5,8 @@ Django项目插件系统集成
 
 from django.conf import settings
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from django.contrib.auth.decorators import login_required
 import json
 
 from . import plugin_manager
@@ -119,7 +120,8 @@ def plugin_api_view(request, plugin_id, action):
         }, status=400)
 
 
-@csrf_exempt
+@require_http_methods(["GET", "POST"])
+@login_required
 def plugin_management_api(request):
     """
     插件管理API

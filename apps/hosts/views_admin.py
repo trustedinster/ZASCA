@@ -9,6 +9,8 @@ import json
 import logging
 
 from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import JsonResponse
@@ -24,7 +26,76 @@ from .forms_admin import AdminHostForm, AdminHostGroupForm
 from .forms_wizard import HostWizardForm, CONNECTION_DEFAULT_PORTS, CONNECTION_DEFAULT_SSL
 from .models import Host, HostGroup
 
+User = get_user_model()
 logger = logging.getLogger(__name__)
+
+
+def _get_permission_context(form, host=None):
+    provider_users = User.objects.filter(
+        groups__name='提供商',
+        is_staff=True,
+        is_superuser=False,
+    ).order_by('username')
+
+    all_groups = Group.objects.all().order_by('name')
+
+    provider_users_json = json.dumps([
+        {'id': u.id, 'username': u.username}
+        for u in provider_users
+    ])
+    groups_json = json.dumps([
+        {
+            'id': g.id,
+            'name': g.name,
+            'member_ids': list(
+                g.user_set.filter(
+                    groups__name='提供商',
+                    is_staff=True,
+                    is_superuser=False,
+                )
+                .values_list('id', flat=True)
+                .distinct()
+            ),
+        }
+        for g in all_groups
+    ])
+
+    provider_user_ids = list(provider_users.values_list('id', flat=True))
+
+    initial_provider_ids = []
+
+    if form.is_bound:
+        initial_provider_ids = [
+            int(x) for x in form.data.getlist('providers')
+        ]
+    elif host and host.pk:
+        initial_provider_ids = list(
+            host.providers.values_list('id', flat=True)
+        )
+
+    initial_permissions = []
+    key_counter = 0
+    for uid in initial_provider_ids:
+        u = provider_users.filter(id=uid).first()
+        if u:
+            initial_permissions.append({
+                'key': key_counter,
+                'type': 'member',
+                'targetId': u.id,
+                'name': u.username,
+                'userIds': [u.id],
+            })
+            key_counter += 1
+
+    return {
+        'provider_users': provider_users,
+        'all_groups': all_groups,
+        'provider_users_json': provider_users_json,
+        'groups_json': groups_json,
+        'provider_user_ids_json': json.dumps(provider_user_ids),
+        'initial_permissions_json': json.dumps(initial_permissions),
+        'initial_provider_ids_json': json.dumps(initial_provider_ids),
+    }
 
 
 # ========== 主机管理 ==========
@@ -163,12 +234,14 @@ class AdminHostCreateView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        form = kwargs.get('form', AdminHostForm())
         context.update({
-            'form': kwargs.get('form', AdminHostForm()),
+            'form': form,
             'page_title': '添加主机',
             'active_nav': 'hosts',
             'is_create': True,
         })
+        context.update(_get_permission_context(form))
         return context
 
     def post(self, request, *args, **kwargs):
@@ -252,6 +325,7 @@ class AdminHostUpdateView(TemplateView):
             'active_nav': 'hosts',
             'is_create': False,
         })
+        context.update(_get_permission_context(form, host))
         return context
 
     def post(self, request, *args, **kwargs):

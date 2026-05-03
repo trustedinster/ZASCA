@@ -5,6 +5,7 @@
 
 import os
 import sys
+import importlib
 import importlib.util
 from typing import Any, Dict, List, Optional, Type
 
@@ -51,104 +52,116 @@ class PluginManager:
             print(f"Plugin directory does not exist: {directory}")
             return loaded_plugins
             
-        # 首先检查主目录中的插件文件
+        NON_PLUGIN_FILES = frozenset([
+            'base.py', 'models.py', 'admin.py', 'views.py',
+            'urls.py', 'signals.py', 'django_integration.py',
+            'apps.py', 'forms_admin.py', 'forms_provider.py',
+            'available_plugins.py',
+        ])
+        NON_PLUGIN_SUBDIRS = frozenset([
+            'core', 'migrations', 'management', 'sample_plugins',
+        ])
+
         for item in os.listdir(directory):
             item_path = os.path.join(directory, item)
-            
-            # 检查是否是Python文件且不是__init__.py
-            if os.path.isfile(item_path) and item.endswith('.py') and item != '__init__.py':
-                # 跳过特定的非插件文件
-                if item in ['base.py', 'models.py', 'admin.py', 'views.py', 'urls.py', 'signals.py', 'django_integration.py']:
-                    continue
-                    
-                plugin_filename = item[:-3]  # 移除.py后缀
-                module_name = f"plugins.{plugin_filename}"  # 使用不同的模块名避免冲突
-                
-                try:
-                    # 使用 importlib.util.spec_from_file_location 动态加载模块
-                    spec = importlib.util.spec_from_file_location(module_name, item_path)
-                    if spec and spec.loader:
-                        module = importlib.util.module_from_spec(spec)
-                        # 添加到 sys.modules 以支持相对导入
-                        sys.modules[spec.name] = module
-                        spec.loader.exec_module(module)
-                        
-                        # 查找插件类（继承自PluginInterface的类）
-                        for attr_name in dir(module):
-                            attr = getattr(module, attr_name)
-                            if (
-                                isinstance(attr, type) and 
-                                issubclass(attr, PluginInterface) and 
-                                attr != PluginInterface
-                            ):
-                                plugin_class: Type[PluginInterface] = attr
-                                
-                                # 创建插件实例并初始化
-                                plugin_instance = plugin_class()
-                                
-                                # 如果插件实例没有设置ID，则使用默认值
-                                if not hasattr(plugin_instance, 'plugin_id'):
-                                    plugin_instance.plugin_id = f"{plugin_filename}_{plugin_class.__name__.lower()}"
-                                    
-                                if self.register_plugin(plugin_instance):
-                                    loaded_plugins.append(plugin_instance.plugin_id)
-                                    
-                except ImportError as e:
-                    # 忽略导入错误（可能是非插件模块）
-                    pass
-                except Exception as e:
-                    print(f"Error loading plugin from {item_path}: {str(e)}")
-                    
-        # 检查子目录，如qq_verification
+            if not os.path.isfile(item_path):
+                continue
+            if not item.endswith('.py') or item == '__init__.py':
+                continue
+            if item in NON_PLUGIN_FILES:
+                continue
+
+            plugin_filename = item[:-3]
+            module_name = f"plugins.{plugin_filename}"
+
+            try:
+                spec = importlib.util.spec_from_file_location(
+                    module_name, item_path
+                )
+                if spec and spec.loader:
+                    module = importlib.util.module_from_spec(spec)
+                    sys.modules[spec.name] = module
+                    spec.loader.exec_module(module)
+                    loaded_plugins.extend(
+                        self._extract_and_register_plugins(
+                            module, plugin_filename
+                        )
+                    )
+            except ImportError:
+                pass
+            except Exception as e:
+                print(f"Error loading plugin from {item_path}: {str(e)}")
+
         for subdir in os.listdir(directory):
             subdir_path = os.path.join(directory, subdir)
-            if os.path.isdir(subdir_path):
-                for item in os.listdir(subdir_path):
-                    if item.endswith('.py') and item != '__init__.py':
-                        item_path = os.path.join(subdir_path, item)
-                        
-                        # 跳过特定的非插件文件
-                        if item in ['__init__.py', 'qq_checker.py']:  # qq_checker.py不是插件类
-                            continue
-                            
-                        plugin_filename = f"{subdir}_{item[:-3]}"  # 包含子目录名
-                        
-                        try:
-                            # 使用 importlib.util.spec_from_file_location 动态加载模块
-                            spec = importlib.util.spec_from_file_location(f"plugins.{subdir}.{item[:-3]}", item_path)
-                            if spec and spec.loader:
-                                module = importlib.util.module_from_spec(spec)
-                                # 添加到 sys.modules 以支持相对导入
-                                sys.modules[spec.name] = module
-                                spec.loader.exec_module(module)
-                                
-                                # 查找插件类（继承自PluginInterface的类）
-                                for attr_name in dir(module):
-                                    attr = getattr(module, attr_name)
-                                    if (
-                                        isinstance(attr, type) and 
-                                        issubclass(attr, PluginInterface) and 
-                                        attr != PluginInterface
-                                    ):
-                                        plugin_class: Type[PluginInterface] = attr
-                                        
-                                        # 创建插件实例并初始化
-                                        plugin_instance = plugin_class()
-                                        
-                                        # 如果插件实例没有设置ID，则使用默认值
-                                        if not hasattr(plugin_instance, 'plugin_id'):
-                                            plugin_instance.plugin_id = f"{plugin_filename}_{plugin_class.__name__.lower()}"
-                                            
-                                        if self.register_plugin(plugin_instance):
-                                            loaded_plugins.append(plugin_instance.plugin_id)
-                                            
-                        except ImportError as e:
-                            # 忽略导入错误（可能是非插件模块）
-                            pass
-                        except Exception as e:
-                            print(f"Error loading plugin from {item_path}: {str(e)}")
-                    
+            if not os.path.isdir(subdir_path):
+                continue
+            if subdir.startswith('_') or subdir in NON_PLUGIN_SUBDIRS:
+                continue
+            init_path = os.path.join(subdir_path, '__init__.py')
+            if not os.path.isfile(init_path):
+                continue
+
+            loaded_plugins.extend(
+                self._load_subdir_package(directory, subdir)
+            )
+
         return loaded_plugins
+
+    def _load_subdir_package(
+        self, parent_dir: str, subdir: str
+    ) -> List[str]:
+        loaded_plugins = []
+        package_name = f"plugins.{subdir}"
+
+        try:
+            if package_name in sys.modules:
+                module = sys.modules[package_name]
+            else:
+                module = importlib.import_module(package_name)
+
+            loaded_plugins.extend(
+                self._extract_and_register_plugins(module, subdir)
+            )
+        except ImportError as e:
+            print(
+                f"Error importing plugin package "
+                f"{package_name}: {str(e)}"
+            )
+        except Exception as e:
+            print(
+                f"Error loading plugin package "
+                f"{package_name}: {str(e)}"
+            )
+
+        return loaded_plugins
+
+    def _extract_and_register_plugins(
+        self, module, default_id_prefix: str
+    ) -> List[str]:
+        loaded = []
+        for attr_name in dir(module):
+            attr = getattr(module, attr_name)
+            if (
+                isinstance(attr, type)
+                and issubclass(attr, PluginInterface)
+                and attr != PluginInterface
+            ):
+                try:
+                    plugin_instance = attr()
+                    if not hasattr(plugin_instance, 'plugin_id'):
+                        plugin_instance.plugin_id = (
+                            f"{default_id_prefix}_"
+                            f"{attr.__name__.lower()}"
+                        )
+                    if self.register_plugin(plugin_instance):
+                        loaded.append(plugin_instance.plugin_id)
+                except Exception as e:
+                    print(
+                        f"Error instantiating plugin "
+                        f"{attr_name}: {str(e)}"
+                    )
+        return loaded
         
     def register_plugin(self, plugin: PluginInterface) -> bool:
         """

@@ -11,6 +11,7 @@ DEMO 模式（ZASCA_DEMO=1）会强制锁定特定配置，不受 .env 影响。
 
 import os
 from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
 
 import pymysql
 pymysql.install_as_MySQLdb()
@@ -39,22 +40,27 @@ def _env(key, default=None):
 # ========== 核心配置（必须在初始化时定义） ==========
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = _env('DJANGO_SECRET_KEY', 'django-insecure-change-this-in-production')
+_INSECURE_SECRET_KEY = 'django-insecure-change-this-in-production'
+SECRET_KEY = _env('DJANGO_SECRET_KEY', _INSECURE_SECRET_KEY)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = _env('DEBUG', 'True').lower() == 'true'
+DEBUG = _env('DEBUG', 'False').lower() == 'true'
+
+if SECRET_KEY == _INSECURE_SECRET_KEY and not DEBUG:
+    raise ImproperlyConfigured(
+        'DJANGO_SECRET_KEY 环境变量必须设置，不允许在生产环境使用默认不安全密钥'
+    )
 
 # 允许的主机列表
 # 在DEBUG模式下，允许所有主机
 if DEBUG:
-    ALLOWED_HOSTS = ['*']
-    # CSRF Trusted Origins - 添加内网穿透域名
+    ALLOWED_HOSTS = _env('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
     CSRF_TRUSTED_ORIGINS = [
         'http://localhost',
         'http://127.0.0.1',
         'https://localhost',
         'https://127.0.0.1',
-        'https://demo.supercmd.dpdns.org',  # 内网穿透域名
+        'https://demo.supercmd.dpdns.org',
         'https://zasca.supercmd.dpdns.org',
     ]
 else:
@@ -92,6 +98,7 @@ INSTALLED_APPS = [
     'apps.provider',  # 提供商后台（新版 Tailwind/MD3）
     'apps.provider_backend',  # 提供商后台（旧版，保留中间件和API）
     'plugins',
+    'plugins.qq_verification',
 ]
 
 MIDDLEWARE = [
@@ -114,7 +121,10 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [
+            BASE_DIR / 'templates',
+            BASE_DIR / 'plugins' / 'qq_verification' / 'templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -147,6 +157,7 @@ if DB_ENGINE == 'mysql':
             'PASSWORD': _env('DB_PASSWORD', ''),
             'HOST': _env('DB_HOST', '127.0.0.1'),
             'PORT': _env('DB_PORT', '3306'),
+            'CONN_MAX_AGE': int(_env('DB_CONN_MAX_AGE', '60')),
             'OPTIONS': {
                 'charset': 'utf8mb4',
                 'init_command': (
@@ -212,19 +223,32 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour',
+    },
 }
 
 # CORS settings
-CORS_ALLOW_ALL_ORIGINS = _env(
-    'CORS_ALLOW_ALL_ORIGINS', 'True' if DEBUG else 'False'
-).lower() == 'true'
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in _env(
+        'CORS_ALLOWED_ORIGINS',
+        'http://localhost:8000,https://localhost,http://127.0.0.1:8000'
+    ).split(',')
+    if origin.strip()
+]
 
 
 # Winrm settings
@@ -302,6 +326,11 @@ CSRF_COOKIE_SECURE = _env(
     'CSRF_COOKIE_SECURE', 'True' if not DEBUG else 'False'
 ).lower() == 'true'
 SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_AGE = int(_env('SESSION_COOKIE_AGE', '3600'))
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # HTTPS相关安全配置 (仅在生产环境中启用)
 if not DEBUG:
@@ -358,8 +387,10 @@ if ZASCA_DEMO:
         },
     ]
 
-    # 允许所有主机
-    ALLOWED_HOSTS = ['*']
+    ALLOWED_HOSTS = _env(
+        'ALLOWED_HOSTS',
+        'localhost,127.0.0.1,demo.supercmd.dpdns.org,zasca.supercmd.dpdns.org'
+    ).split(',')
 
     # DEBUG模式开启
     DEBUG = True

@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 
 @csrf_exempt
 @require_http_methods(["POST"])
+@login_required
+@permission_required('hosts.delete_host', raise_exception=True)
 def revoke_pending_host(request):
     """
     吊销待验证主机
@@ -75,6 +77,8 @@ def revoke_pending_host(request):
 
 @csrf_exempt
 @require_http_methods(["GET"])
+@login_required
+@permission_required('bootstrap.view_initialtoken', raise_exception=True)
 def get_pending_hosts(request):
     """
     获取待验证的主机列表
@@ -115,7 +119,6 @@ def get_pending_hosts(request):
         }, status=500)
 
 
-@csrf_exempt
 @require_http_methods(["POST"])
 @login_required
 @permission_required('bootstrap.add_initialtoken', raise_exception=True)
@@ -403,7 +406,6 @@ def get_bootstrap_config(request):
         }, status=500)
 
 
-@csrf_exempt
 @require_http_methods(["POST"])
 @login_required
 @permission_required('bootstrap.change_initialtoken', raise_exception=True)
@@ -803,6 +805,8 @@ def revoke_session(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+@login_required
+@permission_required('hosts.add_host', raise_exception=True)
 def complete_auto_register(request):
     """
     完成自动注册
@@ -882,7 +886,9 @@ def complete_auto_register(request):
 
 
 @csrf_exempt
-@require_http_methods(["GET", "POST"])
+@require_http_methods(["POST"])
+@login_required
+@permission_required('hosts.add_host', raise_exception=True)
 def auto_register_host(request):
     """
     自动注册主机接口
@@ -894,12 +900,8 @@ def auto_register_host(request):
         import secrets
         from datetime import timedelta
         
-        # 支持 GET 和 POST 两种方式
-        if request.method == 'GET':
-            hostname = request.GET.get('hostname', '')
-        else:
-            data = json.loads(request.body.decode('utf-8'))
-            hostname = data.get('hostname', '')
+        data = json.loads(request.body.decode('utf-8'))
+        hostname = data.get('hostname', '')
         
         # 验证必填字段
         if not hostname:

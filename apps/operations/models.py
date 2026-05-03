@@ -8,11 +8,18 @@ from django.conf import settings
 from django.utils import timezone
 from django.dispatch import Signal
 import logging
-
-# 添加日志
-logger = logging.getLogger(__name__)
+import hashlib
+import base64
 
 User = get_user_model()
+
+logger = logging.getLogger(__name__)
+
+
+def _get_fernet():
+    from cryptography.fernet import Fernet
+    key = hashlib.sha256(settings.SECRET_KEY.encode()).digest()
+    return Fernet(base64.urlsafe_b64encode(key))
 
 # 定义开户申请提交前的信号
 account_opening_request_pre_submit = Signal()
@@ -927,12 +934,29 @@ class CloudComputerUser(models.Model):
     )
     
     # 密码信息（临时存储）
-    initial_password = models.CharField(
-        max_length=255,
+    _initial_password = models.CharField(
+        max_length=512,
         blank=True,
-        verbose_name=_('初始密码'),
-        help_text=_('用户的初始密码，查看后将被清除')
+        db_column='initial_password',
+        verbose_name=_('初始密码(加密)'),
+        help_text=_('用户的初始密码(加密存储)，查看后将被清除')
     )
+
+    @property
+    def initial_password(self):
+        if not self._initial_password:
+            return ''
+        try:
+            return _get_fernet().decrypt(self._initial_password.encode()).decode()
+        except Exception:
+            raise ValueError("密码解密失败，数据可能已损坏或密钥已变更")
+
+    @initial_password.setter
+    def initial_password(self, value):
+        if value:
+            self._initial_password = _get_fernet().encrypt(value.encode()).decode()
+        else:
+            self._initial_password = ''
     password_viewed = models.BooleanField(
         default=False,
         verbose_name=_('密码已查看'),
@@ -1106,20 +1130,19 @@ class CloudComputerUser(models.Model):
             print(f"Error deleting user {self.username} on host {host.name}: {str(e)}")
 
     def get_and_burn_password(self):
-        """阅后即焚 - 只能看一次"""
         from django.utils import timezone
 
         if self.password_viewed:
             raise Exception('密码已被查看，无法再次获取。如需重置请联系管理员。')
 
-        if not self.initial_password:
+        if not self._initial_password:
             raise Exception('密码不存在')
 
         password = self.initial_password
         self.password_viewed = True
         self.password_viewed_at = timezone.now()
         self.initial_password = ''
-        self.save(update_fields=['password_viewed', 'password_viewed_at', 'initial_password'])
+        self.save(update_fields=['password_viewed', 'password_viewed_at', '_initial_password'])
         return password
 
     def reset_windows_password(self, new_password):

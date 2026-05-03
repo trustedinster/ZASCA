@@ -60,9 +60,6 @@ class SystemConfigForm(forms.ModelForm):
             'email_suffix_whitelist',
             'email_suffix_blacklist',
             'local_access_locked',
-            'qq_bot_host',
-            'qq_bot_port',
-            'qq_bot_token',
         ]
 
     def clean_smtp_port(self):

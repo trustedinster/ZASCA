@@ -51,7 +51,8 @@ class LocalLockMiddleware:
                         return HttpResponse(status=403)
             except Exception:
                 logger.exception(
-                    'LocalLockMiddleware 检查异常'
+                    'LocalLockMiddleware 检查异常，默认拒绝'
                 )
+                return HttpResponse(status=403)
 
         return self.get_response(request)

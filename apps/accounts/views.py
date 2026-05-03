@@ -12,6 +12,7 @@ from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.core.cache import cache
+from django.utils.http import url_has_allowed_host_and_scheme
 from PIL import Image
 import os
 
@@ -173,7 +174,11 @@ class LoginView(TemplateView):
 
                 messages.success(request, f'欢迎回来，{user.username}！')
                 next_url = request.POST.get('next') or request.GET.get('next')
-                if next_url:
+                if next_url and url_has_allowed_host_and_scheme(
+                    next_url,
+                    allowed_hosts=request.get_host(),
+                    request=request,
+                ):
                     return redirect(next_url)
                 if user.is_staff or user.is_superuser:
                     return redirect('/admin/')

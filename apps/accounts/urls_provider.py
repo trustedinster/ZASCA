@@ -14,6 +14,7 @@ from apps.accounts.views_superadmin import (
     superadmin_hostgroup_list,
     superadmin_hostgroup_provider_assign,
 )
+from plugins.dynamic_urls import get_plugin_provider_urls
 
 app_name = 'provider'
 
@@ -30,8 +31,9 @@ urlpatterns = [
     # 工单管理子模块
     path('tickets/', include('apps.tickets.urls_provider')),
 
-    # 插件配置子模块
+    # 插件配置子模块（动态加载）
     path('plugins/', include('plugins.urls_provider')),
+    path('plugins/', include(get_plugin_provider_urls())),
 
     # 提供商 API
     path('api/', include('apps.provider_backend.api_urls')),

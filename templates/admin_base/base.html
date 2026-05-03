@@ -1,4 +1,5 @@
 {% load static %}
+{% load plugin_extensions %}
 <!DOCTYPE html>
 <html class="dark" lang="zh-CN">
 <head>
@@ -278,10 +279,7 @@
                             <span class="material-symbols-rounded text-lg shrink-0 text-cyan-400">language</span>
                             <span>域名路由</span>
                         </a>
-                        <a href="{% url 'admin:admin_plugins:qq_list' %}" class="flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium transition {% if active_nav == 'qq_plugins' %}bg-white/10 text-cyan-400 backdrop-blur-xl{% else %}text-white/70 hover:bg-white/5 hover:text-white{% endif %}">
-                            <span class="material-symbols-rounded text-lg shrink-0 text-cyan-400">verified</span>
-                            <span>QQ验证</span>
-                        </a>
+                        {% plugin_nav_items %}
                         <a href="{% url 'admin:admin_operations:task_list' %}" class="flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium transition {% if active_nav == 'tasks' %}bg-white/10 text-cyan-400 backdrop-blur-xl{% else %}text-white/70 hover:bg-white/5 hover:text-white{% endif %}">
                             <span class="material-symbols-rounded text-lg shrink-0 text-cyan-400">task</span>
                             <span>系统任务</span>

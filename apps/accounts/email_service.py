@@ -1,4 +1,5 @@
 import smtplib
+import ssl
 import logging
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -51,7 +52,8 @@ class EmailService:
             server.ehlo()
 
             if self.smtp_use_tls:
-                server.starttls()
+                context = ssl.create_default_context()
+                server.starttls(context=context)
                 server.ehlo()
 
             server.login(self.smtp_username, self.smtp_password)

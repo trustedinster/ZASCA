@@ -9,6 +9,7 @@
 from django.urls import path, include
 
 from apps.accounts.views_admin import admin_dashboard
+from plugins.dynamic_urls import get_plugin_admin_urls
 
 app_name = 'admin'
 
@@ -32,8 +33,9 @@ urlpatterns = [
     # 工单系统
     path('tickets/', include('apps.tickets.urls_admin')),
 
-    # 插件配置
+    # 插件配置（动态加载）
     path('plugins/', include('plugins.urls_admin')),
+    path('plugins/', include(get_plugin_admin_urls())),
 
     # 审计日志
     path('audit/', include('apps.audit.urls_admin')),

@@ -5,7 +5,7 @@ from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 from django.core.exceptions import ValidationError
 import datetime
 import base64
@@ -40,9 +40,8 @@ class CertificateAuthority(models.Model):
             return None
         try:
             return _get_fernet().decrypt(self._private_key.encode()).decode()
-        except:
-            # 兼容旧数据（未加密的）
-            return self._private_key
+        except InvalidToken:
+            raise ValueError("私钥解密失败，数据可能已损坏或密钥已变更")
 
     @private_key.setter
     def private_key(self, value):
@@ -136,8 +135,8 @@ class ServerCertificate(models.Model):
             return None
         try:
             return _get_fernet().decrypt(self._private_key.encode()).decode()
-        except:
-            return self._private_key
+        except InvalidToken:
+            raise ValueError("私钥解密失败，数据可能已损坏或密钥已变更")
 
     @private_key.setter
     def private_key(self, value):
@@ -220,12 +219,13 @@ class ServerCertificate(models.Model):
 
         # 生成PFX格式证书（包含私钥）
         from cryptography.hazmat.primitives.serialization.pkcs12 import serialize_key_and_certificates
+        pfx_password = settings.SECRET_KEY[:32].encode()
         pfx = serialize_key_and_certificates(
             name=hostname.encode(),
             key=server_private_key,
             cert=cert,
             cas=[ca_cert],
-            encryption_algorithm=serialization.NoEncryption()  # 可以选择加密
+            encryption_algorithm=serialization.BestAvailableEncryption(pfx_password)
         )
 
         self.pfx_data = base64.b64encode(pfx).decode('utf-8')
@@ -273,8 +273,8 @@ class ClientCertificate(models.Model):
             return None
         try:
             return _get_fernet().decrypt(self._private_key.encode()).decode()
-        except:
-            return self._private_key
+        except InvalidToken:
+            raise ValueError("私钥解密失败，数据可能已损坏或密钥已变更")
 
     @private_key.setter
     def private_key(self, value):

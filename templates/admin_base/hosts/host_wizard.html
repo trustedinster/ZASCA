@@ -46,8 +46,9 @@
         <div :class="step >= 1 ? 'text-cyan-400' : 'text-white/70'" class="text-xs font-medium text-center w-20 transition">
             <span class="material-symbols-rounded text-base">info</span><br>基本信息
         </div>
-        <div :class="step >= 2 ? 'text-cyan-400' : 'text-white/70'" class="text-xs font-medium text-center w-20 transition">
-            <span class="material-symbols-rounded text-base">settings_ethernet</span><br>连接配置
+        <div :class="step >= 2 ? 'text-cyan-400' : 'text-white/70'" class="text-xs font-medium text-center w-24 transition">
+            <span class="material-symbols-rounded text-base" x-text="connectionType === 'tunnel' ? 'terminal' : 'settings_ethernet'"></span><br>
+            <span x-text="connectionType === 'tunnel' ? '执行命令' : '连接配置'"></span>
         </div>
         <div :class="step >= 3 ? 'text-cyan-400' : 'text-white/70'" class="text-xs font-medium text-center w-20 transition">
             <span class="material-symbols-rounded text-base">admin_panel_settings</span><br>分配提供商
@@ -57,6 +58,9 @@
     <!-- Form -->
     <form method="post" @submit.prevent="onSubmit">
         {% csrf_token %}
+
+        <!-- Hidden tunnel_token field -->
+        <input type="hidden" name="tunnel_token" id="id_tunnel_token" x-model="tunnelToken">
 
         <!-- Non-field errors -->
         {% if form.non_field_errors %}
@@ -94,8 +98,8 @@
                         {% endif %}
                     </div>
 
-                    <!-- Hostname -->
-                    <div>
+                    <!-- Hostname (hidden in tunnel mode) -->
+                    <div x-show="connectionType !== 'tunnel'" x-transition>
                         <label for="id_hostname" class="block text-sm font-medium text-white mb-2">
                             主机地址 <span class="text-red-400 ml-1">*</span>
                         </label>
@@ -105,7 +109,6 @@
                             id="id_hostname"
                             x-model="hostname"
                             placeholder="输入主机地址，如: 192.168.1.100"
-                            required
                             class="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-md px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500 transition"
                         >
                         {% if form.hostname.errors %}
@@ -149,15 +152,15 @@
                     <!-- Tunnel Info Alert -->
                     <div x-show="connectionType === 'tunnel'" x-transition>
                         <x-admin-alert type="info" title="隧道模式说明" dismissible="false">
-                            隧道模式适用于无公网IP的主机。主机将通过隧道客户端主动连接到服务器，无需开放入站端口。创建后将自动生成隧道Token。
+                            隧道模式适用于无公网IP的主机。主机将通过隧道客户端主动连接到服务器，无需开放入站端口。创建后将自动生成隧道Token和一键执行命令。
                         </x-admin-alert>
                     </div>
                 </div>
             </x-admin-card>
         </div>
 
-        <!-- Step 2: Connection Config -->
-        <div x-show="step === 2" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-8" x-transition:enter-end="opacity-100 translate-x-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-x-0" x-transition:leave-end="opacity-0 -translate-x-8">
+        <!-- Step 2: Connection Config (non-tunnel) -->
+        <div x-show="step === 2 && connectionType !== 'tunnel'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-8" x-transition:enter-end="opacity-100 translate-x-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-x-0" x-transition:leave-end="opacity-0 -translate-x-8">
             <x-admin-card title="连接配置" icon="settings_ethernet">
                 <div class="space-y-5">
                     <!-- Port & RDP Port -->
@@ -272,16 +275,9 @@
                             {% endfor %}
                         </div>
                         {% endif %}
-
-                        <!-- Tunnel auto-generate option -->
-                        <div x-show="connectionType === 'tunnel'" x-transition class="mt-2">
-                            <x-admin-alert type="info" dismissible="false">
-                                隧道模式下，密码将用于本地WinServer连接的备用认证。建议留空自动生成。
-                            </x-admin-alert>
-                        </div>
                     </div>
 
-                    <!-- Test Connection (placeholder) -->
+                    <!-- Test Connection -->
                     <div class="pt-3 border-t border-slate-700/50">
                         <button
                             type="button"
@@ -296,6 +292,127 @@
                             <x-admin-alert :type="testSuccess ? 'success' : 'error'" dismissible="true">
                                 <span x-text="testResult"></span>
                             </x-admin-alert>
+                        </div>
+                    </div>
+                </div>
+            </x-admin-card>
+        </div>
+
+        <!-- Step 2: Execute Command (tunnel mode) -->
+        <div x-show="step === 2 && connectionType === 'tunnel'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-8" x-transition:enter-end="opacity-100 translate-x-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-x-0" x-transition:leave-end="opacity-0 -translate-x-8">
+            <x-admin-card title="执行命令" icon="terminal">
+                <div class="space-y-5">
+
+                    <!-- Loading state -->
+                    <div x-show="!tunnelToken" class="flex flex-col items-center py-8">
+                        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-cyan-400 mb-4"></div>
+                        <p class="text-white/70 text-sm">正在生成隧道Token...</p>
+                    </div>
+
+                    <!-- Command content -->
+                    <div x-show="tunnelToken" x-transition>
+                        <!-- Instructions -->
+                        <div class="mb-5">
+                            <x-admin-alert type="info" title="使用说明" dismissible="false">
+                                <div class="space-y-1 text-sm">
+                                    <p>1. 在目标主机上以<b>管理员权限</b>打开 PowerShell 或命令提示符</p>
+                                    <p>2. 复制下方的一键执行命令并运行</p>
+                                    <p>3. 命令将自动下载Gateway客户端并使用Token建立隧道连接</p>
+                                </div>
+                            </x-admin-alert>
+                        </div>
+
+                        <!-- Shell Type Selection -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-white mb-3">选择命令行类型</label>
+                            <div class="flex gap-3">
+                                <button
+                                    type="button"
+                                    @click="shellType = 'powershell'"
+                                    :class="shellType === 'powershell' ? 'border-cyan-500/50 bg-cyan-500/10 text-cyan-400' : 'border-slate-600/30 bg-slate-900/50 text-white/70 hover:border-cyan-500/30'"
+                                    class="flex items-center gap-2 px-4 py-2.5 rounded-md border transition text-sm font-medium"
+                                >
+                                    <span class="material-symbols-rounded text-lg">terminal</span>
+                                    PowerShell
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="shellType = 'cmd'"
+                                    :class="shellType === 'cmd' ? 'border-cyan-500/50 bg-cyan-500/10 text-cyan-400' : 'border-slate-600/30 bg-slate-900/50 text-white/70 hover:border-cyan-500/30'"
+                                    class="flex items-center gap-2 px-4 py-2.5 rounded-md border transition text-sm font-medium"
+                                >
+                                    <span class="material-symbols-rounded text-lg">code</span>
+                                    Cmd
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Architecture Selection -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-white mb-3">系统架构</label>
+                            <div class="flex gap-3">
+                                <button
+                                    type="button"
+                                    @click="arch = 'amd64'"
+                                    :class="arch === 'amd64' ? 'border-cyan-500/50 bg-cyan-500/10 text-cyan-400' : 'border-slate-600/30 bg-slate-900/50 text-white/70 hover:border-cyan-500/30'"
+                                    class="flex items-center gap-2 px-4 py-2.5 rounded-md border transition text-sm font-medium"
+                                >
+                                    <span class="material-symbols-rounded text-lg">memory</span>
+                                    x64 (amd64)
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="arch = 'arm64'"
+                                    :class="arch === 'arm64' ? 'border-cyan-500/50 bg-cyan-500/10 text-cyan-400' : 'border-slate-600/30 bg-slate-900/50 text-white/70 hover:border-cyan-500/30'"
+                                    class="flex items-center gap-2 px-4 py-2.5 rounded-md border transition text-sm font-medium"
+                                >
+                                    <span class="material-symbols-rounded text-lg">memory</span>
+                                    ARM64
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Command Display -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-sm font-medium text-white">一键执行命令</label>
+                                <button
+                                    type="button"
+                                    @click="copyCommand()"
+                                    class="inline-flex items-center gap-1.5 text-xs text-cyan-400 hover:text-white hover:bg-cyan-500/10 px-3 py-1.5 rounded-md transition font-medium"
+                                >
+                                    <span class="material-symbols-rounded text-sm" x-text="commandCopied ? 'check' : 'content_copy'">content_copy</span>
+                                    <span x-text="commandCopied ? '已复制' : '复制命令'">复制命令</span>
+                                </button>
+                            </div>
+                            <div class="relative bg-slate-950/50 border border-slate-700/50 rounded-md overflow-hidden">
+                                <div class="flex items-center gap-2 px-4 py-2 bg-slate-900/50 border-b border-slate-700/50">
+                                    <span class="material-symbols-rounded text-sm" x-text="shellType === 'powershell' ? 'terminal' : 'code'">terminal</span>
+                                    <span class="text-xs text-white/50 font-mono" x-text="shellType === 'powershell' ? 'PowerShell' : 'Command Prompt'"></span>
+                                </div>
+                                <div class="p-4 overflow-x-auto">
+                                    <code class="text-sm text-green-400 font-mono whitespace-pre-wrap break-all" x-text="tunnelCommand"></code>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Token Display -->
+                        <div class="pt-3 border-t border-slate-700/50">
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-sm font-medium text-white">隧道Token</label>
+                                <button
+                                    type="button"
+                                    @click="copyToken()"
+                                    class="inline-flex items-center gap-1.5 text-xs text-cyan-400 hover:text-white hover:bg-cyan-500/10 px-3 py-1.5 rounded-md transition font-medium"
+                                >
+                                    <span class="material-symbols-rounded text-sm" x-text="tokenCopied ? 'check' : 'content_copy'">content_copy</span>
+                                    <span x-text="tokenCopied ? '已复制' : '复制'">复制</span>
+                                </button>
+                            </div>
+                            <div class="bg-slate-950/50 border border-slate-700/50 rounded-md px-4 py-3">
+                                <code class="text-sm text-amber-400 font-mono break-all" x-text="tunnelToken"></code>
+                            </div>
+                            <p class="mt-2 text-xs text-white/50">请妥善保管此Token，它用于唯一标识和认证隧道连接</p>
                         </div>
                     </div>
                 </div>
@@ -379,7 +496,7 @@
                                 <span class="text-white/70">主机名称</span>
                                 <span class="text-white font-medium" x-text="name || '-'"></span>
                             </div>
-                            <div class="flex justify-between">
+                            <div x-show="connectionType !== 'tunnel'" class="flex justify-between">
                                 <span class="text-white/70">主机地址</span>
                                 <span class="text-white font-medium" x-text="hostname || '-'"></span>
                             </div>
@@ -387,22 +504,38 @@
                                 <span class="text-white/70">连接类型</span>
                                 <span class="text-white font-medium" x-text="connectionTypeLabel"></span>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-white/70">端口</span>
-                                <span class="text-white font-medium" x-text="port"></span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-white/70">SSL</span>
-                                <span class="text-white font-medium" x-text="useSsl ? '是' : '否'"></span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-white/70">用户名</span>
-                                <span class="text-white font-medium" x-text="username || '-'"></span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-white/70">密码</span>
-                                <span class="text-white font-medium" x-text="password ? '已设置' : '自动生成'"></span>
-                            </div>
+                            <template x-if="connectionType !== 'tunnel'">
+                                <div>
+                                    <div class="flex justify-between">
+                                        <span class="text-white/70">端口</span>
+                                        <span class="text-white font-medium" x-text="port"></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-white/70">SSL</span>
+                                        <span class="text-white font-medium" x-text="useSsl ? '是' : '否'"></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-white/70">用户名</span>
+                                        <span class="text-white font-medium" x-text="username || '-'"></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-white/70">密码</span>
+                                        <span class="text-white font-medium" x-text="password ? '已设置' : '自动生成'"></span>
+                                    </div>
+                                </div>
+                            </template>
+                            <template x-if="connectionType === 'tunnel'">
+                                <div>
+                                    <div class="flex justify-between">
+                                        <span class="text-white/70">隧道Token</span>
+                                        <span class="text-white font-medium text-xs font-mono" x-text="tunnelToken ? tunnelToken.substring(0, 12) + '...' : '待生成'"></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-white/70">Gateway</span>
+                                        <span class="text-white font-medium text-xs font-mono" x-text="gatewayUrl"></span>
+                                    </div>
+                                </div>
+                            </template>
                             <div class="flex justify-between">
                                 <span class="text-white/70">提供商</span>
                                 <span class="text-white font-medium" x-text="selectedProviders.length ? selectedProviders.length + ' 位' : '未分配'"></span>
@@ -470,11 +603,17 @@ function hostWizard() {
         testResult: null,
         testSuccess: false,
 
-        // 连接类型默认端口映射
+        tunnelToken: '',
+        gatewayUrl: '{{ gateway_url }}',
+        serverBaseUrl: '{{ server_base_url }}',
+        shellType: 'powershell',
+        arch: 'amd64',
+        commandCopied: false,
+        tokenCopied: false,
+
         defaultPorts: {{ default_ports|safe }},
         defaultSsl: {{ default_ssl|safe }},
 
-        // 连接类型中文标签
         connectionTypeLabels: {
             {% for value, label in connection_type_choices %}
             '{{ value }}': '{{ label }}',
@@ -495,8 +634,20 @@ function hostWizard() {
             return hints[this.connectionType] || '';
         },
 
+        get tunnelCommand() {
+            if (!this.tunnelToken) return '';
+            const downloadUrl = `${this.serverBaseUrl}/tunnel/download/?arch=${this.arch}`;
+            const gatewayUrl = this.gatewayUrl;
+            const token = this.tunnelToken;
+
+            if (this.shellType === 'powershell') {
+                return `Invoke-WebRequest -Uri "${downloadUrl}" -OutFile "zasca-tunnel.exe"; .\\zasca-tunnel.exe install -token ${token} -server ${gatewayUrl}`;
+            } else {
+                return `curl -o zasca-tunnel.exe ${downloadUrl} && zasca-tunnel.exe install -token ${token} -server ${gatewayUrl}`;
+            }
+        },
+
         onConnectionTypeChange() {
-            // 根据连接类型自动设置端口和SSL
             const newPort = this.defaultPorts[this.connectionType];
             if (newPort) {
                 this.port = newPort;
@@ -505,7 +656,6 @@ function hostWizard() {
             if (newSsl !== undefined) {
                 this.useSsl = newSsl;
             }
-            // 端口5986自动启用SSL
             if (this.port === 5986) {
                 this.useSsl = true;
             }
@@ -517,25 +667,65 @@ function hostWizard() {
             input.type = this.showPassword ? 'text' : 'password';
         },
 
+        async generateTunnelToken() {
+            try {
+                const response = await fetch('{% url "admin:admin_hosts:host_wizard_generate_token" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json',
+                    },
+                });
+                const data = await response.json();
+                if (data.success) {
+                    this.tunnelToken = data.tunnel_token;
+                    this.gatewayUrl = data.gateway_url;
+                    this.serverBaseUrl = data.server_base_url;
+                }
+            } catch (e) {
+                console.error('Failed to generate tunnel token:', e);
+            }
+        },
+
+        copyCommand() {
+            if (!this.tunnelCommand) return;
+            navigator.clipboard.writeText(this.tunnelCommand).then(() => {
+                this.commandCopied = true;
+                setTimeout(() => { this.commandCopied = false; }, 2000);
+            });
+        },
+
+        copyToken() {
+            if (!this.tunnelToken) return;
+            navigator.clipboard.writeText(this.tunnelToken).then(() => {
+                this.tokenCopied = true;
+                setTimeout(() => { this.tokenCopied = false; }, 2000);
+            });
+        },
+
         nextStep() {
-            // 简单的客户端验证
             if (this.step === 1) {
                 if (!this.name.trim()) {
                     this.shakeField('id_name');
                     return;
                 }
-                if (!this.hostname.trim()) {
+                if (this.connectionType !== 'tunnel' && !this.hostname.trim()) {
                     this.shakeField('id_hostname');
                     return;
                 }
             }
-            if (this.step === 2) {
+            if (this.step === 2 && this.connectionType !== 'tunnel') {
                 if (!this.username.trim()) {
                     this.shakeField('id_username');
                     return;
                 }
             }
+
             this.step++;
+
+            if (this.step === 2 && this.connectionType === 'tunnel' && !this.tunnelToken) {
+                this.generateTunnelToken();
+            }
         },
 
         shakeField(id) {
@@ -550,7 +740,6 @@ function hostWizard() {
         },
 
         testConnection() {
-            // 占位：测试连接功能
             this.testingConnection = true;
             this.testResult = null;
             setTimeout(() => {
@@ -561,9 +750,7 @@ function hostWizard() {
         },
 
         onSubmit() {
-            // 同步 Alpine.js 状态到隐藏的表单字段
             const form = this.$el;
-            // 确保所有字段值已同步
             this.$el.submit();
         },
     };

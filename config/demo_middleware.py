@@ -3,6 +3,7 @@ DEMO模式中间件
 用于处理演示模式下的特殊逻辑
 """
 import os
+import secrets as _secrets
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.contrib.auth import get_user_model
@@ -100,7 +101,7 @@ class DemoModeMiddleware:
             }
         )
         if created:
-            user.set_password('demo_user_password')
+            user.set_password(os.environ.get('ZASCA_DEMO_USER_PASSWORD', _secrets.token_urlsafe(16)))
             user.save()
 
         # 创建Admin用户
@@ -115,7 +116,7 @@ class DemoModeMiddleware:
             }
         )
         if created:
-            admin.set_password('demo_admin_password')
+            admin.set_password(os.environ.get('ZASCA_DEMO_ADMIN_PASSWORD', _secrets.token_urlsafe(16)))
             # 分配特定权限
             self.assign_demo_permissions(admin)
             admin.save()

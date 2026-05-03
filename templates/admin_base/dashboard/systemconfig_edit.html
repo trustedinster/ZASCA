@@ -1,4 +1,5 @@
 {% extends "admin_base/base.html" %}
+{% load plugin_extensions %}
 
 {% block title %}ZASCA 超级管理员 - 系统配置{% endblock %}
 
@@ -222,25 +223,7 @@
             </div>
         </div>
 
-        <!-- QQ Bot Default Config -->
-        <div>
-            <h3 class="text-lg font-medium text-white mb-4 flex items-center gap-2">
-                <span class="material-symbols-rounded text-cyan-400">smart_toy</span>
-                QQ机器人默认配置
-            </h3>
-            <p class="text-sm text-white/50 mb-4">此处配置的机器人服务器信息将作为QQ验证的默认配置，各产品可选择使用系统默认或自定义配置。</p>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {% with field=form.qq_bot_host %}
-                <x-admin-input label="QQ机器人服务器地址" placeholder="机器人服务器的主机地址"></x-admin-input>
-                {% endwith %}
-                {% with field=form.qq_bot_port %}
-                <x-admin-input label="QQ机器人端口" placeholder="机器人服务器的端口号"></x-admin-input>
-                {% endwith %}
-                {% with field=form.qq_bot_token %}
-                <x-admin-input label="QQ机器人访问令牌" type="password" placeholder="用于认证的访问令牌"></x-admin-input>
-                {% endwith %}
-            </div>
-        </div>
+        {% plugin_extensions "system_config_after_sections" %}
 
         <!-- Actions -->
         <div class="flex items-center justify-between gap-3 pt-4 border-t border-slate-700/50">

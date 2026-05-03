@@ -282,30 +282,6 @@ class SystemConfig(models.Model):
         help_text='启用后将禁止来自 localhost/127.0.0.1 的访问'
     )
 
-    qq_bot_host = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        verbose_name='QQ机器人服务器地址',
-        help_text='QQ机器人服务器的主机地址（系统默认配置）'
-    )
-
-    qq_bot_port = models.CharField(
-        max_length=20,
-        blank=True,
-        null=True,
-        verbose_name='QQ机器人服务器端口',
-        help_text='QQ机器人服务器的端口号（系统默认配置）'
-    )
-
-    qq_bot_token = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        verbose_name='QQ机器人访问令牌',
-        help_text='用于认证的访问令牌（系统默认配置）'
-    )
-
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name='创建时间'

@@ -159,8 +159,8 @@
     {% for product in form.target_product.field.queryset %}
     productDiskConfig[{{ product.id }}] = {
         enableDiskQuota: {{ product.enable_disk_quota|lower }},
-        allowExtraQuotaDisks: {{ product.allow_extra_quota_disks|safe }},
-        defaultDiskQuota: {{ product.default_disk_quota|safe }}
+        allowExtraQuotaDisks: {{ product.allow_extra_quota_disks|default:"[]"|safe }},
+        defaultDiskQuota: {{ product.default_disk_quota|default:"{}"|safe }}
     };
     {% endfor %}
     {% endif %}

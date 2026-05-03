@@ -3,7 +3,7 @@ from apps.hosts.models import Host
 import uuid
 from django.utils import timezone
 from datetime import timedelta
-import random
+import secrets as _secrets
 from django.conf import settings
 
 
@@ -31,7 +31,7 @@ class InitialToken(models.Model):
     def generate_pairing_code(self):
         """生成6位数字配对码"""
         # 生成6位随机数字（000000-999999）
-        code = f"{random.randint(0, 999999):06d}"
+        code = f"{_secrets.randbelow(1000000):06d}"
         self.pairing_code = code
         self.pairing_code_expires_at = timezone.now() + timedelta(minutes=5)  # 5分钟有效期
         self.save()

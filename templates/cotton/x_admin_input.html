@@ -11,7 +11,7 @@
         type="{{ attrs.type|default:'text' }}"
         name="{{ attrs.name|default:f.html_name }}"
         id="{{ attrs.id|default:f.id_for_label }}"
-        {% if attrs.type != 'password' %}value="{{ attrs.value|default:f.value }}"{% endif %}
+        {% if attrs.type != 'password' %}value="{{ attrs.value|default:f.value|default_if_none:'' }}"{% endif %}
         placeholder="{{ attrs.placeholder|default:'' }}"
         {% if attrs.required|default:f.field.required %}required{% endif %}
         class="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition {% if attrs.errors or f.errors %}border-red-500/50{% endif %}"

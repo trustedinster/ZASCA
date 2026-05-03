@@ -52,13 +52,14 @@ class HostWizardForm(forms.ModelForm):
 
     分为三步：
     - Step 1: 基本信息 (name, hostname, connection_type)
-    - Step 2: 连接配置 (port, rdp_port, use_ssl, username, password)
+    - Step 2: 连接配置 (port, rdp_port, use_ssl, username, password) 或 执行命令 (隧道模式)
     - Step 3: 分配提供商 (providers, description)
 
     智能默认值：
     - port 根据连接类型自动设置 (winrm=5985, ssh=22)
     - use_ssl 根据端口自动判断 (5986=True)
     - 密码留空时自动生成
+    - 隧道模式下hostname非必填，自动生成
     """
 
     password = forms.CharField(
@@ -73,12 +74,20 @@ class HostWizardForm(forms.ModelForm):
         label='密码',
     )
 
+    tunnel_token = forms.CharField(
+        widget=forms.HiddenInput(attrs={
+            'x-model': 'tunnelToken',
+        }),
+        required=False,
+    )
+
     class Meta:
         model = Host
         fields = [
             'name', 'hostname', 'connection_type',
             'port', 'rdp_port', 'use_ssl', 'username', 'password',
             'providers', 'description',
+            'tunnel_token',
         ]
         widgets = {
             'name': forms.TextInput(attrs={
@@ -141,7 +150,6 @@ class HostWizardForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # providers: 所有提供商组用户
         provider_users = User.objects.filter(
             groups__name='提供商',
             is_staff=True,
@@ -149,11 +157,20 @@ class HostWizardForm(forms.ModelForm):
         ).order_by('username')
         self.fields['providers'].queryset = provider_users
 
-        # 设置初始默认值
         if not self.initial.get('port'):
             self.initial['port'] = 5985
         if not self.initial.get('rdp_port'):
             self.initial['rdp_port'] = 3389
+
+    def clean(self):
+        cleaned_data = super().clean()
+        connection_type = cleaned_data.get('connection_type')
+        hostname = cleaned_data.get('hostname')
+
+        if connection_type == 'tunnel' and not hostname:
+            cleaned_data['hostname'] = 'tunnel-pending'
+
+        return cleaned_data
 
     def save(self, commit=True):
         instance = super().save(commit=False)

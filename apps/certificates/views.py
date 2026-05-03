@@ -66,8 +66,6 @@ def issue_server_certificate(request):
             'data': {
                 'ca_cert': ca.certificate,
                 'server_cert': cert.certificate,
-                'server_key': cert.private_key,
-                'pfx_data': cert.pfx_data,
                 'thumbprint': cert.thumbprint,
                 'expires_at': cert.expires_at.isoformat()
             }
@@ -144,7 +142,6 @@ def issue_client_certificate(request):
             'success': True,
             'data': {
                 'certificate': cert.certificate,
-                'private_key': cert.private_key,
                 'thumbprint': cert.thumbprint,
                 'expires_at': cert.expires_at.isoformat()
             }
@@ -163,7 +160,6 @@ def issue_client_certificate(request):
         }, status=500)
 
 
-@csrf_exempt
 @require_http_methods(["POST"])
 @login_required
 def validate_certificate_request(request):

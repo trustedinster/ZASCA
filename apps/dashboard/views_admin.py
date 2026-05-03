@@ -60,7 +60,7 @@ def widget_create(request):
             messages.success(
                 request, f'仪表盘组件「{widget.title}」创建成功。'
             )
-            return redirect('admin_dashboard_config:widget_list')
+            return redirect('admin:admin_dashboard_config:widget_list')
     else:
         form = DashboardWidgetForm()
 
@@ -84,7 +84,7 @@ def widget_edit(request, pk):
             messages.success(
                 request, f'仪表盘组件「{widget.title}」更新成功。'
             )
-            return redirect('admin_dashboard_config:widget_list')
+            return redirect('admin:admin_dashboard_config:widget_list')
     else:
         form = DashboardWidgetForm(instance=widget)
 
@@ -108,7 +108,7 @@ def widget_delete(request, pk):
         messages.success(
             request, f'仪表盘组件「{title}」已删除。'
         )
-        return redirect('admin_dashboard_config:widget_list')
+        return redirect('admin:admin_dashboard_config:widget_list')
 
     context = {
         'widget': widget,
@@ -133,7 +133,7 @@ def systemconfig_edit(request):
         if form.is_valid():
             form.save()
             messages.success(request, '系统配置已更新。')
-            return redirect('admin_dashboard_config:systemconfig_edit')
+            return redirect('admin:admin_dashboard_config:systemconfig_edit')
     else:
         form = SystemConfigForm(instance=config)
 
@@ -163,7 +163,7 @@ def systemconfig_send_test_email(request):
 
         if not test_email:
             messages.error(request, '未提供测试邮箱地址。')
-            return redirect('admin_dashboard_config:systemconfig_edit')
+            return redirect('admin:admin_dashboard_config:systemconfig_edit')
 
         subject = 'ZASCA 测试邮件'
         html_body = f'''
@@ -255,4 +255,4 @@ def systemconfig_send_test_email(request):
             f"错误: {str(e)}"
         )
 
-    return redirect('admin_dashboard_config:systemconfig_edit')
+    return redirect('admin:admin_dashboard_config:systemconfig_edit')

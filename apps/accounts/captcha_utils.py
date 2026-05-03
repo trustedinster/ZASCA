@@ -137,7 +137,7 @@ def generate_captcha():
     # 同时初始化尝试次数计数器
     cache.set(f"captcha_attempts_{captcha_id}", 0, 300)  # 5分钟内最多尝试
     
-    logger.info(f"Generated captcha: ID={captcha_id}, text={captcha_text}")
+    logger.debug(f"Generated captcha: ID={captcha_id}")
     
     return {
         'captcha_id': captcha_id,
@@ -195,7 +195,7 @@ def verify_captcha(captcha_id, user_input, consume=True, max_attempts=5, check_a
 
     # 验证用户输入（不区分大小写）
     is_valid = correct_captcha.lower() == user_input.lower()
-    logger.info(f"Captcha verification result for {captcha_id}: {is_valid} (input: {user_input}, expected: {correct_captcha})")
+    logger.info(f"Captcha verification result for {captcha_id}: {is_valid}")
     
     # 如果验证成功且需要消费（一次性使用），则删除缓存中的验证码
     if is_valid and consume:
@@ -235,23 +235,14 @@ def get_captcha_image(request, captcha_id):
         captcha_id = result['captcha_id']
         image_data = result['image_data']
     else:
-        # 如果提供了captcha_id，检查它是否存在
-        captcha_text = cache.get(captcha_id)
-        if not captcha_text:
-            logger.warning(f"Requested captcha not found: {captcha_id}, generating new one")
-            # 如果不存在，生成新的
-            result = generate_captcha()
-            captcha_id = result['captcha_id']
-            image_data = result['image_data']
-        else:
-            # 如果存在，重新生成图片（但保持相同的文本）
-            captcha_text, image_data = generate_captcha_image()
-            # 更新缓存中的验证码，以防用户多次请求同一ID
-            cache.set(captcha_id, captcha_text.lower(), 300)
-            # 重置尝试次数
-            attempts_key = f"captcha_attempts_{captcha_id}"
-            current_attempts = cache.get(attempts_key, 0)
-            cache.set(attempts_key, current_attempts, 300)
-            logger.debug(f"Refreshed captcha image for {captcha_id}, attempts: {current_attempts}")
+            captcha_text = cache.get(captcha_id)
+            if not captcha_text:
+                logger.warning(f"Requested captcha not found: {captcha_id}, generating new one")
+                result = generate_captcha()
+                captcha_id = result['captcha_id']
+                image_data = result['image_data']
+            else:
+                logger.debug(f"Returning existing captcha image for {captcha_id}")
+                _, image_data = generate_captcha_image()
     
     return HttpResponse(image_data, content_type='image/png')
