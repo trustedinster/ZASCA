@@ -5470,6 +5470,11 @@
       display: none;
     }
   }
+  .md\:hidden {
+    @media (width >= 48rem) {
+      display: none;
+    }
+  }
   .max-md\:w-full {
     @media (width < 48rem) {
       width: 100%;

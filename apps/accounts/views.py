@@ -16,7 +16,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from PIL import Image
 import os
 
-from .models import User
+from .models import User, RegistrationLink
 from .forms import UserRegistrationForm, UserUpdateForm, UserLoginForm
 from . import geetest_utils
 from . import captcha_utils
@@ -529,6 +529,103 @@ def send_register_email_code(request):
         )
 
     return JsonResponse({'status': 'ok'})
+
+
+@method_decorator(rate_limit.register_rate_limit, name='dispatch')
+class RegisterByLinkView(CreateView):
+    model = User
+    form_class = UserRegistrationForm
+    template_name = 'accounts/register_by_link.html'
+    success_url = reverse_lazy('accounts:login')
+
+    def dispatch(self, request, *args, **kwargs):
+        token = kwargs.get('token')
+        try:
+            self.reglink = RegistrationLink.objects.select_related(
+                'group'
+            ).get(token=token)
+        except RegistrationLink.DoesNotExist:
+            messages.error(request, '注册链接不存在')
+            return redirect('accounts:register')
+
+        if self.reglink.used:
+            messages.error(request, '此注册链接已被使用')
+            return redirect('accounts:register')
+
+        if self.reglink.is_expired:
+            messages.error(request, '此注册链接已过期')
+            return redirect('accounts:register')
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['reglink'] = self.reglink
+        context['target_group'] = self.reglink.group
+        from apps.dashboard.models import SystemConfig
+        sc = SystemConfig.get_config()
+        captcha_id, _ = geetest_utils._get_runtime_keys()
+        context['GEETEST_ID'] = captcha_id
+        captcha_provider, _, captcha_key = sc.get_captcha_config(
+            scene='register'
+        )
+        context['CAPTCHA_PROVIDER'] = captcha_provider
+        if captcha_provider == 'turnstile':
+            context['TURNSTILE_SITE_KEY'] = captcha_key
+        else:
+            context['TURNSTILE_SITE_KEY'] = None
+        context.update(get_theme_context())
+        return context
+
+    def form_valid(self, form):
+        import hmac
+        email = form.cleaned_data.get('email')
+        email_code = self.request.POST.get('email_code')
+        if not (email and email_code):
+            form.add_error(None, '邮箱验证码缺失')
+            return self.form_invalid(form)
+
+        cache_key = f'register_email_code:{email}'
+        expected = cache.get(cache_key)
+        if not hmac.compare_digest(
+            str(expected or ''), str(email_code or '')
+        ):
+            form.add_error(None, '邮箱验证码错误或已过期')
+            return self.form_invalid(form)
+
+        cache.delete(cache_key)
+
+        from .captcha_service import validate_captcha
+        is_valid, error_msg = validate_captcha(
+            self.request, scene='register'
+        )
+        if not is_valid:
+            form.add_error(None, error_msg)
+            return self.form_invalid(form)
+
+        user = form.save()
+
+        user.groups.set([self.reglink.group])
+        user.sync_staff_status()
+
+        from django.utils import timezone
+        self.reglink.used = True
+        self.reglink.used_by = user
+        self.reglink.used_at = timezone.now()
+        self.reglink.save(update_fields=['used', 'used_by', 'used_at'])
+
+        messages.success(
+            self.request,
+            f'注册成功！您已加入「{self.reglink.group.name}」组，请登录。'
+        )
+        return redirect(self.success_url)
+
+    def form_invalid(self, form):
+        messages.error(
+            self.request,
+            '注册失败，请检查表单中的错误。'
+        )
+        return super().form_invalid(form)
 
 
 @login_required

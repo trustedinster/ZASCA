@@ -20,6 +20,7 @@ urlpatterns = [
     # 用户与权限
     path('users/', include('apps.accounts.urls_admin_users')),
     path('groups/', include('apps.accounts.urls_admin_groups')),
+    path('reglinks/', include('apps.accounts.urls_admin_reglinks')),
 
     # 提供商分配
     path('providers/', include('apps.accounts.urls_admin_providers')),

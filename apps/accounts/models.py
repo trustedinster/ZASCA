@@ -1,6 +1,8 @@
 """
 用户管理模型
 """
+import uuid as _uuid
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser, Group
 from django.utils.translation import gettext_lazy as _
@@ -302,3 +304,82 @@ class GroupProfile(models.Model):
     def __str__(self):
         default_tag = ' [默认]' if self.is_default else ''
         return f'{self.group.name}{default_tag}'
+
+
+class RegistrationLink(models.Model):
+    token = models.CharField(
+        max_length=64,
+        unique=True,
+        default=_uuid.uuid4,
+        verbose_name=_('令牌'),
+        help_text=_('注册链接的唯一标识')
+    )
+    group = models.ForeignKey(
+        Group,
+        on_delete=models.CASCADE,
+        related_name='registration_links',
+        verbose_name=_('注册后用户组'),
+        help_text=_('通过此链接注册的用户将自动加入该用户组')
+    )
+    created_by = models.ForeignKey(
+        'User',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='created_registration_links',
+        verbose_name=_('创建者'),
+        help_text=_('创建此注册链接的管理员')
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('创建时间')
+    )
+    used = models.BooleanField(
+        default=False,
+        verbose_name=_('已使用'),
+        help_text=_('此注册链接是否已被使用')
+    )
+    used_by = models.ForeignKey(
+        'User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='used_registration_link',
+        verbose_name=_('使用者'),
+        help_text=_('使用此链接注册的用户')
+    )
+    used_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_('使用时间')
+    )
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_('过期时间'),
+        help_text=_('留空表示永不过期')
+    )
+    note = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name=_('备注'),
+        help_text=_('管理员备注，仅后台可见')
+    )
+
+    class Meta:
+        verbose_name = _('注册链接')
+        verbose_name_plural = verbose_name
+        ordering = ['-created_at']
+
+    def __str__(self):
+        status = '已使用' if self.used else '未使用'
+        return f'注册链接({self.group.name}) - {status}'
+
+    @property
+    def is_expired(self):
+        if self.expires_at is None:
+            return False
+        return timezone.now() > self.expires_at
+
+    @property
+    def is_valid(self):
+        return not self.used and not self.is_expired
