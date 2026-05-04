@@ -1,19 +1,9 @@
-// geetest_v4_adapter.js
-// Adapter for gt4.js to open verification when triggered (on button click)
-// - Uses bind mode to attach verification to trigger elements
-// - On success, fills hidden inputs: lot_number, captcha_output, pass_token, gen_time, captcha_id
-// - Handles form submission with proper validation
-// - Also handles email code button verification
-
 (function () {
-    function $(sel) { return document.querySelector(sel); }
     function $all(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
 
     var defaultCaptchaId = window.GEETEST_CAPTCHA_ID || null;
-    var captchaInstances = {}; // Store the captcha instances by element
 
     function initOnTrigger() {
-        // find all trigger buttons (exclude email code buttons which are handled by email_code.js)
         var triggers = $all('[data-geetest-trigger]:not([data-geetest-email-trigger])');
         triggers.forEach(function (btn) {
             var form = btn.closest('form');
@@ -23,190 +13,77 @@
                 return;
             }
 
-            // initialize geetest v4 in bind mode
-            initGeetest4({ 
+            var captchaInstance = null;
+            var ready = false;
+
+            initGeetest4({
                 captchaId: captchaId,
-                product: "bind"  // Use bind mode for hidden button
-            }, function (captcha) {
-                // Store the captcha instance for this button
-                captchaInstances[btn] = captcha;
+                product: 'bind'
+            }, function (captchaObj) {
+                captchaInstance = captchaObj;
 
-                // Add event listener to the button to trigger the captcha
-                btn.addEventListener('click', function(e) {
-                    // Check if we already have captcha values filled
-                    var passTokenInput = form ? form.querySelector('input[name="pass_token"]') : null;
-                    var passTokenValue = passTokenInput ? passTokenInput.value : '';
-                    
-                    // If we already have captcha values, just submit the form
-                    if (passTokenValue) {
-                        return; // Let the form submit normally
-                    }
-
-                    e.preventDefault(); // Prevent default form submission
-                    
-                    // Call verify to trigger the verification process in bind mode
-                    if (typeof captcha.verify === 'function') {
-                        captcha.verify();
-                    } else if (typeof captcha.showBox === 'function') {
-                        // Fallback to showBox if verify is not available
-                        captcha.showBox();
-                    } else {
-                        // Final fallback: try appendTo method
-                        var container = document.getElementById('geetest-v4-popup-container');
-                        if (!container) {
-                            container = document.createElement('div');
-                            container.id = 'geetest-v4-popup-container';
-                            container.style.position = 'fixed';
-                            container.style.left = '50%';
-                            container.style.top = '50%';
-                            container.style.transform = 'translate(-50%, -50%)';
-                            container.style.zIndex = '2000';
-                            container.style.background = 'white';
-                            container.style.padding = '10px';
-                            container.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
-                            document.body.appendChild(container);
-                        }
-
-                        // clear container
-                        container.innerHTML = '';
-                        try {
-                            captcha.appendTo('#' + container.id);
-                        } catch (err) {
-                            // some builds expect a DOM element, so we pass the element
-                            captcha.appendTo(container);
-                        }
-                    }
+                captchaObj.onReady(function () {
+                    ready = true;
                 });
 
-                // attach success handler
-                if (typeof captcha.onSuccess === 'function') {
-                    captcha.onSuccess(function () {
-                        // v4 exposes getValidate or similar — try common names
-                        var result = {};
-                        try {
-                            // these names depend on geetest version; attempt a few
-                            if (typeof captcha.getValidate === 'function') {
-                                result = captcha.getValidate();
-                            } else if (typeof captcha.getCaptcha === 'function') {
-                                result = captcha.getCaptcha();
-                            } else if (typeof captcha.getResponse === 'function') {
-                                result = captcha.getResponse();
-                            } else {
-                                // In case methods don't exist, try to get properties directly
-                                result = {
-                                    lot_number: captcha.lot_number || captcha.lotNumber || captcha.challenge || '',
-                                    captcha_output: captcha.captcha_output || captcha.captchaOutput || captcha.validate || '',
-                                    pass_token: captcha.pass_token || captcha.passToken || captcha.seccode || '',
-                                    gen_time: captcha.gen_time || captcha.genTime || Date.now().toString()
-                                };
-                            }
-                        } catch (e) {
-                            console.warn('Cannot read captcha result via helper APIs', e);
-                            // Fallback to direct property access
-                            result = {
-                                lot_number: captcha.lot_number || captcha.lotNumber || captcha.challenge || '',
-                                captcha_output: captcha.captcha_output || captcha.captchaOutput || captcha.validate || '',
-                                pass_token: captcha.pass_token || captcha.passToken || captcha.seccode || '',
-                                gen_time: captcha.gen_time || captcha.genTime || Date.now().toString()
-                            };
-                        }
+                captchaObj.onSuccess(function () {
+                    var result = captchaObj.getValidate();
+                    if (!result) {
+                        alert('验证结果获取失败，请重试');
+                        return;
+                    }
 
-                        // Ensure we have the required fields
-                        var lot_number = result.lot_number || result.lotNumber || result.lot || '';
-                        var captcha_output = result.captcha_output || result.captchaOutput || result.captcha || '';
-                        var pass_token = result.pass_token || result.passToken || result.pass || '';
-                        var gen_time = result.gen_time || result.genTime || result.gen || '';
+                    if (form) {
+                        var inLot = form.querySelector('input[name="lot_number"]');
+                        var inOutput = form.querySelector('input[name="captcha_output"]');
+                        var inPass = form.querySelector('input[name="pass_token"]');
+                        var inGen = form.querySelector('input[name="gen_time"]');
+                        var inCid = form.querySelector('input[name="captcha_id"]');
 
-                        // If the captcha instance has direct properties
-                        lot_number = lot_number || captcha.lot_number || captcha.lotNumber || captcha.challenge || '';
-                        captcha_output = captcha_output || captcha.captcha_output || captcha.captchaOutput || captcha.validate || '';
-                        pass_token = pass_token || captcha.pass_token || captcha.passToken || captcha.seccode || '';
-                        gen_time = gen_time || captcha.gen_time || captcha.genTime || Date.now().toString();
+                        if (inLot) inLot.value = result.lot_number || '';
+                        if (inOutput) inOutput.value = result.captcha_output || '';
+                        if (inPass) inPass.value = result.pass_token || '';
+                        if (inGen) inGen.value = result.gen_time || '';
+                        if (inCid) inCid.value = captchaId;
+                    }
 
-                        // also get captcha_id if available
-                        var captcha_id = captchaId; // Use the captchaId from the initialization
+                    if (form) form.submit();
+                });
 
-                        // Validate that we have essential values
-                        if (!lot_number || !captcha_output || !pass_token) {
-                            console.error('Missing required Geetest v4 parameters:', { 
-                                lot_number: lot_number, 
-                                captcha_output: captcha_output, 
-                                pass_token: pass_token 
-                            });
-                            alert('验证码验证失败，请重试');
-                            return;
-                        }
+                captchaObj.onError(function (error) {
+                    console.error('Geetest v4 error:', error);
+                    alert('验证码加载失败，请稍后重试');
+                });
+            });
 
-                        // close popup if exists
-                        var container = document.getElementById('geetest-v4-popup-container');
-                        if (container) {
-                            try { container.remove(); } catch (e) { container.style.display = 'none'; }
-                        }
-
-                        // fill hidden inputs if present in the form
-                        if (form) {
-                            var inLot = form.querySelector('input[name="lot_number"]');
-                            var inOutput = form.querySelector('input[name="captcha_output"]');
-                            var inPass = form.querySelector('input[name="pass_token"]');
-                            var inGen = form.querySelector('input[name="gen_time"]');
-                            var inCid = form.querySelector('input[name="captcha_id"]');
-
-                            if (inLot) inLot.value = lot_number;
-                            if (inOutput) inOutput.value = captcha_output;
-                            if (inPass) inPass.value = pass_token;
-                            if (inGen) inGen.value = gen_time;
-                            if (inCid) inCid.value = captcha_id;
-                        }
-                        
-                        // Submit the form after filling the captcha fields
-                        if (form) form.submit();
-                    });
-                } else {
-                    console.warn('captcha.onSuccess is not a function');
-                }
-
-                // Handle error events
-                if (typeof captcha.onError === 'function') {
-                    captcha.onError(function(error) {
-                        console.error('Geetest v4 error:', error);
-                        // close popup if exists
-                        var container = document.getElementById('geetest-v4-popup-container');
-                        if (container) {
-                            try { container.remove(); } catch (e) { container.style.display = 'none'; }
-                        }
-                        alert('验证码加载失败，请稍后重试');
-                    });
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (ready && captchaInstance) {
+                    captchaInstance.showCaptcha();
                 }
             });
-            
-            // Add event listener to form to handle submission
+
             if (form) {
-                // Override the form submit to check for captcha completion
-                form.addEventListener('submit', function(e) {
+                form.addEventListener('submit', function (e) {
                     var passTokenInput = form.querySelector('input[name="pass_token"]');
                     var passTokenValue = passTokenInput ? passTokenInput.value : '';
-                    
-                    // Check if we already have captcha values filled
                     if (!passTokenValue && window.CAPTCHA_PROVIDER === 'geetest') {
-                        e.preventDefault(); // Prevent form submission
-                        
-                        // Trigger the captcha verification by clicking the button
-                        btn.click();
+                        e.preventDefault();
+                        if (ready && captchaInstance) {
+                            captchaInstance.showCaptcha();
+                        }
                     }
-                    // If we have captcha values, let the form submit normally
                 });
             }
         });
     }
-    
-    // Make functions globally accessible for manual initialization if needed
+
     window.initGeetestAdapter = {
         initOnTrigger: initOnTrigger
     };
-    
-    // auto init on DOM ready
+
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             initOnTrigger();
         });
     } else {

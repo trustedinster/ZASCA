@@ -87,37 +87,39 @@
         }
 
         if(provider === 'geetest'){
-            // show geetest popup, use adapter's mechanism: initGeetest4 and onSuccess
-            // Get captchaId from button attribute, window global, or hidden input
-            var emailCaptchaId = btn.getAttribute('data-captcha-id') || window.GEETEST_CAPTCHA_ID || (document.getElementById('captcha_id') && document.getElementById('captcha_id').value);
+            var emailCaptchaId = btn.getAttribute('data-captcha-id') || window.GEETEST_CAPTCHA_ID;
             if(!emailCaptchaId){
                 alert('Geetest captcha ID 未配置');
                 return;
             }
-            initGeetest4({ captchaId: emailCaptchaId }, function(captcha){
-                var container = document.getElementById('geetest-email-popup');
-                if(!container){ container = document.createElement('div'); container.id='geetest-email-popup'; document.body.appendChild(container);}
-                container.innerHTML = '';
-                try{ captcha.appendTo(container); } catch(e){ captcha.appendTo('#' + container.id); }
-                if(typeof captcha.onSuccess === 'function'){
-                    captcha.onSuccess(function(){
-                        var res = null;
-                        try{ if(typeof captcha.getValidate === 'function') res = captcha.getValidate(); else if(typeof captcha.getResponse === 'function') res = captcha.getResponse(); }catch(e){}
-                        var form = new FormData();
-                        form.append('email', email);
-                        if(res){
-                            form.append('lot_number', res.lot_number || res.lotNumber || '');
-                            form.append('captcha_output', res.captcha_output || res.captchaOutput || '');
-                            form.append('pass_token', res.pass_token || res.passToken || '');
-                            form.append('gen_time', res.gen_time || res.genTime || '');
-                            form.append('captcha_id', emailCaptchaId);
-                        }
-                        postCode(form, btn); // Pass button reference for countdown
-                        try{ container.remove(); } catch(e){ container.style.display='none'; }
-                    });
-                } else {
-                    alert('当前验证码组件不支持回调，请刷新页面');
-                }
+            initGeetest4({
+                captchaId: emailCaptchaId,
+                product: 'bind'
+            }, function(captchaObj){
+                captchaObj.onReady(function(){
+                    captchaObj.showCaptcha();
+                });
+                captchaObj.onSuccess(function(){
+                    var result = captchaObj.getValidate();
+                    if(!result){
+                        alert('验证结果获取失败，请重试');
+                        return;
+                    }
+                    var form = new FormData();
+                    form.append('email', email);
+                    form.append('lot_number', result.lot_number || '');
+                    form.append('captcha_output', result.captcha_output || '');
+                    form.append('pass_token', result.pass_token || '');
+                    form.append('gen_time', result.gen_time || '');
+                    form.append('captcha_id', emailCaptchaId);
+                    postCode(form, btn);
+                });
+                captchaObj.onError(function(error){
+                    console.error('Geetest v4 error:', error);
+                    alert('验证码加载失败，请稍后重试');
+                });
+                captchaObj.onClose(function(){
+                });
             });
         } else if(provider === 'local') {
             // 如果是本地验证码，不应该到达这里，因为local_captcha_adapter.js会处理
