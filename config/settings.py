@@ -10,6 +10,7 @@ DEMO 模式（ZASCA_DEMO=1）会强制锁定特定配置，不受 .env 影响。
 """
 
 import os
+import importlib
 from pathlib import Path
 from django.core.exceptions import ImproperlyConfigured
 
@@ -98,8 +99,34 @@ INSTALLED_APPS = [
     'apps.provider',  # 提供商后台（新版 Tailwind/MD3）
     'apps.provider_backend',  # 提供商后台（旧版，保留中间件和API）
     'plugins',
-    'plugins.qq_verification',
 ]
+
+# ========== 插件 Django App 动态注册 ==========
+# 从 plugins.toml 读取需要注册为 Django App 的插件模块
+# 这样插件不存在时系统仍能正常启动（松耦合）
+def _discover_plugin_apps():
+    plugin_apps = []
+    toml_path = BASE_DIR / 'plugins' / 'plugins.toml'
+    if not toml_path.exists():
+        return plugin_apps
+    try:
+        import toml
+        toml_data = toml.loads(toml_path.read_text(encoding='utf-8'))
+        for section in ('builtin', 'third_party'):
+            for _key, info in toml_data.get(section, {}).items():
+                if info.get('enabled', True) and info.get('django_app', True):
+                    module = info.get('module', '')
+                    if module:
+                        try:
+                            importlib.import_module(module)
+                            plugin_apps.append(module)
+                        except ImportError:
+                            pass
+    except Exception:
+        pass
+    return plugin_apps
+
+INSTALLED_APPS += _discover_plugin_apps()
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -123,7 +150,6 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
             BASE_DIR / 'templates',
-            BASE_DIR / 'plugins' / 'qq_verification' / 'templates',
         ],
         'APP_DIRS': True,
         'OPTIONS': {
