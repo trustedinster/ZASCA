@@ -23,7 +23,7 @@
                     <select class="w-full px-4 py-3 border border-md-outline/50 rounded-md bg-md-surface/50 text-md-on-surface placeholder-md-outline focus:outline-none focus:ring-2 focus:ring-md-primary transition" name="product">
                         <option value="">全部</option>
                         {% for product_name, users in cloud_users_by_product.items %}
-                        <option value="{{ product_name }}" {% if request.GET.product == product_name %}selected{% endif %}>{{ product_name }}</option>
+                        <option value="{{ product_name }}" {% if current_product == product_name %}selected{% endif %}>{{ product_name }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -32,7 +32,7 @@
                     <input type="text" 
                            class="w-full px-4 py-3 border border-md-outline/50 rounded-md bg-md-surface/50 text-md-on-surface placeholder-md-outline focus:outline-none focus:ring-2 focus:ring-md-primary transition" 
                            name="search" 
-                           value="{{ request.GET.search|default:'' }}"
+                           value="{{ current_search }}"
                            placeholder="按用户名、姓名或邮箱搜索">
                 </div>
                 <div class="flex gap-2 items-end">
@@ -135,7 +135,7 @@
     {% if is_paginated and paginator.num_pages > 1 %}
     <div class="flex justify-center mt-8">
         {% if page_obj.has_previous %}
-        <a class="inline-flex items-center justify-center min-w-[40px] h-10 px-4 mx-1 rounded-md bg-md-surface text-md-on-surface text-sm font-medium no-underline transition hover:bg-md-surface-variant" href="?{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}page={{ page_obj.previous_page_number }}">
+        <a class="inline-flex items-center justify-center min-w-[40px] h-10 px-4 mx-1 rounded-md bg-md-surface text-md-on-surface text-sm font-medium no-underline transition hover:bg-md-surface-variant" href="?{% if current_status %}status={{ current_status }}&{% endif %}{% if current_product %}product={{ current_product }}&{% endif %}{% if current_search %}search={{ current_search }}&{% endif %}page={{ page_obj.previous_page_number }}">
             <i class="material-icons">chevron_left</i>
         </a>
         {% endif %}
@@ -143,7 +143,7 @@
         <span class="inline-flex items-center justify-center min-w-[40px] h-10 px-4 mx-1 rounded-md bg-md-primary text-md-on-primary text-sm font-medium">{{ page_obj.number }} / {{ paginator.num_pages }}</span>
 
         {% if page_obj.has_next %}
-        <a class="inline-flex items-center justify-center min-w-[40px] h-10 px-4 mx-1 rounded-md bg-md-surface text-md-on-surface text-sm font-medium no-underline transition hover:bg-md-surface-variant" href="?{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}page={{ page_obj.next_page_number }}">
+        <a class="inline-flex items-center justify-center min-w-[40px] h-10 px-4 mx-1 rounded-md bg-md-surface text-md-on-surface text-sm font-medium no-underline transition hover:bg-md-surface-variant" href="?{% if current_status %}status={{ current_status }}&{% endif %}{% if current_product %}product={{ current_product }}&{% endif %}{% if current_search %}search={{ current_search }}&{% endif %}page={{ page_obj.next_page_number }}">
             <i class="material-icons">chevron_right</i>
         </a>
         {% endif %}

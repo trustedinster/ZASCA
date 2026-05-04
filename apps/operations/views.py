@@ -422,7 +422,10 @@ class MyCloudComputersView(ListView):
         context['filter_form'] = CloudComputerUserFilterForm(self.request.GET)
         context['statuses'] = CloudComputerUser._meta.get_field('status').choices
         
-        # 按产品分组云电脑用户
+        context['current_product'] = self.request.GET.get('product', '')
+        context['current_search'] = self.request.GET.get('search', '')
+        context['current_status'] = self.request.GET.get('status', '')
+        
         from collections import defaultdict
         cloud_users_by_product = defaultdict(list)
         for user in context['cloud_users']:
