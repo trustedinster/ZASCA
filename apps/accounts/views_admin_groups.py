@@ -29,6 +29,7 @@ def group_create(request):
         name = request.POST.get('name', '').strip()
         description = request.POST.get('description', '').strip()
         sort_order = request.POST.get('sort_order', 0)
+        auto_staff = request.POST.get('auto_staff') == 'on'
 
         if not name:
             messages.error(request, '用户组名称不能为空')
@@ -43,6 +44,7 @@ def group_create(request):
             group=group,
             is_default=False,
             description=description,
+            auto_staff=auto_staff,
             sort_order=int(sort_order),
         )
         messages.success(request, f'用户组「{name}」创建成功')
@@ -63,6 +65,7 @@ def group_update(request, pk):
         name = request.POST.get('name', '').strip()
         description = request.POST.get('description', '').strip()
         sort_order = request.POST.get('sort_order', 0)
+        auto_staff = request.POST.get('auto_staff') == 'on'
 
         if not name:
             messages.error(request, '用户组名称不能为空')
@@ -84,7 +87,11 @@ def group_update(request, pk):
         group_profile.group.save()
         group_profile.description = description
         group_profile.sort_order = int(sort_order)
+        group_profile.auto_staff = auto_staff
         group_profile.save()
+
+        for user in group_profile.group.user_set.all():
+            user.sync_staff_status()
 
         messages.success(request, f'用户组「{name}」更新成功')
         return redirect('admin:admin_groups:group_list')

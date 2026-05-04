@@ -60,6 +60,9 @@
                         {% if gp.is_default %}
                         <x-admin-badge text="默认" color="primary"></x-admin-badge>
                         {% endif %}
+                        {% if gp.auto_staff %}
+                        <x-admin-badge text="自动员工" color="success"></x-admin-badge>
+                        {% endif %}
                         <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-white/5 text-white/50 text-xs">
                             {{ gp.group.user_set.count }} 名成员
                         </span>

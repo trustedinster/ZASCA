@@ -26,9 +26,6 @@ urlpatterns = [
     # 切换激活状态
     path('<int:pk>/toggle-active/', views.user_toggle_active, name='user_toggle_active'),
 
-    # 切换员工状态
-    path('<int:pk>/toggle-staff/', views.user_toggle_staff, name='user_toggle_staff'),
-
     # 重置密码
     path('<int:pk>/reset-password/', views.user_reset_password, name='user_reset_password'),
 ]

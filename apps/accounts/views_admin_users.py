@@ -162,27 +162,6 @@ def user_toggle_active(request, pk):
 
 
 @superadmin_required
-def user_toggle_staff(request, pk):
-    """切换用户员工状态（POST 操作，完成后重定向回列表）"""
-    user = get_object_or_404(User, pk=pk)
-
-    if user.pk == request.user.pk:
-        messages.error(request, '不能取消自己的员工权限')
-        return redirect('admin:admin_users:user_list')
-
-    if request.method == 'POST':
-        user.is_staff = not user.is_staff
-        user.save(update_fields=['is_staff'])
-        status_text = '授予' if user.is_staff else '撤销'
-        messages.success(
-            request,
-            f'用户「{user.username}」已{status_text}员工权限',
-        )
-
-    return redirect('admin:admin_users:user_list')
-
-
-@superadmin_required
 def user_reset_password(request, pk):
     """重置用户密码视图"""
     user = get_object_or_404(User, pk=pk)

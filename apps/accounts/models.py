@@ -73,6 +73,21 @@ class User(AbstractUser):
         full_name = super().get_full_name()
         return full_name if full_name else self.username
 
+    def sync_staff_status(self):
+        if self.is_superuser:
+            if not self.is_staff:
+                self.is_staff = True
+                self.save(update_fields=['is_staff'])
+            return
+
+        has_auto_staff = self.groups.filter(
+            profile__auto_staff=True
+        ).exists()
+
+        if has_auto_staff != self.is_staff:
+            self.is_staff = has_auto_staff
+            self.save(update_fields=['is_staff'])
+
     def update_last_login(self, request):
         """
         更新最后登录信息
@@ -267,6 +282,11 @@ class GroupProfile(models.Model):
         blank=True,
         verbose_name=_('描述'),
         help_text=_('用户组的功能描述')
+    )
+    auto_staff = models.BooleanField(
+        default=False,
+        verbose_name=_('自动员工'),
+        help_text=_('勾选后，属于该组的用户将自动获得员工身份(is_staff)')
     )
     sort_order = models.IntegerField(
         default=0,

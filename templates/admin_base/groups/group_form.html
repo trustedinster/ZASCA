@@ -79,6 +79,29 @@
             </div>
         </div>
 
+        <div>
+            <h3 class="text-white font-medium mb-4 flex items-center gap-2">
+                <span class="material-symbols-rounded text-cyan-400">badge</span>
+                员工身份
+            </h3>
+            <label class="flex items-center gap-3 cursor-pointer group">
+                <div class="relative">
+                    <input
+                        type="checkbox"
+                        name="auto_staff"
+                        {% if not is_create and group_profile.auto_staff %}checked{% endif %}
+                        class="sr-only peer"
+                    >
+                    <div class="w-11 h-6 bg-white/10 rounded-full peer-checked:bg-cyan-500 transition"></div>
+                    <div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition peer-checked:translate-x-5"></div>
+                </div>
+                <div>
+                    <span class="text-white text-sm font-medium">自动授予员工身份</span>
+                    <p class="text-white/50 text-xs mt-0.5">开启后，属于该组的用户将自动获得员工身份(is_staff)，可登录后台管理系统</p>
+                </div>
+            </label>
+        </div>
+
         {% if not is_create and group_profile.is_default %}
         <div class="bg-amber-500/10 border border-amber-500/30 rounded-md p-4">
             <div class="flex items-center gap-2">

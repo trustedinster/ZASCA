@@ -1,7 +1,7 @@
 """
 用户管理信号处理器
 """
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
 
@@ -19,5 +19,10 @@ def create_user_log(sender, instance, created, **kwargs):
         created: 是否是新创建的用户
         **kwargs: 其他参数
     """
-    # 移除日志记录功能，因为已经删除了 OperationLog 模型
     pass
+
+
+@receiver(m2m_changed, sender=User.groups.through)
+def sync_staff_on_group_change(sender, instance, action, **kwargs):
+    if action in ('post_add', 'post_remove', 'post_clear'):
+        instance.sync_staff_status()

@@ -77,9 +77,16 @@ class AdminUserCreateForm(forms.ModelForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.set_password(self.cleaned_data['password1'])
+        group = self.cleaned_data.get('groups')
+        if group:
+            try:
+                user.is_staff = group.profile.auto_staff
+            except GroupProfile.DoesNotExist:
+                user.is_staff = False
+        else:
+            user.is_staff = False
         if commit:
             user.save()
-            group = self.cleaned_data.get('groups')
             if group:
                 user.groups.set([group])
             else:
@@ -105,9 +112,16 @@ class AdminUserUpdateForm(forms.ModelForm):
 
     def save(self, commit=True):
         user = super().save(commit=False)
+        group = self.cleaned_data.get('groups')
+        if group:
+            try:
+                user.is_staff = group.profile.auto_staff
+            except GroupProfile.DoesNotExist:
+                user.is_staff = False
+        else:
+            user.is_staff = False
         if commit:
             user.save()
-            group = self.cleaned_data.get('groups')
             if group:
                 user.groups.set([group])
             else:
