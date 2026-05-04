@@ -177,7 +177,6 @@ class LoginView(TemplateView):
                 if next_url and url_has_allowed_host_and_scheme(
                     next_url,
                     allowed_hosts=request.get_host(),
-                    request=request,
                 ):
                     return redirect(next_url)
                 if user.is_staff or user.is_superuser:
