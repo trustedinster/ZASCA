@@ -832,30 +832,53 @@ class Command(BaseCommand):
         return None
 
     def _run_migrate(self, app_label):
-        from django.core.management import call_command
+        import subprocess
+        import sys
         self.stdout.write(f'正在执行数据库迁移: {app_label}')
         try:
-            call_command('migrate', app_label, verbosity=0)
-            self.stdout.write(self.style.SUCCESS(
-                f'数据库迁移完成: {app_label}'
-            ))
+            result = subprocess.run(
+                [sys.executable, 'manage.py', 'migrate', app_label],
+                capture_output=True, text=True,
+                cwd=str(settings.BASE_DIR),
+            )
+            if result.returncode == 0:
+                self.stdout.write(self.style.SUCCESS(
+                    f'数据库迁移完成: {app_label}'
+                ))
+            else:
+                self.stdout.write(self.style.WARNING(
+                    f'数据库迁移失败: {result.stderr.strip()}'
+                ))
+                self.stdout.write(
+                    '你可以手动执行: '
+                    f'python manage.py migrate {app_label}'
+                )
         except Exception as e:
             self.stdout.write(self.style.WARNING(
                 f'数据库迁移失败: {str(e)}'
             ))
-            self.stdout.write(
-                '你可以手动执行: '
-                f'python manage.py migrate {app_label}'
-            )
 
     def _run_migrate_reverse(self, app_label):
-        from django.core.management import call_command
+        import subprocess
+        import sys
         self.stdout.write(f'正在回滚数据库迁移: {app_label}')
         try:
-            call_command('migrate', app_label, 'zero', verbosity=0)
-            self.stdout.write(self.style.SUCCESS(
-                f'数据库迁移已回滚: {app_label}'
-            ))
+            result = subprocess.run(
+                [
+                    sys.executable, 'manage.py',
+                    'migrate', app_label, 'zero',
+                ],
+                capture_output=True, text=True,
+                cwd=str(settings.BASE_DIR),
+            )
+            if result.returncode == 0:
+                self.stdout.write(self.style.SUCCESS(
+                    f'数据库迁移已回滚: {app_label}'
+                ))
+            else:
+                self.stdout.write(self.style.WARNING(
+                    f'数据库迁移回滚失败: {result.stderr.strip()}'
+                ))
         except Exception as e:
             self.stdout.write(self.style.WARNING(
                 f'数据库迁移回滚失败: {str(e)}'
