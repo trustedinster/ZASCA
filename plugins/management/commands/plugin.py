@@ -387,100 +387,48 @@ class Command(BaseCommand):
         if not os.path.exists(plugin_path):
             raise CommandError(f'插件路径不存在: {plugin_path}')
 
-        init_file_path = os.path.join(plugin_path, '__init__.py')
-        plugin_info_from_init = None
-
-        if os.path.exists(init_file_path):
-            try:
-                spec = importlib.util.spec_from_file_location(
-                    f"plugin_init_{os.path.basename(plugin_path)}",
-                    init_file_path
-                )
-                init_module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(init_module)
-
-                if hasattr(init_module, 'PLUGIN_INFO'):
-                    plugin_info_from_init = getattr(init_module, 'PLUGIN_INFO')
-            except Exception:
-                pass
+        plugin_dir_name = os.path.basename(plugin_path)
+        plugins_base = os.path.join(settings.BASE_DIR, 'plugins')
+        is_under_plugins = (
+            os.path.dirname(os.path.abspath(plugin_path)) ==
+            os.path.abspath(plugins_base)
+        )
 
         plugin_class = None
-        plugin_file = None
-        if plugin_info_from_init and 'main_class' in plugin_info_from_init:
-            main_class_name = plugin_info_from_init['main_class']
-            if hasattr(init_module, main_class_name):
-                plugin_class = getattr(init_module, main_class_name)
-                plugin_file = '__init__.py'
+        plugin_module_name = None
 
-        if not plugin_class:
-            plugin_files = [f for f in os.listdir(plugin_path) if f.endswith('.py')]
-            if not plugin_files:
-                raise CommandError(f'插件路径中没有Python文件: {plugin_path}')
-
-            plugin_file = None
-            plugin_dir_name = os.path.basename(plugin_path)
-
-            for pf in plugin_files:
-                if pf == f"{plugin_dir_name}.py":
-                    plugin_file = pf
-                    break
-
-            if not plugin_file:
-                for pf in plugin_files:
-                    if pf == '__init__.py':
-                        continue
-                    file_path = os.path.join(plugin_path, pf)
-                    try:
-                        with open(file_path, 'r', encoding='utf-8') as f:
-                            content = f.read()
-                            if 'PluginInterface' in content and 'class' in content and (
-                                '(PluginInterface)' in content or
-                                '(PluginInterface,' in content or
-                                '(BasePlugin)' in content or
-                                'PluginInterface):' in content
-                            ):
-                                plugin_file = pf
-                                break
-                    except UnicodeDecodeError:
-                        continue
-
-            if not plugin_file:
-                plugin_file = plugin_files[0]
-
-            plugin_module_path = os.path.join(plugin_path, plugin_file)
-
-            try:
-                spec = importlib.util.spec_from_file_location(
-                    f"external_plugin_{plugin_dir_name}",
-                    plugin_module_path
+        if is_under_plugins:
+            plugin_class, plugin_module_name = (
+                self._load_plugin_class_from_package(
+                    plugin_dir_name, plugin_path
                 )
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-
-                for attr_name in dir(module):
-                    attr = getattr(module, attr_name)
-                    if (hasattr(attr, '__bases__') and
-                        inspect.isclass(attr) and
-                        any(hasattr(base, '__name__') and base.__name__ == 'PluginInterface' for base in attr.__bases__)):
-                        plugin_class = attr
-                        break
-
-            except Exception as e:
-                raise CommandError(f'从文件 {plugin_file} 加载插件模块失败: {str(e)}')
+            )
+        else:
+            plugin_class, plugin_module_name = (
+                self._load_plugin_class_from_external(plugin_path)
+            )
 
         if not plugin_class:
-            raise CommandError(f'在 {plugin_path} 中未找到有效的插件类')
+            raise CommandError(
+                f'在 {plugin_path} 中未找到有效的插件类'
+            )
 
         try:
             plugin_instance = plugin_class()
             plugin_manager = get_plugin_manager()
 
-            plugin_manager.plugins[plugin_instance.plugin_id] = plugin_instance
+            plugin_manager.plugins[plugin_instance.plugin_id] = (
+                plugin_instance
+            )
 
             if plugin_instance.initialize():
-                self.stdout.write(self.style.SUCCESS(f'成功从路径安装插件: {plugin_instance.name}'))
+                self.stdout.write(self.style.SUCCESS(
+                    f'成功从路径安装插件: {plugin_instance.name}'
+                ))
             else:
-                self.stdout.write(self.style.WARNING(f'插件 {plugin_instance.name} 安装成功但初始化失败'))
+                self.stdout.write(self.style.WARNING(
+                    f'插件 {plugin_instance.name} 安装成功但初始化失败'
+                ))
 
             plugin_record, created = PluginRecord.objects.update_or_create(
                 plugin_id=plugin_instance.plugin_id,
@@ -495,34 +443,9 @@ class Command(BaseCommand):
             if created:
                 self.stdout.write(f'已创建插件数据库记录')
 
-            plugin_dir_name = os.path.basename(plugin_path)
-            if plugin_file == '__init__.py':
-                module_name = f'plugins.{plugin_dir_name}'
-            else:
-                plugin_files = [f for f in os.listdir(plugin_path) if f.endswith('.py')]
-                actual_plugin_file = None
-
-                for pf in plugin_files:
-                    if pf == '__init__.py':
-                        continue
-                    file_path = os.path.join(plugin_path, pf)
-                    try:
-                        with open(file_path, 'r', encoding='utf-8') as f:
-                            content = f.read()
-                            if plugin_class.__name__ in content and 'class' in content and plugin_class.__name__ + '(' in content:
-                                actual_plugin_file = pf
-                                break
-                    except UnicodeDecodeError:
-                        continue
-
-                if actual_plugin_file:
-                    module_name = f'plugins.{plugin_dir_name}.{actual_plugin_file[:-3]}'
-                else:
-                    module_name = f'plugins.{plugin_dir_name}.{plugin_file[:-3]}'
-
             self.add_plugin_to_toml_config(plugin_instance.plugin_id, {
                 'name': plugin_instance.name,
-                'module': module_name,
+                'module': plugin_module_name,
                 'class': plugin_class.__name__,
                 'description': plugin_instance.description,
                 'version': plugin_instance.version,
@@ -530,6 +453,76 @@ class Command(BaseCommand):
             })
         except Exception as e:
             raise CommandError(f'从路径安装插件失败: {str(e)}')
+
+    def _load_plugin_class_from_external(self, plugin_path):
+        plugin_class = None
+        plugin_module_name = None
+        plugin_dir_name = os.path.basename(plugin_path)
+
+        init_file = os.path.join(plugin_path, '__init__.py')
+        if os.path.exists(init_file):
+            try:
+                spec = importlib.util.spec_from_file_location(
+                    f"plugin_init_{plugin_dir_name}", init_file
+                )
+                if spec is not None and spec.loader is not None:
+                    init_module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(init_module)
+                    if hasattr(init_module, 'PLUGIN_INFO'):
+                        pinfo = getattr(init_module, 'PLUGIN_INFO')
+                        mc = pinfo.get('main_class')
+                        if mc and hasattr(init_module, mc):
+                            plugin_class = getattr(init_module, mc)
+                            plugin_module_name = (
+                                f'plugins.{plugin_dir_name}'
+                            )
+            except Exception:
+                pass
+
+        if not plugin_class:
+            py_files = [
+                f for f in os.listdir(plugin_path)
+                if f.endswith('.py') and f != '__init__.py'
+            ]
+            for pf in py_files:
+                fp = os.path.join(plugin_path, pf)
+                try:
+                    with open(fp, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                    if not re.search(
+                        r'class\s+\w+\s*\([^)]*PluginInterface',
+                        content, re.DOTALL
+                    ):
+                        continue
+
+                    mod_name = f'plugins.{plugin_dir_name}.{pf[:-3]}'
+                    spec = importlib.util.spec_from_file_location(
+                        mod_name, fp
+                    )
+                    if spec is None or spec.loader is None:
+                        continue
+                    module = importlib.util.module_from_spec(spec)
+                    sys.modules[mod_name] = module
+                    spec.loader.exec_module(module)
+
+                    for attr_name in dir(module):
+                        attr = getattr(module, attr_name)
+                        if not inspect.isclass(attr):
+                            continue
+                        if attr.__name__ == 'PluginInterface':
+                            continue
+                        if not hasattr(attr, '__mro__'):
+                            continue
+                        if any(
+                            hasattr(b, '__name__') and
+                            b.__name__ == 'PluginInterface'
+                            for b in attr.__mro__
+                        ):
+                            return attr, mod_name
+                except Exception:
+                    continue
+
+        return plugin_class, plugin_module_name
 
     def install_builtin_plugin(self, plugin_id, plugin_info):
         plugin_manager = get_plugin_manager()
