@@ -66,34 +66,36 @@
 
                 <!-- 移动端用户菜单项 -->
                 {% if user.is_authenticated %}
-                <li class="relative max-md:w-full mobile-user-item hidden">
+                <li class="max-md:w-full md:hidden"><div class="h-px bg-md-outline-variant my-2"></div></li>
+                <li class="relative max-md:w-full md:hidden">
                     <a class="flex items-center gap-2 px-4 py-2 rounded-md-xl text-md-on-surface-variant no-underline text-sm font-medium transition hover:bg-md-surface-variant hover:text-md-on-surface min-h-[40px] whitespace-nowrap max-md:w-full max-md:justify-start max-md:px-4 max-md:py-3 max-md:rounded-md" href="{% url 'accounts:profile' %}">
                         <span class="material-symbols-rounded text-lg">account_circle</span>
                         个人资料
                     </a>
                 </li>
                 {% if user.is_staff or user.is_superuser %}
-                <li class="relative max-md:w-full mobile-admin-item hidden">
+                <li class="relative max-md:w-full md:hidden">
                     <a class="flex items-center gap-2 px-4 py-2 rounded-md-xl text-md-on-surface-variant no-underline text-sm font-medium transition hover:bg-md-surface-variant hover:text-md-on-surface min-h-[40px] whitespace-nowrap max-md:w-full max-md:justify-start max-md:px-4 max-md:py-3 max-md:rounded-md" href="/admin/">
                         <span class="material-symbols-rounded text-lg">admin_panel_settings</span>
                         后台管理
                     </a>
                 </li>
                 {% endif %}
-                <li class="relative max-md:w-full mobile-logout-item hidden">
-                    <a class="flex items-center gap-2 px-4 py-2 rounded-md-xl text-md-on-surface-variant no-underline text-sm font-medium transition hover:bg-md-surface-variant hover:text-md-on-surface min-h-[40px] whitespace-nowrap max-md:w-full max-md:justify-start max-md:px-4 max-md:py-3 max-md:rounded-md" href="{% url 'accounts:logout' %}">
+                <li class="relative max-md:w-full md:hidden">
+                    <a class="flex items-center gap-2 px-4 py-2 rounded-md-xl text-md-error no-underline text-sm font-medium transition hover:bg-md-error/10 min-h-[40px] whitespace-nowrap max-md:w-full max-md:justify-start max-md:px-4 max-md:py-3 max-md:rounded-md" href="{% url 'accounts:logout' %}">
                         <span class="material-symbols-rounded text-lg">logout</span>
                         退出登录
                     </a>
                 </li>
                 {% else %}
-                <li class="relative max-md:w-full mobile-login-item hidden">
+                <li class="max-md:w-full md:hidden"><div class="h-px bg-md-outline-variant my-2"></div></li>
+                <li class="relative max-md:w-full md:hidden">
                     <a class="flex items-center gap-2 px-4 py-2 rounded-md-xl text-md-on-surface-variant no-underline text-sm font-medium transition hover:bg-md-surface-variant hover:text-md-on-surface min-h-[40px] whitespace-nowrap max-md:w-full max-md:justify-start max-md:px-4 max-md:py-3 max-md:rounded-md" href="{% url 'accounts:login' %}">
                         <span class="material-symbols-rounded text-lg">login</span>
                         登录
                     </a>
                 </li>
-                <li class="relative max-md:w-full mobile-register-item hidden">
+                <li class="relative max-md:w-full md:hidden">
                     <a class="flex items-center gap-2 px-4 py-2 rounded-md-xl text-md-on-surface-variant no-underline text-sm font-medium transition hover:bg-md-surface-variant hover:text-md-on-surface min-h-[40px] whitespace-nowrap max-md:w-full max-md:justify-start max-md:px-4 max-md:py-3 max-md:rounded-md" href="{% url 'accounts:register' %}">
                         <span class="material-symbols-rounded text-lg">person_add</span>
                         注册
