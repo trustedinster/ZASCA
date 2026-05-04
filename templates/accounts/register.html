@@ -105,34 +105,11 @@
                     </label>
                 </div>
 
-                <input type="hidden" name="lot_number" id="lot_number_reg">
-                <input type="hidden" name="captcha_output" id="captcha_output_reg">
-                <input type="hidden" name="pass_token" id="pass_token_reg">
-                <input type="hidden" name="gen_time" id="gen_time_reg">
-                <input type="hidden" name="captcha_id" id="captcha_id_reg" value="{{ GEETEST_ID }}">
-
                 <div>
-                    {% if CAPTCHA_PROVIDER == 'geetest' %}
-                    <button type="submit" class="inline-flex items-center justify-center gap-2 bg-md-primary text-md-on-primary rounded-md px-6 py-3 hover:bg-md-primary/90 transition font-medium w-full focus:outline-none focus:ring-2 focus:ring-md-primary disabled:opacity-50 disabled:cursor-not-allowed" data-geetest-trigger="true">
+                    <button type="submit" class="inline-flex items-center justify-center gap-2 bg-md-primary text-md-on-primary rounded-md px-6 py-3 hover:bg-md-primary/90 transition font-medium w-full focus:outline-none focus:ring-2 focus:ring-md-primary disabled:opacity-50 disabled:cursor-not-allowed" id="register-button">
                         <span class="material-icons text-xl">person_add</span>
                         <span>创建账户</span>
                     </button>
-                    {% elif CAPTCHA_PROVIDER == 'turnstile' %}
-                    <button type="submit" class="inline-flex items-center justify-center gap-2 bg-md-primary text-md-on-primary rounded-md px-6 py-3 hover:bg-md-primary/90 transition font-medium w-full focus:outline-none focus:ring-2 focus:ring-md-primary disabled:opacity-50 disabled:cursor-not-allowed">
-                        <span class="material-icons text-xl">person_add</span>
-                        <span>创建账户</span>
-                    </button>
-                    {% elif CAPTCHA_PROVIDER == 'local' %}
-                    <button type="button" class="inline-flex items-center justify-center gap-2 bg-md-primary text-md-on-primary rounded-md px-6 py-3 hover:bg-md-primary/90 transition font-medium w-full focus:outline-none focus:ring-2 focus:ring-md-primary disabled:opacity-50 disabled:cursor-not-allowed" id="register-button">
-                        <span class="material-icons text-xl">person_add</span>
-                        <span>创建账户</span>
-                    </button>
-                    {% else %}
-                    <button type="submit" class="inline-flex items-center justify-center gap-2 bg-md-primary text-md-on-primary rounded-md px-6 py-3 hover:bg-md-primary/90 transition font-medium w-full focus:outline-none focus:ring-2 focus:ring-md-primary disabled:opacity-50 disabled:cursor-not-allowed">
-                        <span class="material-icons text-xl">person_add</span>
-                        <span>创建账户</span>
-                    </button>
-                    {% endif %}
                 </div>
             </form>
 

@@ -130,10 +130,7 @@ class HostWizardForm(forms.ModelForm):
                 'placeholder': '输入主机描述（可选）',
                 'x-model': 'description',
             }),
-            'providers': forms.SelectMultiple(attrs={
-                'class': 'hidden',
-                'x-ref': 'providersSelect',
-            }),
+            'providers': forms.CheckboxSelectMultiple(),
         }
         labels = {
             'name': '主机名称',

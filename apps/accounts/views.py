@@ -85,13 +85,6 @@ class RegisterView(CreateView):
         # Optionally clear the code to prevent reuse
         cache.delete(cache_key)
 
-        from .captcha_service import validate_captcha
-        is_valid, error_msg = validate_captcha(self.request, scene='register')
-
-        if not is_valid:
-            form.add_error(None, error_msg)
-            return self.form_invalid(form)
-
         response = super().form_valid(form)
         messages.success(
             self.request,
@@ -595,14 +588,6 @@ class RegisterByLinkView(CreateView):
             return self.form_invalid(form)
 
         cache.delete(cache_key)
-
-        from .captcha_service import validate_captcha
-        is_valid, error_msg = validate_captcha(
-            self.request, scene='register'
-        )
-        if not is_valid:
-            form.add_error(None, error_msg)
-            return self.form_invalid(form)
 
         user = form.save()
 
