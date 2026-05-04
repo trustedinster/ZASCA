@@ -24,6 +24,11 @@ urlpatterns = [
         name='host_wizard'
     ),
     path(
+        'wizard/generate-token/',
+        views_admin.admin_host_wizard_generate_token,
+        name='host_wizard_generate_token'
+    ),
+    path(
         'create/',
         views_admin.AdminHostCreateView.as_view(),
         name='host_create'

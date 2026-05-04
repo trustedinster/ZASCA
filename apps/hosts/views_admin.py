@@ -7,7 +7,10 @@
 
 import json
 import logging
+import os
+import secrets
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -734,12 +737,23 @@ def admin_host_wizard(request):
     # 获取提供商列表及主机数量（用于向导第三步）
     providers_with_count = form.get_providers_with_host_count()
 
+    gateway_url = os.environ.get(
+        'TUNNEL_GATEWAY_URL',
+        'wss://gateway.zasca.com:9000'
+    )
+    server_base_url = os.environ.get(
+        'TUNNEL_SERVER_BASE_URL',
+        request.build_absolute_uri('/').rstrip('/')
+    )
+
     context = {
         'form': form,
         'providers_with_count': providers_with_count,
         'connection_type_choices': Host.CONNECTION_TYPE_CHOICES,
         'default_ports': json.dumps(CONNECTION_DEFAULT_PORTS),
         'default_ssl': json.dumps(CONNECTION_DEFAULT_SSL),
+        'gateway_url': gateway_url,
+        'server_base_url': server_base_url,
         'page_title': '添加主机',
         'active_nav': 'hosts',
     }
@@ -749,3 +763,33 @@ def admin_host_wizard(request):
         'admin_base/hosts/host_wizard.html',
         context,
     )
+
+
+@admin_required
+def admin_host_wizard_generate_token(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+
+    try:
+        token = secrets.token_urlsafe(32)
+        gateway_url = os.environ.get(
+            'TUNNEL_GATEWAY_URL',
+            'wss://gateway.zasca.com:9000'
+        )
+        server_base_url = os.environ.get(
+            'TUNNEL_SERVER_BASE_URL',
+            request.build_absolute_uri('/').rstrip('/')
+        )
+
+        return JsonResponse({
+            'success': True,
+            'tunnel_token': token,
+            'gateway_url': gateway_url,
+            'server_base_url': server_base_url,
+        })
+    except Exception as e:
+        logger.error(f"Error generating tunnel token: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': 'Failed to generate tunnel token',
+        }, status=500)
