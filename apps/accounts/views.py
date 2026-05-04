@@ -120,11 +120,12 @@ class LoginView(TemplateView):
         context['form'] = UserLoginForm()
         from apps.dashboard.models import SystemConfig
         sc = SystemConfig.get_config()
-        captcha_id, _ = geetest_utils._get_runtime_keys()
+        # 使用场景化配置获取登录场景的验证码设置
+        captcha_provider, captcha_id, captcha_key = sc.get_captcha_config(scene='login')
         context['GEETEST_ID'] = captcha_id
-        context['CAPTCHA_PROVIDER'] = sc.captcha_provider
-        if sc.captcha_provider == 'turnstile':
-            context['TURNSTILE_SITE_KEY'] = sc.captcha_id
+        context['CAPTCHA_PROVIDER'] = captcha_provider
+        if captcha_provider == 'turnstile':
+            context['TURNSTILE_SITE_KEY'] = captcha_key
         else:
             context['TURNSTILE_SITE_KEY'] = None
         
@@ -564,11 +565,11 @@ class RegisterByLinkView(CreateView):
         context['target_group'] = self.reglink.group
         from apps.dashboard.models import SystemConfig
         sc = SystemConfig.get_config()
-        captcha_id, _ = geetest_utils._get_runtime_keys()
-        context['GEETEST_ID'] = captcha_id
-        captcha_provider, _, captcha_key = sc.get_captcha_config(
+        # 使用场景化配置获取注册场景的验证码设置
+        captcha_provider, captcha_id, captcha_key = sc.get_captcha_config(
             scene='register'
         )
+        context['GEETEST_ID'] = captcha_id
         context['CAPTCHA_PROVIDER'] = captcha_provider
         if captcha_provider == 'turnstile':
             context['TURNSTILE_SITE_KEY'] = captcha_key

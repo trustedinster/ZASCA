@@ -88,7 +88,13 @@
 
         if(provider === 'geetest'){
             // show geetest popup, use adapter's mechanism: initGeetest4 and onSuccess
-            initGeetest4({ captchaId: window.GEETEST_CAPTCHA_ID || window.GEETEST_CAPTCHA_ID || (document.getElementById('captcha_id') && document.getElementById('captcha_id').value) }, function(captcha){
+            // Get captchaId from button attribute, window global, or hidden input
+            var emailCaptchaId = btn.getAttribute('data-captcha-id') || window.GEETEST_CAPTCHA_ID || (document.getElementById('captcha_id') && document.getElementById('captcha_id').value);
+            if(!emailCaptchaId){
+                alert('Geetest captcha ID 未配置');
+                return;
+            }
+            initGeetest4({ captchaId: emailCaptchaId }, function(captcha){
                 var container = document.getElementById('geetest-email-popup');
                 if(!container){ container = document.createElement('div'); container.id='geetest-email-popup'; document.body.appendChild(container);}
                 container.innerHTML = '';
@@ -104,7 +110,7 @@
                             form.append('captcha_output', res.captcha_output || res.captchaOutput || '');
                             form.append('pass_token', res.pass_token || res.passToken || '');
                             form.append('gen_time', res.gen_time || res.genTime || '');
-                            form.append('captcha_id', document.getElementById('captcha_id') ? document.getElementById('captcha_id').value : '');
+                            form.append('captcha_id', emailCaptchaId);
                         }
                         postCode(form, btn); // Pass button reference for countdown
                         try{ container.remove(); } catch(e){ container.style.display='none'; }
