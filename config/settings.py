@@ -106,6 +106,7 @@ INSTALLED_APPS = [
 # 这样插件不存在时系统仍能正常启动（松耦合）
 def _discover_plugin_apps():
     plugin_apps = []
+    seen = set()
     toml_path = BASE_DIR / 'plugins' / 'plugins.toml'
     if not toml_path.exists():
         return plugin_apps
@@ -114,14 +115,26 @@ def _discover_plugin_apps():
         toml_data = toml.loads(toml_path.read_text(encoding='utf-8'))
         for section in ('builtin', 'third_party'):
             for _key, info in toml_data.get(section, {}).items():
-                if info.get('enabled', True) and info.get('django_app', True):
-                    module = info.get('module', '')
-                    if module:
-                        try:
-                            importlib.import_module(module)
-                            plugin_apps.append(module)
-                        except ImportError:
-                            pass
+                if not info.get('enabled', True):
+                    continue
+                if not info.get('django_app', True):
+                    continue
+                module = info.get('module', '')
+                if not module:
+                    continue
+                parts = module.split('.')
+                if len(parts) >= 2 and parts[0] == 'plugins':
+                    app_module = '.'.join(parts[:2])
+                else:
+                    app_module = module
+                if app_module in seen:
+                    continue
+                seen.add(app_module)
+                pkg_dir = (
+                    BASE_DIR / 'plugins' / app_module.split('.')[-1]
+                )
+                if pkg_dir.is_dir() and (pkg_dir / '__init__.py').exists():
+                    plugin_apps.append(app_module)
     except Exception:
         pass
     return plugin_apps

@@ -33,12 +33,14 @@ class Command(BaseCommand):
         parser.add_argument('--source', type=str, help='插件源地址或本地路径')
         parser.add_argument('--force', action='store_true', help='强制执行操作')
         parser.add_argument('--no-migrate', action='store_true', help='跳过数据库迁移')
+        parser.add_argument('--debug', action='store_true', help='输出调试信息')
         parser.add_argument('--registry', type=str, default=PLUGIN_REGISTRY_URL, help='插件仓库地址')
 
     def handle(self, *args, **options):
         action = options['action']
         plugin_name = options.get('plugin_name')
         no_migrate = options.get('no_migrate', False)
+        self.debug = options.get('debug', False)
 
         if action == 'list':
             self.list_plugins()
@@ -349,24 +351,33 @@ class Command(BaseCommand):
     def _load_plugin_class_from_package(self, plugin_id, plugin_path):
         plugin_class = None
         plugin_module_name = None
+        mod_name = f'plugins.{plugin_id}'
 
         init_file = os.path.join(plugin_path, '__init__.py')
         if os.path.exists(init_file):
             try:
-                mod_name = f'plugins.{plugin_id}'
                 init_module = importlib.import_module(mod_name)
                 if hasattr(init_module, 'PLUGIN_INFO'):
                     pinfo = getattr(init_module, 'PLUGIN_INFO')
                     if 'main_class' in pinfo and hasattr(init_module, pinfo['main_class']):
                         plugin_class = getattr(init_module, pinfo['main_class'])
                         plugin_module_name = mod_name
-            except ImportError:
-                pass
+                        if self.debug:
+                            self.stdout.write(f'[DEBUG] 从 PLUGIN_INFO 找到插件类: {plugin_class.__name__}')
+            except ImportError as e:
+                if self.debug:
+                    self.stdout.write(f'[DEBUG] import_module({mod_name}) 失败: {e}')
 
         if not plugin_class:
             plugin_class, plugin_module_name = self._scan_py_files_for_plugin(
                 plugin_id, plugin_path
             )
+
+        if self.debug:
+            if plugin_class:
+                self.stdout.write(f'[DEBUG] 找到插件类: {plugin_class.__name__} from {plugin_module_name}')
+            else:
+                self.stdout.write(f'[DEBUG] 未找到插件类 in {plugin_path}')
 
         return plugin_class, plugin_module_name
 
@@ -835,12 +846,21 @@ class Command(BaseCommand):
         import subprocess
         import sys
         self.stdout.write(f'正在执行数据库迁移: {app_label}')
+        if self.debug:
+            from django.apps import apps
+            installed = [a.label for a in apps.get_app_configs()]
+            self.stdout.write(f'[DEBUG] 已注册 App labels: {installed}')
+            self.stdout.write(f'[DEBUG] {app_label} is_installed: {apps.is_installed(app_label)}')
         try:
             result = subprocess.run(
-                [sys.executable, 'manage.py', 'migrate', app_label],
+                [sys.executable, 'manage.py', 'migrate', app_label, '--verbosity=2' if self.debug else '--verbosity=0'],
                 capture_output=True, text=True,
                 cwd=str(settings.BASE_DIR),
             )
+            if self.debug and result.stdout:
+                self.stdout.write(f'[DEBUG] migrate stdout:\n{result.stdout}')
+            if self.debug and result.stderr:
+                self.stdout.write(f'[DEBUG] migrate stderr:\n{result.stderr}')
             if result.returncode == 0:
                 self.stdout.write(self.style.SUCCESS(
                     f'数据库迁移完成: {app_label}'
