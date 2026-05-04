@@ -28,26 +28,42 @@ class Command(BaseCommand):
     help = '插件管理命令，类似 pip 的功能'
 
     def add_arguments(self, parser):
-        parser.add_argument('action', type=str, help='操作类型: install, uninstall, list, info, search, login')
+        parser.add_argument('action', type=str, help='操作类型: install, upgrade, uninstall, list, info, search, login')
         parser.add_argument('plugin_name', nargs='?', type=str, help='插件名称或本地路径')
         parser.add_argument('--source', type=str, help='插件源地址或本地路径')
         parser.add_argument('--force', action='store_true', help='强制执行操作')
+        parser.add_argument('--no-migrate', action='store_true', help='跳过数据库迁移')
         parser.add_argument('--registry', type=str, default=PLUGIN_REGISTRY_URL, help='插件仓库地址')
 
     def handle(self, *args, **options):
         action = options['action']
         plugin_name = options.get('plugin_name')
+        no_migrate = options.get('no_migrate', False)
 
         if action == 'list':
             self.list_plugins()
         elif action == 'install':
             if not plugin_name:
                 raise CommandError('安装插件需要指定插件名称或路径')
-            self.install_plugin(plugin_name, options.get('source'), options.get('force'), options.get('registry'))
+            self.install_plugin(
+                plugin_name,
+                options.get('source'),
+                options.get('force'),
+                options.get('registry'),
+                no_migrate=no_migrate,
+            )
+        elif action == 'upgrade':
+            if not plugin_name:
+                raise CommandError('升级插件需要指定插件名称')
+            self.upgrade_plugin(plugin_name, options.get('registry'))
         elif action == 'uninstall':
             if not plugin_name:
                 raise CommandError('卸载插件需要指定插件名称')
-            self.uninstall_plugin(plugin_name, options.get('force'))
+            self.uninstall_plugin(
+                plugin_name,
+                options.get('force'),
+                no_migrate=no_migrate,
+            )
         elif action == 'info':
             if not plugin_name:
                 raise CommandError('查看插件信息需要指定插件名称')
@@ -58,7 +74,11 @@ class Command(BaseCommand):
         elif action == 'login':
             self.login_github()
         else:
-            raise CommandError(f'未知的操作: {action}. 支持的操作: install, uninstall, list, info, search, login')
+            raise CommandError(
+                f'未知的操作: {action}. '
+                f'支持的操作: install, upgrade, uninstall, '
+                f'list, info, search, login'
+            )
 
     def _fetch_registry(self, registry_url=None):
         url = registry_url or PLUGIN_REGISTRY_URL
@@ -157,33 +177,43 @@ class Command(BaseCommand):
                 '未找到 gh CLI，请先安装 GitHub CLI: https://cli.github.com/'
             )
 
-    def install_plugin(self, plugin_name, source=None, force=False, registry_url=None):
+    def install_plugin(self, plugin_name, source=None, force=False, registry_url=None, no_migrate=False):
         self.stdout.write(f'正在安装插件: {plugin_name}')
 
+        app_label = None
+
         if os.path.exists(plugin_name) and os.path.isdir(plugin_name):
-            self.install_from_path(plugin_name)
-            return
+            app_label = self.install_from_path(plugin_name)
+        else:
+            plugin_path = os.path.join(
+                settings.BASE_DIR, 'plugins', plugin_name
+            )
+            if os.path.exists(plugin_path) and os.path.isdir(plugin_path):
+                app_label = self.install_from_path(plugin_path)
+            elif plugin_name in ALL_AVAILABLE_PLUGINS:
+                plugin_info = ALL_AVAILABLE_PLUGINS[plugin_name]
+                app_label = self.install_builtin_plugin(
+                    plugin_id=plugin_name, plugin_info=plugin_info
+                )
+            else:
+                found = False
+                for pid, pinfo in ALL_AVAILABLE_PLUGINS.items():
+                    if pinfo['name'].lower() == plugin_name.lower():
+                        app_label = self.install_builtin_plugin(
+                            plugin_id=pid, plugin_info=pinfo
+                        )
+                        found = True
+                        break
+                if not found:
+                    if source and os.path.exists(source) and os.path.isdir(source):
+                        app_label = self.install_from_path(source)
+                    else:
+                        app_label = self.install_from_registry(
+                            plugin_name, registry_url, force
+                        )
 
-        plugin_path = os.path.join(settings.BASE_DIR, 'plugins', plugin_name)
-        if os.path.exists(plugin_path) and os.path.isdir(plugin_path):
-            self.install_from_path(plugin_path)
-            return
-
-        if plugin_name in ALL_AVAILABLE_PLUGINS:
-            plugin_info = ALL_AVAILABLE_PLUGINS[plugin_name]
-            self.install_builtin_plugin(plugin_name, plugin_info)
-            return
-
-        for plugin_id, plugin_info in ALL_AVAILABLE_PLUGINS.items():
-            if plugin_info['name'].lower() == plugin_name.lower():
-                self.install_builtin_plugin(plugin_id, plugin_info)
-                return
-
-        if source and os.path.exists(source) and os.path.isdir(source):
-            self.install_from_path(source)
-            return
-
-        self.install_from_registry(plugin_name, registry_url, force)
+        if app_label and not no_migrate:
+            self._run_migrate(app_label)
 
     def install_from_registry(self, plugin_name, registry_url=None, force=False):
         remote_plugins = self._fetch_registry(registry_url)
@@ -263,9 +293,11 @@ class Command(BaseCommand):
 
         self._try_register_cloned_plugin(plugin_name, target_dir, plugin_info)
 
+        app_label = plugin_name
         self.stdout.write(self.style.SUCCESS(
             f'插件 {plugin_info.get("name", plugin_name)} 安装完成!'
         ))
+        return app_label
 
     def _try_register_cloned_plugin(self, plugin_id, plugin_path, registry_info):
         plugin_class = None
@@ -451,6 +483,7 @@ class Command(BaseCommand):
                 'version': plugin_instance.version,
                 'enabled': True
             })
+            return self._get_app_label_from_module(plugin_module_name)
         except Exception as e:
             raise CommandError(f'从路径安装插件失败: {str(e)}')
 
@@ -531,7 +564,9 @@ class Command(BaseCommand):
             self.stdout.write(
                 self.style.WARNING(f'插件 {plugin_info["name"]} 已经加载.')
             )
-            return
+            return self._get_app_label_from_module(
+                plugin_info.get('module', '')
+            )
 
         plugin = plugin_manager.load_builtin_plugin(plugin_id, plugin_info)
         if not plugin:
@@ -539,11 +574,17 @@ class Command(BaseCommand):
 
         try:
             if plugin.initialize():
-                self.stdout.write(self.style.SUCCESS(f'成功安装并初始化插件: {plugin.name}'))
+                self.stdout.write(self.style.SUCCESS(
+                    f'成功安装并初始化插件: {plugin.name}'
+                ))
             else:
-                self.stdout.write(self.style.WARNING(f'插件 {plugin.name} 安装成功但初始化失败'))
+                self.stdout.write(self.style.WARNING(
+                    f'插件 {plugin.name} 安装成功但初始化失败'
+                ))
         except Exception as e:
-            self.stdout.write(self.style.WARNING(f'插件 {plugin.name} 安装成功但初始化出错: {str(e)}'))
+            self.stdout.write(self.style.WARNING(
+                f'插件 {plugin.name} 安装成功但初始化出错: {str(e)}'
+            ))
 
         plugin_record, created = PluginRecord.objects.update_or_create(
             plugin_id=plugin.plugin_id,
@@ -561,22 +602,30 @@ class Command(BaseCommand):
         if plugin_id not in ALL_AVAILABLE_PLUGINS:
             self.add_plugin_to_toml_config(plugin_id, plugin_info)
 
-    def uninstall_plugin(self, plugin_name, force=False):
+        return self._get_app_label_from_module(
+            plugin_info.get('module', '')
+        )
+
+    def uninstall_plugin(self, plugin_name, force=False, no_migrate=False):
         self.stdout.write(f'正在卸载插件: {plugin_name}')
 
         plugin_manager = get_plugin_manager()
 
         plugin = None
         loaded_plugins = plugin_manager.get_all_plugins()
+        app_label = None
         for pid, p in loaded_plugins.items():
             if p.plugin_id == plugin_name or p.name.lower() == plugin_name.lower():
                 plugin = p
+                app_label = pid
                 break
 
         if not plugin:
             db_record = PluginRecord.objects.filter(plugin_id=plugin_name).first()
             if db_record:
                 if force or input(f'插件 {plugin_name} 未加载但数据库中有记录。是否删除数据库记录？(y/N): ').lower() == 'y':
+                    if not no_migrate:
+                        self._run_migrate_reverse(plugin_name)
                     PluginRecord.objects.filter(plugin_id=plugin_name).delete()
                     self.remove_plugin_from_toml_config(plugin_name)
                     plugin_dir = os.path.join(settings.BASE_DIR, 'plugins', plugin_name)
@@ -598,6 +647,8 @@ class Command(BaseCommand):
             success = plugin_manager.unload_plugin(plugin.plugin_id)
 
             if success:
+                if not no_migrate and app_label:
+                    self._run_migrate_reverse(app_label)
                 PluginRecord.objects.filter(plugin_id=plugin.plugin_id).update(is_active=False)
                 self.remove_plugin_from_toml_config(plugin.plugin_id)
                 plugin_dir = os.path.join(settings.BASE_DIR, 'plugins', plugin.plugin_id)
@@ -609,6 +660,8 @@ class Command(BaseCommand):
                 raise CommandError(f'卸载插件 {plugin.name} 失败')
         except Exception as e:
             if force:
+                if not no_migrate and app_label:
+                    self._run_migrate_reverse(app_label)
                 PluginRecord.objects.filter(plugin_id=plugin.plugin_id).delete()
                 self.remove_plugin_from_toml_config(plugin.plugin_id)
                 plugin_dir = os.path.join(settings.BASE_DIR, 'plugins', plugin.plugin_id)
@@ -769,3 +822,71 @@ class Command(BaseCommand):
             self.stdout.write(f'已从 TOML 配置文件中移除插件 {plugin_id}')
         else:
             self.stdout.write(f'插件 {plugin_id} 在 TOML 配置文件中未找到')
+
+    def _get_app_label_from_module(self, module_name):
+        if not module_name:
+            return None
+        parts = module_name.rsplit('.', 1)
+        if len(parts) == 2 and parts[0].startswith('plugins.'):
+            return parts[0].split('.')[1]
+        return None
+
+    def _run_migrate(self, app_label):
+        from django.core.management import call_command
+        self.stdout.write(f'正在执行数据库迁移: {app_label}')
+        try:
+            call_command('migrate', app_label, verbosity=0)
+            self.stdout.write(self.style.SUCCESS(
+                f'数据库迁移完成: {app_label}'
+            ))
+        except Exception as e:
+            self.stdout.write(self.style.WARNING(
+                f'数据库迁移失败: {str(e)}'
+            ))
+            self.stdout.write(
+                '你可以手动执行: '
+                f'python manage.py migrate {app_label}'
+            )
+
+    def _run_migrate_reverse(self, app_label):
+        from django.core.management import call_command
+        self.stdout.write(f'正在回滚数据库迁移: {app_label}')
+        try:
+            call_command('migrate', app_label, 'zero', verbosity=0)
+            self.stdout.write(self.style.SUCCESS(
+                f'数据库迁移已回滚: {app_label}'
+            ))
+        except Exception as e:
+            self.stdout.write(self.style.WARNING(
+                f'数据库迁移回滚失败: {str(e)}'
+            ))
+
+    def upgrade_plugin(self, plugin_name, registry_url=None):
+        self.stdout.write(f'正在升级插件: {plugin_name}')
+
+        plugin_info = ALL_AVAILABLE_PLUGINS.get(plugin_name)
+        if not plugin_info:
+            for pid, pinfo in ALL_AVAILABLE_PLUGINS.items():
+                if pinfo['name'].lower() == plugin_name.lower():
+                    plugin_info = pinfo
+                    plugin_name = pid
+                    break
+
+        if not plugin_info:
+            self.stdout.write(
+                '插件未在本地配置中找到，尝试从远程仓库更新...'
+            )
+            self.install_from_registry(
+                plugin_name, registry_url, force=True
+            )
+            return
+
+        app_label = self._get_app_label_from_module(
+            plugin_info.get('module', '')
+        )
+        if app_label:
+            self._run_migrate(app_label)
+
+        self.stdout.write(self.style.SUCCESS(
+            f'插件 {plugin_name} 升级完成'
+        ))
