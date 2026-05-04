@@ -5,7 +5,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('plugins', '0007_add_use_default_bot_and_group_ids'),
-        ('qq_verification', '0001_initial'),
     ]
 
     operations = [
