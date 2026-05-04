@@ -167,6 +167,10 @@ class HostWizardForm(forms.ModelForm):
         if connection_type == 'tunnel' and not hostname:
             cleaned_data['hostname'] = 'tunnel-pending'
 
+        tunnel_token = cleaned_data.get('tunnel_token')
+        if tunnel_token == '':
+            cleaned_data['tunnel_token'] = None
+
         return cleaned_data
 
     def save(self, commit=True):

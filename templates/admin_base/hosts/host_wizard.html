@@ -59,6 +59,8 @@
     <form method="post" @submit.prevent="onSubmit">
         {% csrf_token %}
 
+        <input type="hidden" name="tunnel_token" id="id_tunnel_token" x-model="tunnelToken">
+
         <!-- Non-field errors -->
         {% if form.non_field_errors %}
         <div class="mb-6">
