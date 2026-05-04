@@ -529,7 +529,7 @@ def send_register_email_code(request):
 class RegisterByLinkView(CreateView):
     model = User
     form_class = UserRegistrationForm
-    template_name = 'accounts/register_by_link.html'
+    template_name = 'accounts/register.html'
     success_url = reverse_lazy('accounts:login')
 
     def dispatch(self, request, *args, **kwargs):
@@ -558,9 +558,9 @@ class RegisterByLinkView(CreateView):
         context['target_group'] = self.reglink.group
         from apps.dashboard.models import SystemConfig
         sc = SystemConfig.get_config()
-        # 使用场景化配置获取注册场景的验证码设置
+        # 获取邮箱验证码场景的配置（获取验证码需要行为验证）
         captcha_provider, captcha_id, captcha_key = sc.get_captcha_config(
-            scene='register'
+            scene='email'
         )
         context['GEETEST_ID'] = captcha_id
         context['CAPTCHA_PROVIDER'] = captcha_provider
