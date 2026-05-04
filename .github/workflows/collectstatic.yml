@@ -9,6 +9,7 @@ on:
     branches: [ main, master ]
     paths:
       - 'static/**'
+  workflow_dispatch:
 
 jobs:
   collectstatic:
