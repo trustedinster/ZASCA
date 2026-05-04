@@ -6,12 +6,14 @@ import os
 import sys
 import subprocess
 import json
+import re
 import toml
 import inspect
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from plugins.core.plugin_manager import get_plugin_manager
 from plugins.models import PluginRecord
+import importlib
 import importlib.util
 from plugins.available_plugins import ALL_AVAILABLE_PLUGINS
 import shutil
@@ -266,55 +268,12 @@ class Command(BaseCommand):
         ))
 
     def _try_register_cloned_plugin(self, plugin_id, plugin_path, registry_info):
-        init_file = os.path.join(plugin_path, '__init__.py')
         plugin_class = None
-        plugin_file = None
+        plugin_module_name = None
 
-        if os.path.exists(init_file):
-            try:
-                spec = importlib.util.spec_from_file_location(
-                    f"plugin_init_{plugin_id}", init_file
-                )
-                init_module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(init_module)
-                if hasattr(init_module, 'PLUGIN_INFO'):
-                    pinfo = getattr(init_module, 'PLUGIN_INFO')
-                    if 'main_class' in pinfo and hasattr(init_module, pinfo['main_class']):
-                        plugin_class = getattr(init_module, pinfo['main_class'])
-                        plugin_file = '__init__.py'
-            except Exception:
-                pass
-
-        if not plugin_class:
-            py_files = [f for f in os.listdir(plugin_path) if f.endswith('.py') and f != '__init__.py']
-            for pf in py_files:
-                fp = os.path.join(plugin_path, pf)
-                try:
-                    with open(fp, 'r', encoding='utf-8') as f:
-                        content = f.read()
-                        if 'PluginInterface' in content and 'class' in content and (
-                            '(PluginInterface)' in content or
-                            '(PluginInterface,' in content or
-                            'PluginInterface):' in content
-                        ):
-                            spec = importlib.util.spec_from_file_location(
-                                f"external_plugin_{plugin_id}", fp
-                            )
-                            module = importlib.util.module_from_spec(spec)
-                            spec.loader.exec_module(module)
-                            for attr_name in dir(module):
-                                attr = getattr(module, attr_name)
-                                if (hasattr(attr, '__bases__') and
-                                    inspect.isclass(attr) and
-                                    any(hasattr(base, '__name__') and base.__name__ == 'PluginInterface'
-                                        for base in attr.__bases__)):
-                                    plugin_class = attr
-                                    plugin_file = pf
-                                    break
-                            if plugin_class:
-                                break
-                except Exception:
-                    continue
+        plugin_class, plugin_module_name = self._load_plugin_class_from_package(
+            plugin_id, plugin_path
+        )
 
         if plugin_class:
             try:
@@ -337,14 +296,9 @@ class Command(BaseCommand):
                     }
                 )
 
-                if plugin_file == '__init__.py':
-                    module_name = f'plugins.{plugin_id}'
-                else:
-                    module_name = f'plugins.{plugin_id}.{plugin_file[:-3]}'
-
                 self.add_plugin_to_toml_config(plugin_instance.plugin_id, {
                     'name': plugin_instance.name,
-                    'module': module_name,
+                    'module': plugin_module_name,
                     'class': plugin_class.__name__,
                     'description': plugin_instance.description,
                     'version': plugin_instance.version,
@@ -359,6 +313,75 @@ class Command(BaseCommand):
                 '未找到 PluginInterface 子类，插件已下载但未自动注册到 TOML 配置'
             ))
             self.stdout.write('你可能需要手动在 plugins.toml 中添加插件配置')
+
+    def _load_plugin_class_from_package(self, plugin_id, plugin_path):
+        plugin_class = None
+        plugin_module_name = None
+
+        init_file = os.path.join(plugin_path, '__init__.py')
+        if os.path.exists(init_file):
+            try:
+                mod_name = f'plugins.{plugin_id}'
+                init_module = importlib.import_module(mod_name)
+                if hasattr(init_module, 'PLUGIN_INFO'):
+                    pinfo = getattr(init_module, 'PLUGIN_INFO')
+                    if 'main_class' in pinfo and hasattr(init_module, pinfo['main_class']):
+                        plugin_class = getattr(init_module, pinfo['main_class'])
+                        plugin_module_name = mod_name
+            except ImportError:
+                pass
+
+        if not plugin_class:
+            plugin_class, plugin_module_name = self._scan_py_files_for_plugin(
+                plugin_id, plugin_path
+            )
+
+        return plugin_class, plugin_module_name
+
+    def _scan_py_files_for_plugin(self, plugin_id, plugin_path):
+        py_files = [
+            f for f in os.listdir(plugin_path)
+            if f.endswith('.py') and f != '__init__.py'
+        ]
+        for pf in py_files:
+            fp = os.path.join(plugin_path, pf)
+            try:
+                with open(fp, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                if not re.search(
+                    r'class\s+\w+\s*\([^)]*PluginInterface',
+                    content, re.DOTALL
+                ):
+                    continue
+
+                mod_name = f'plugins.{plugin_id}.{pf[:-3]}'
+                try:
+                    module = importlib.import_module(mod_name)
+                except ImportError:
+                    spec = importlib.util.spec_from_file_location(
+                        f"external_plugin_{plugin_id}", fp
+                    )
+                    if spec is None or spec.loader is None:
+                        continue
+                    module = importlib.util.module_from_spec(spec)
+                    sys.modules[mod_name] = module
+                    spec.loader.exec_module(module)
+
+                for attr_name in dir(module):
+                    attr = getattr(module, attr_name)
+                    if not inspect.isclass(attr) or not hasattr(attr, '__mro__'):
+                        continue
+                    if attr.__name__ == 'PluginInterface':
+                        continue
+                    if any(
+                        hasattr(base, '__name__') and base.__name__ == 'PluginInterface'
+                        for base in attr.__mro__
+                    ):
+                        return attr, mod_name
+            except Exception:
+                continue
+
+        return None, None
 
     def install_from_path(self, plugin_path):
         if not os.path.exists(plugin_path):
