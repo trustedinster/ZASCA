@@ -216,7 +216,7 @@ def admin_ticket_comment_create(request, pk):
             for error in errors:
                 messages.error(request, error)
 
-    return redirect('admin_tickets:ticket_detail', pk=ticket.pk)
+    return redirect('admin:admin_tickets:ticket_detail', pk=ticket.pk)
 
 
 # ===========================================================================
@@ -237,7 +237,7 @@ def admin_ticket_batch_processing(request):
     selected_ids = _get_selected_ids(request)
     if not selected_ids:
         messages.warning(request, '未选择任何工单。')
-        return redirect('admin_tickets:ticket_list')
+        return redirect('admin:admin_tickets:ticket_list')
 
     qs = Ticket.objects.filter(
         pk__in=selected_ids,
@@ -267,7 +267,7 @@ def admin_ticket_batch_processing(request):
     else:
         messages.warning(request, '没有可标记为处理中的工单。')
 
-    return redirect('admin_tickets:ticket_list')
+    return redirect('admin:admin_tickets:ticket_list')
 
 
 @admin_required
@@ -277,7 +277,7 @@ def admin_ticket_batch_resolved(request):
     selected_ids = _get_selected_ids(request)
     if not selected_ids:
         messages.warning(request, '未选择任何工单。')
-        return redirect('admin_tickets:ticket_list')
+        return redirect('admin:admin_tickets:ticket_list')
 
     qs = Ticket.objects.filter(
         pk__in=selected_ids,
@@ -310,7 +310,7 @@ def admin_ticket_batch_resolved(request):
     else:
         messages.warning(request, '没有可标记为已解决的工单。')
 
-    return redirect('admin_tickets:ticket_list')
+    return redirect('admin:admin_tickets:ticket_list')
 
 
 @admin_required
@@ -320,7 +320,7 @@ def admin_ticket_batch_closed(request):
     selected_ids = _get_selected_ids(request)
     if not selected_ids:
         messages.warning(request, '未选择任何工单。')
-        return redirect('admin_tickets:ticket_list')
+        return redirect('admin:admin_tickets:ticket_list')
 
     qs = Ticket.objects.filter(
         pk__in=selected_ids,
@@ -352,7 +352,7 @@ def admin_ticket_batch_closed(request):
     else:
         messages.warning(request, '没有可关闭的工单。')
 
-    return redirect('admin_tickets:ticket_list')
+    return redirect('admin:admin_tickets:ticket_list')
 
 
 # ===========================================================================
@@ -419,7 +419,7 @@ def admin_category_create(request):
                 request,
                 f'工单分类 {category.name} 创建成功',
             )
-            return redirect('admin_tickets:category_list')
+            return redirect('admin:admin_tickets:category_list')
     else:
         form = AdminTicketCategoryForm()
 
@@ -456,7 +456,7 @@ def admin_category_update(request, pk):
                 request,
                 f'工单分类 {category.name} 更新成功',
             )
-            return redirect('admin_tickets:category_list')
+            return redirect('admin:admin_tickets:category_list')
     else:
         form = AdminTicketCategoryForm(instance=category)
 
@@ -494,7 +494,7 @@ def admin_category_delete(request, pk):
             request,
             f'工单分类 {category_name} 已删除',
         )
-        return redirect('admin_tickets:category_list')
+        return redirect('admin:admin_tickets:category_list')
 
     # 获取关联工单数
     ticket_count = Ticket.objects.filter(category=category).count()
