@@ -7,6 +7,16 @@
     </label>
     {% endif %}
 
+    {% if attrs.type == 'select' %}
+    <select
+        name="{{ attrs.name|default:f.html_name }}"
+        id="{{ attrs.id|default:f.id_for_label }}"
+        {% if attrs.required|default:f.field.required %}required{% endif %}
+        class="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition appearance-none cursor-pointer {% if attrs.errors or f.errors %}border-red-500/50{% endif %}"
+    >
+        {{ slot }}
+    </select>
+    {% else %}
     <input
         type="{{ attrs.type|default:'text' }}"
         name="{{ attrs.name|default:f.html_name }}"
@@ -16,6 +26,7 @@
         {% if attrs.required|default:f.field.required %}required{% endif %}
         class="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition {% if attrs.errors or f.errors %}border-red-500/50{% endif %}"
     >
+    {% endif %}
 
     {% if attrs.help_text|default:f.help_text and not attrs.errors and not f.errors %}
     <p class="mt-1 text-sm text-white/70">{{ attrs.help_text|default:f.help_text }}</p>

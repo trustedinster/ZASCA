@@ -32,6 +32,14 @@ class DashboardWidgetForm(forms.ModelForm):
 class SystemConfigForm(forms.ModelForm):
     """系统配置表单（单例）"""
 
+    _PRESERVE_IF_EMPTY = [
+        'smtp_password',
+        'captcha_key',
+        'email_captcha_key',
+        'login_captcha_key',
+        'register_captcha_key',
+    ]
+
     class Meta:
         model = SystemConfig
         fields = [
@@ -63,7 +71,6 @@ class SystemConfigForm(forms.ModelForm):
         ]
 
     def clean_smtp_port(self):
-        """验证 SMTP 端口"""
         port = self.cleaned_data.get('smtp_port')
         if port and (port < 1 or port > 65535):
             raise forms.ValidationError('端口号必须在 1-65535 之间')
@@ -77,8 +84,16 @@ class SystemConfigForm(forms.ModelForm):
         errors = {}
 
         if provider in ['geetest', 'turnstile']:
-            if not (cleaned.get('captcha_id') and cleaned.get('captcha_key')):
-                msg = f'启用 {self.instance.get_captcha_provider_display()} 时必须填写验证码 ID 和密钥。'
+            captcha_id = cleaned.get('captcha_id')
+            captcha_key = cleaned.get('captcha_key')
+            if not captcha_key and self.instance and self.instance.pk:
+                captcha_key = self.instance.captcha_key
+            if not (captcha_id and captcha_key):
+                msg = (
+                    f'启用 '
+                    f'{self.instance.get_captcha_provider_display()} '
+                    f'时必须填写验证码 ID 和密钥。'
+                )
                 errors['captcha_id'] = msg
                 errors['captcha_key'] = msg
 
@@ -86,3 +101,16 @@ class SystemConfigForm(forms.ModelForm):
             raise forms.ValidationError(errors)
 
         return cleaned
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.instance and self.instance.pk:
+            for field in self._PRESERVE_IF_EMPTY:
+                if not getattr(instance, field):
+                    setattr(
+                        instance, field,
+                        getattr(self.instance, field),
+                    )
+        if commit:
+            instance.save()
+        return instance

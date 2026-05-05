@@ -109,7 +109,7 @@
                 <x-admin-input label="SMTP用户名" placeholder="通常是邮箱地址"></x-admin-input>
                 {% endwith %}
                 {% with field=form.smtp_password %}
-                <x-admin-input label="SMTP密码" type="password" placeholder="SMTP登录密码或应用专用密码"></x-admin-input>
+                <x-admin-input label="SMTP密码" type="password" placeholder="留空则保持原值不变"></x-admin-input>
                 {% endwith %}
                 {% with field=form.smtp_from_email %}
                 <x-admin-input label="发件人邮箱" type="email" placeholder="系统发送邮件的发件人地址"></x-admin-input>
@@ -135,7 +135,7 @@
                 <x-admin-input label="验证码 ID" placeholder="验证码服务的公共ID"></x-admin-input>
                 {% endwith %}
                 {% with field=form.captcha_key %}
-                <x-admin-input label="验证码密钥" type="password" placeholder="验证码服务的密钥"></x-admin-input>
+                <x-admin-input label="验证码密钥" type="password" placeholder="留空则保持原值不变"></x-admin-input>
                 {% endwith %}
             </div>
         </div>

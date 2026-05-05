@@ -132,6 +132,11 @@ def systemconfig_edit(request):
         form = SystemConfigForm(request.POST, instance=config)
         if form.is_valid():
             form.save()
+            from .signals import system_config_saved
+            system_config_saved.send(
+                sender=SystemConfig,
+                request=request,
+            )
             messages.success(request, '系统配置已更新。')
             return redirect('admin:admin_dashboard_config:systemconfig_edit')
     else:
