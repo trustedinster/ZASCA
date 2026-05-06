@@ -306,22 +306,26 @@ class SystemConfig(models.Model):
         from django.core.exceptions import ValidationError
 
         errors = {}
-        # Provider-based validation (captcha_provider is primary selector)
         provider = getattr(self, 'captcha_provider', 'none')
         if provider in ['geetest', 'turnstile']:
-            if not (self.captcha_id and self.captcha_key):
+            captcha_id = self.captcha_id
+            captcha_key = self.captcha_key
+            if self.pk and not (captcha_id and captcha_key):
+                try:
+                    existing = SystemConfig.objects.get(pk=self.pk)
+                    if not captcha_id:
+                        captcha_id = existing.captcha_id
+                    if not captcha_key:
+                        captcha_key = existing.captcha_key
+                except SystemConfig.DoesNotExist:
+                    pass
+            if not (captcha_id and captcha_key):
                 msg = (
                     f'启用 {self.get_captcha_provider_display()} 时 '
                     f'必须填写验证码 ID 和密钥。'
                 )
                 errors['captcha_id'] = msg
                 errors['captcha_key'] = msg
-        elif provider == 'local':
-            # local provider requires no external keys
-            pass
-        else:
-            # none - no validation needed
-            pass
 
         if errors:
             raise ValidationError(errors)

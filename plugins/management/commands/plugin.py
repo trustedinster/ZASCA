@@ -28,7 +28,7 @@ class Command(BaseCommand):
     help = '插件管理命令，类似 pip 的功能'
 
     def add_arguments(self, parser):
-        parser.add_argument('action', type=str, help='操作类型: install, upgrade, uninstall, list, info, search, login')
+        parser.add_argument('action', type=str, help='操作类型: install, upgrade, uninstall, list, info, search, login, enable, disable')
         parser.add_argument('plugin_name', nargs='?', type=str, help='插件名称或本地路径')
         parser.add_argument('--source', type=str, help='插件源地址或本地路径')
         parser.add_argument('--force', action='store_true', help='强制执行操作')
@@ -75,11 +75,19 @@ class Command(BaseCommand):
             self.search_plugins(keyword, options.get('registry'))
         elif action == 'login':
             self.login_github()
+        elif action == 'enable':
+            if not plugin_name:
+                raise CommandError('启用插件需要指定插件名称')
+            self.enable_plugin(plugin_name)
+        elif action == 'disable':
+            if not plugin_name:
+                raise CommandError('禁用插件需要指定插件名称')
+            self.disable_plugin(plugin_name)
         else:
             raise CommandError(
                 f'未知的操作: {action}. '
                 f'支持的操作: install, upgrade, uninstall, '
-                f'list, info, search, login'
+                f'list, info, search, login, enable, disable'
             )
 
     def _fetch_registry(self, registry_url=None):
@@ -833,6 +841,137 @@ class Command(BaseCommand):
             self.stdout.write(f'已从 TOML 配置文件中移除插件 {plugin_id}')
         else:
             self.stdout.write(f'插件 {plugin_id} 在 TOML 配置文件中未找到')
+
+    def _resolve_plugin_id(self, plugin_name):
+        plugin_manager = get_plugin_manager()
+        loaded_plugins = plugin_manager.get_all_plugins()
+
+        for pid, p in loaded_plugins.items():
+            if p.plugin_id == plugin_name or p.name.lower() == plugin_name.lower():
+                return p.plugin_id
+
+        for plugin_id, plugin_info in ALL_AVAILABLE_PLUGINS.items():
+            if plugin_id == plugin_name or plugin_info.get('name', '').lower() == plugin_name.lower():
+                return plugin_id
+
+        db_record = PluginRecord.objects.filter(plugin_id=plugin_name).first()
+        if not db_record:
+            db_record = PluginRecord.objects.filter(
+                name__iexact=plugin_name
+            ).first()
+        if db_record:
+            return db_record.plugin_id
+
+        return None
+
+    def enable_plugin(self, plugin_name):
+        plugin_id = self._resolve_plugin_id(plugin_name)
+        if not plugin_id:
+            raise CommandError(f'找不到插件: {plugin_name}')
+
+        plugin_manager = get_plugin_manager()
+        loaded_plugins = plugin_manager.get_all_plugins()
+
+        if plugin_id in loaded_plugins:
+            self.stdout.write(self.style.WARNING(
+                f'插件 {plugin_id} 已加载且处于启用状态'
+            ))
+            self.update_plugin_enabled_in_toml(plugin_id, True)
+            PluginRecord.objects.filter(plugin_id=plugin_id).update(
+                is_active=True
+            )
+            return
+
+        plugin_info = ALL_AVAILABLE_PLUGINS.get(plugin_id)
+        if plugin_info:
+            plugin = plugin_manager.load_builtin_plugin(plugin_id, plugin_info)
+            if plugin:
+                try:
+                    plugin.initialize()
+                    self.stdout.write(self.style.SUCCESS(
+                        f'成功启用并初始化插件: {plugin.name}'
+                    ))
+                except Exception as e:
+                    self.stdout.write(self.style.WARNING(
+                        f'插件 {plugin.name} 启用成功但初始化失败: {str(e)}'
+                    ))
+            else:
+                raise CommandError(f'加载插件 {plugin_id} 失败')
+        else:
+            self.stdout.write(self.style.WARNING(
+                f'插件 {plugin_id} 不在可用插件列表中，仅更新配置和数据库状态'
+            ))
+
+        self.update_plugin_enabled_in_toml(plugin_id, True)
+        PluginRecord.objects.update_or_create(
+            plugin_id=plugin_id,
+            defaults={'is_active': True}
+        )
+        self.stdout.write(self.style.SUCCESS(f'插件 {plugin_id} 已启用'))
+
+    def disable_plugin(self, plugin_name):
+        plugin_id = self._resolve_plugin_id(plugin_name)
+        if not plugin_id:
+            raise CommandError(f'找不到插件: {plugin_name}')
+
+        plugin_manager = get_plugin_manager()
+        loaded_plugins = plugin_manager.get_all_plugins()
+
+        if plugin_id in loaded_plugins:
+            plugin = loaded_plugins[plugin_id]
+            try:
+                if hasattr(plugin, 'shutdown'):
+                    plugin.shutdown()
+                plugin_manager.unload_plugin(plugin_id)
+                self.stdout.write(f'已卸载插件: {plugin.name}')
+            except Exception as e:
+                raise CommandError(f'卸载插件 {plugin.name} 失败: {str(e)}')
+
+        self.update_plugin_enabled_in_toml(plugin_id, False)
+        PluginRecord.objects.filter(plugin_id=plugin_id).update(
+            is_active=False
+        )
+        self.stdout.write(self.style.SUCCESS(f'插件 {plugin_id} 已禁用'))
+
+    def update_plugin_enabled_in_toml(self, plugin_id, enabled):
+        config_file_path = os.path.join(
+            settings.BASE_DIR, 'plugins', 'plugins.toml'
+        )
+
+        if not os.path.exists(config_file_path):
+            self.stdout.write(self.style.WARNING(
+                f'TOML 配置文件不存在: {config_file_path}'
+            ))
+            return False
+
+        with open(config_file_path, 'r', encoding='utf-8') as f:
+            toml_data = toml.load(f)
+
+        updated = False
+        for section in ('builtin', 'third_party'):
+            if section in toml_data and plugin_id in toml_data[section]:
+                toml_data[section][plugin_id]['enabled'] = enabled
+                updated = True
+                break
+
+        if not updated:
+            self.stdout.write(self.style.WARNING(
+                f'插件 {plugin_id} 在 TOML 配置文件中未找到，将添加配置'
+            ))
+            toml_data.setdefault('third_party', {})[plugin_id] = {
+                'enabled': enabled
+            }
+            updated = True
+
+        if updated:
+            with open(config_file_path, 'w', encoding='utf-8') as f:
+                toml.dump(toml_data, f)
+            state = '启用' if enabled else '禁用'
+            self.stdout.write(
+                f'已更新 TOML 配置: 插件 {plugin_id} -> {state}'
+            )
+
+        return updated
 
     def _get_app_label_from_module(self, module_name):
         if not module_name:
