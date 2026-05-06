@@ -86,8 +86,11 @@ class SystemConfigForm(forms.ModelForm):
         if provider in ['geetest', 'turnstile']:
             captcha_id = cleaned.get('captcha_id')
             captcha_key = cleaned.get('captcha_key')
-            if not captcha_key and self.instance and self.instance.pk:
-                captcha_key = self.instance.captcha_key
+            if self.instance and self.instance.pk:
+                if not captcha_id:
+                    captcha_id = self.instance.captcha_id
+                if not captcha_key:
+                    captcha_key = self.instance.captcha_key
             if not (captcha_id and captcha_key):
                 msg = (
                     f'启用 '
