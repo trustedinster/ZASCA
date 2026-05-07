@@ -106,6 +106,11 @@ class WidgetConfigForm(forms.Form):
 class SystemConfigForm(forms.ModelForm):
     """系统配置表单"""
 
+    _PRESERVE_IF_EMPTY = [
+        'smtp_password',
+        'captcha_key',
+    ]
+
     class Meta:
         model = SystemConfig
         fields = [
@@ -200,6 +205,17 @@ class SystemConfigForm(forms.ModelForm):
             }),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._original_values = {}
+        if self.instance and self.instance.pk:
+            for field in self._PRESERVE_IF_EMPTY:
+                self._original_values[field] = getattr(
+                    self.instance, field
+                )
+            for field in self._PRESERVE_IF_EMPTY:
+                self.fields[field].required = False
+
     def clean_smtp_port(self):
         """验证SMTP端口"""
         port = self.cleaned_data.get('smtp_port')
@@ -227,10 +243,15 @@ class SystemConfigForm(forms.ModelForm):
         return cleaned
 
     def save(self, commit=True):
-        # 保存前测试邮件配置
         config = super().save(commit=False)
 
-        # 如果SMTP配置存在，则测试邮件发送
+        if self.instance and self.instance.pk:
+            for field in self._PRESERVE_IF_EMPTY:
+                if not getattr(config, field):
+                    original = self._original_values.get(field)
+                    if original:
+                        setattr(config, field, original)
+
         smtp_configured = (
             config.smtp_host and config.smtp_port and
             config.smtp_username and config.smtp_password and
@@ -242,11 +263,13 @@ class SystemConfigForm(forms.ModelForm):
                     subject='系统配置测试邮件',
                     message='这是一封测试邮件，用于验证系统邮件配置是否正确。',
                     from_email=config.smtp_from_email,
-                    recipient_list=[config.smtp_username],  # 发送给自己作为测试
+                    recipient_list=[config.smtp_username],
                     fail_silently=False,
                 )
             except Exception as e:
-                raise ValidationError(f'邮件配置测试失败: {str(e)}')
+                raise ValidationError(
+                    f'邮件配置测试失败: {str(e)}'
+                )
 
         if commit:
             config.save()

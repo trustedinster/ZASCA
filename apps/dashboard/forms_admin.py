@@ -70,6 +70,15 @@ class SystemConfigForm(forms.ModelForm):
             'local_access_locked',
         ]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._original_values = {}
+        if self.instance and self.instance.pk:
+            for field in self._PRESERVE_IF_EMPTY:
+                self._original_values[field] = getattr(self.instance, field)
+            for field in self._PRESERVE_IF_EMPTY:
+                self.fields[field].required = False
+
     def clean_smtp_port(self):
         port = self.cleaned_data.get('smtp_port')
         if port and (port < 1 or port > 65535):
@@ -110,10 +119,9 @@ class SystemConfigForm(forms.ModelForm):
         if self.instance and self.instance.pk:
             for field in self._PRESERVE_IF_EMPTY:
                 if not getattr(instance, field):
-                    setattr(
-                        instance, field,
-                        getattr(self.instance, field),
-                    )
+                    original = self._original_values.get(field)
+                    if original:
+                        setattr(instance, field, original)
         if commit:
             instance.save()
         return instance
