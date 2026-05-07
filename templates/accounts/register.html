@@ -47,6 +47,10 @@
 
             <form method="post" action="{% if reglink %}{% url 'accounts:register_by_link' reglink.token %}{% else %}{% url 'accounts:register' %}{% endif %}" class="register-form space-y-5 max-w-full overflow-hidden" id="registerForm" novalidate>
                 {% csrf_token %}
+                <input type="hidden" name="lot_number" id="lot_number_reg">
+                <input type="hidden" name="captcha_output" id="captcha_output_reg">
+                <input type="hidden" name="pass_token" id="pass_token_reg">
+                <input type="hidden" name="gen_time" id="gen_time_reg">
 
                 <div>
                     <div class="relative">

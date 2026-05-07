@@ -1,13 +1,7 @@
-/**
- * 本地图形验证码适配器
- * 提供与Geetest和Turnstile类似的功能接口
- */
-
 class LocalCaptchaAdapter {
     constructor(options = {}) {
         this.options = {
-            container: options.container || 'body',
-            product: options.product || 'popup', // popup or bind
+            product: options.product || 'popup',
             ...options
         };
         this.captchaId = null;
@@ -15,450 +9,222 @@ class LocalCaptchaAdapter {
         this.resolveCallback = null;
     }
 
-    /**
-     * 显示验证码模态框
-     */
     async showBox() {
         return new Promise((resolve) => {
             this.resolveCallback = resolve;
-            this.createModal();
+            this._createModal();
         });
     }
 
-    /**
-     * 创建验证码模态框
-     */
-    createModal() {
-        // 移除已存在的模态框
-        const existingModal = document.querySelector('#local-captcha-modal');
-        if (existingModal) {
-            existingModal.remove();
-        }
+    _createModal() {
+        const existing = document.getElementById('local-captcha-overlay');
+        if (existing) existing.remove();
 
-        // 创建遮罩层
         const overlay = document.createElement('div');
         overlay.id = 'local-captcha-overlay';
-        overlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 9999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        `;
+        overlay.className = 'fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md';
 
-        // 创建模态框
-        this.modal = document.createElement('div');
-        this.modal.id = 'local-captcha-modal';
-        this.modal.style.cssText = `
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            width: 300px;
-            max-width: 90vw;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            position: relative;
-        `;
+        const modal = document.createElement('div');
+        modal.id = 'local-captcha-modal';
+        modal.className = 'bg-black/90 backdrop-blur-2xl border border-white/10 rounded-md-lg shadow-2xl p-6 w-[320px] max-w-[90vw] relative';
 
-        // 创建标题
         const title = document.createElement('h3');
-        title.textContent = '请输入验证码';
-        title.style.cssText = `
-            margin: 0 0 15px 0;
-            color: #333;
-            font-size: 16px;
-        `;
+        title.className = 'text-lg font-medium text-white mb-4 flex items-center gap-2';
+        title.innerHTML = '<span class="material-symbols-rounded text-cyan-400">verified_user</span>请输入验证码';
 
-        // 创建验证码图片容器
-        const imageContainer = document.createElement('div');
-        imageContainer.id = 'captcha-image-container';
-        imageContainer.style.cssText = `
-            text-align: center;
-            margin-bottom: 15px;
-        `;
+        const imgRow = document.createElement('div');
+        imgRow.className = 'flex items-center gap-3 mb-4';
 
-        // 创建验证码图片
         const captchaImg = document.createElement('img');
         captchaImg.id = 'captcha-image';
-        captchaImg.style.cssText = `
-            width: 120px;
-            height: 40px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
-        `;
+        captchaImg.className = 'h-10 w-[120px] border border-slate-700/50 rounded-md cursor-pointer hover:opacity-80 transition';
         captchaImg.alt = '验证码';
+        captchaImg.title = '点击刷新验证码';
+        captchaImg.addEventListener('click', () => this._refreshCaptcha());
 
-        // 点击图片刷新验证码
-        captchaImg.addEventListener('click', () => {
-            this.refreshCaptcha();
-        });
+        const refreshBtn = document.createElement('button');
+        refreshBtn.type = 'button';
+        refreshBtn.className = 'flex items-center justify-center w-9 h-9 rounded-full bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-cyan-400 transition cursor-pointer';
+        refreshBtn.title = '刷新验证码';
+        refreshBtn.innerHTML = '<span class="material-symbols-rounded text-xl">refresh</span>';
+        refreshBtn.addEventListener('click', () => this._refreshCaptcha());
 
-        // 创建刷新图标
-        const refreshIcon = document.createElement('span');
-        refreshIcon.innerHTML = '🔄';
-        refreshIcon.style.cssText = `
-            margin-left: 10px;
-            cursor: pointer;
-            font-size: 16px;
-        `;
-        refreshIcon.title = '刷新验证码';
-        refreshIcon.addEventListener('click', () => {
-            this.refreshCaptcha();
-        });
+        imgRow.appendChild(captchaImg);
+        imgRow.appendChild(refreshBtn);
 
-        // 创建验证码输入框
         const input = document.createElement('input');
         input.type = 'text';
         input.id = 'captcha-input';
         input.placeholder = '请输入验证码';
         input.maxLength = 4;
-        input.style.cssText = `
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-        `;
+        input.autocomplete = 'off';
+        input.className = 'w-full bg-slate-900/50 border border-slate-700/50 rounded-md px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition text-center text-lg tracking-[0.3em] uppercase';
 
-        // 创建按钮容器
-        const buttonContainer = document.createElement('div');
-        buttonContainer.style.cssText = `
-            display: flex;
-            gap: 10px;
-        `;
+        const errorMsg = document.createElement('p');
+        errorMsg.id = 'captcha-error';
+        errorMsg.className = 'text-sm text-red-400 mt-1 hidden';
 
-        // 创建取消按钮
-        const cancelButton = document.createElement('button');
-        cancelButton.type = 'button';
-        cancelButton.textContent = '取消';
-        cancelButton.style.cssText = `
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: #f5f5f5;
-            cursor: pointer;
-        `;
-        cancelButton.addEventListener('click', () => {
-            this.closeModal();
+        const btnRow = document.createElement('div');
+        btnRow.className = 'flex gap-3 mt-4';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'flex-1 bg-slate-800/50 border border-slate-700/50 rounded-md px-4 py-2.5 text-slate-300 hover:bg-slate-700/50 transition font-medium cursor-pointer';
+        cancelBtn.textContent = '取消';
+        cancelBtn.addEventListener('click', () => {
+            this._closeModal();
             if (this.resolveCallback) {
                 this.resolveCallback({ status: 'closed' });
             }
         });
 
-        // 创建确认按钮
-        const confirmButton = document.createElement('button');
-        confirmButton.type = 'button';
-        confirmButton.textContent = '确认';
-        confirmButton.style.cssText = `
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 4px;
-            background: #007bff;
-            color: white;
-            cursor: pointer;
-        `;
-        confirmButton.addEventListener('click', () => {
-            this.verifyCaptcha();
-        });
+        const confirmBtn = document.createElement('button');
+        confirmBtn.type = 'button';
+        confirmBtn.className = 'flex-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded-md px-4 py-2.5 shadow-[0_0_15px_-3px_rgba(34,211,238,0.3)] transition font-medium cursor-pointer';
+        confirmBtn.textContent = '确认';
+        confirmBtn.addEventListener('click', () => this._verifyCaptcha());
 
-        // 组装模态框
-        imageContainer.appendChild(captchaImg);
-        imageContainer.appendChild(refreshIcon);
+        btnRow.appendChild(cancelBtn);
+        btnRow.appendChild(confirmBtn);
 
-        buttonContainer.appendChild(cancelButton);
-        buttonContainer.appendChild(confirmButton);
+        modal.appendChild(title);
+        modal.appendChild(imgRow);
+        modal.appendChild(input);
+        modal.appendChild(errorMsg);
+        modal.appendChild(btnRow);
+        overlay.appendChild(modal);
 
-        this.modal.appendChild(title);
-        this.modal.appendChild(imageContainer);
-        this.modal.appendChild(input);
-        this.modal.appendChild(buttonContainer);
-
-        // 绑定回车键确认
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.verifyCaptcha();
-            }
-        });
-
-        overlay.appendChild(this.modal);
-
-        // 添加到页面
-        document.body.appendChild(overlay);
-
-        // 生成并显示验证码
-        this.generateCaptcha();
-    }
-
-    /**
-     * 生成验证码
-     */
-    async generateCaptcha() {
-        try {
-            const response = await fetch('/accounts/captcha/generate/');
-            const data = await response.json();
-            
-            if (data.captcha_id) {
-                this.captchaId = data.captcha_id;
-                
-                // 设置验证码图片
-                const captchaImg = document.getElementById('captcha-image');
-                if (captchaImg) {
-                    captchaImg.src = `/accounts/captcha/image/${this.captchaId}/?t=${Date.now()}`;
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                this._closeModal();
+                if (this.resolveCallback) {
+                    this.resolveCallback({ status: 'closed' });
                 }
             }
-        } catch (error) {
-            console.error('生成验证码失败:', error);
-            alert('验证码生成失败，请稍后重试');
+        });
+
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this._verifyCaptcha();
+        });
+
+        document.body.appendChild(overlay);
+
+        this._generateCaptcha();
+
+        setTimeout(() => input.focus(), 100);
+    }
+
+    async _generateCaptcha() {
+        try {
+            const resp = await fetch('/accounts/captcha/generate/');
+            const data = await resp.json();
+            if (data.captcha_id) {
+                this.captchaId = data.captcha_id;
+                const img = document.getElementById('captcha-image');
+                if (img) {
+                    img.src = `/accounts/captcha/image/${this.captchaId}/?t=${Date.now()}`;
+                }
+            }
+        } catch (err) {
+            console.error('生成验证码失败:', err);
+            this._showError('验证码生成失败，请稍后重试');
         }
     }
 
-    /**
-     * 刷新验证码
-     */
-    async refreshCaptcha() {
-        await this.generateCaptcha();
-        
-        // 清空输入框
+    async _refreshCaptcha() {
         const input = document.getElementById('captcha-input');
-        if (input) {
-            input.value = '';
-        }
+        if (input) input.value = '';
+        this._hideError();
+        await this._generateCaptcha();
     }
 
-    /**
-     * 验证验证码
-     */
-    async verifyCaptcha() {
+    async _verifyCaptcha() {
         const input = document.getElementById('captcha-input');
         const userInput = input ? input.value.trim() : '';
 
         if (!userInput) {
-            alert('请输入验证码');
+            this._showError('请输入验证码');
             return;
         }
 
         if (!this.captchaId) {
-            alert('验证码已过期，请重新获取');
-            await this.generateCaptcha();
+            this._showError('验证码已过期，请重新获取');
+            await this._generateCaptcha();
             return;
         }
 
-        // 直接返回结果，不调用后端验证接口
-        // 验证码的最终验证将在表单提交时由后端完成
-        this.closeModal();
-        
-        // 返回模拟的Geetest v4数据格式
+        this._closeModal();
+
         const result = {
             status: 'success',
-            lot_number: this.captchaId, // 使用captchaId作为lot_number
-            captcha_output: userInput,  // 用户输入作为captcha_output
+            lot_number: this.captchaId,
+            captcha_output: userInput,
             pass_token: 'local_captcha_pass_token',
             gen_time: Date.now().toString(),
             captcha_id: this.captchaId
         };
+
+        window._localCaptchaResult = result;
 
         if (this.resolveCallback) {
             this.resolveCallback(result);
         }
     }
 
-    /**
-     * 关闭模态框
-     */
-    closeModal() {
-        const overlay = document.querySelector('#local-captcha-overlay');
-        if (overlay) {
-            overlay.remove();
+    _showError(msg) {
+        const el = document.getElementById('captcha-error');
+        if (el) {
+            el.textContent = msg;
+            el.classList.remove('hidden');
         }
+    }
+
+    _hideError() {
+        const el = document.getElementById('captcha-error');
+        if (el) el.classList.add('hidden');
+    }
+
+    _closeModal() {
+        const overlay = document.getElementById('local-captcha-overlay');
+        if (overlay) overlay.remove();
         this.modal = null;
     }
 
-    /**
-     * 获取CSRF令牌
-     */
     getCsrfToken() {
         return window.getCsrfToken ? window.getCsrfToken() :
-               (document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+            (document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
                 document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1] || '');
     }
 
-    /**
-     * 初始化并返回实例
-     */
     static initGeetest(config, callback) {
         const adapter = new LocalCaptchaAdapter(config);
         callback(adapter);
     }
 }
 
-// 注册到全局作用域，以便与现有的Geetest代码兼容
 window.initGeetest4 = LocalCaptchaAdapter.initGeetest;
 
-// 倒计时功能
-let countdownTimer = null;
-
-// 开始倒计时
-function startCountdown(button, initialText = null) {
-    if (countdownTimer) {
-        clearInterval(countdownTimer); // 清除任何现有的倒计时
-    }
-    
-    let count = 60;
-    const originalText = initialText || button.textContent || button.innerText;
-    button.disabled = true;
-    
-    // 更新按钮文本显示倒计时
-    button.textContent = `${originalText} (${count}s)`;
-    
-    countdownTimer = setInterval(() => {
-        count--;
-        button.textContent = `${originalText} (${count}s)`;
-        
-        if (count <= 0) {
-            clearInterval(countdownTimer);
-            button.disabled = false;
-            button.textContent = originalText;
-            countdownTimer = null;
-        }
-    }, 1000);
+function _fillHiddenFields(result) {
+    const suffixes = ['login', 'reg', 'forgot'];
+    suffixes.forEach(suffix => {
+        const lotEl = document.getElementById(`lot_number_${suffix}`);
+        const outEl = document.getElementById(`captcha_output_${suffix}`);
+        const passEl = document.getElementById(`pass_token_${suffix}`);
+        const genEl = document.getElementById(`gen_time_${suffix}`);
+        if (lotEl) lotEl.value = result.lot_number;
+        if (outEl) outEl.value = result.captcha_output;
+        if (passEl) passEl.value = result.pass_token;
+        if (genEl) genEl.value = result.gen_time;
+    });
 }
 
-// 在DOM准备好后，处理本地验证码触发按钮
-document.addEventListener('DOMContentLoaded', function() {
-    // 检查是否使用本地验证码
-    const captchaProvider = window.CAPTCHA_PROVIDER;
-    
-    // 只有当明确使用本地验证码时才处理
-    if (captchaProvider === 'local') {
-        // 如果使用本地验证码，移除email_code.js可能添加的事件监听器
-        // 通过克隆并替换按钮来清除所有事件监听器
-        const emailCodeButtons = document.querySelectorAll('#get-email-code[data-local-captcha-trigger]');
-        emailCodeButtons.forEach(button => {
-            const newButton = button.cloneNode(true);
-            button.parentNode.replaceChild(newButton, button);
-        });
-        
-        // 现在为本地验证码触发按钮添加事件监听器
-        document.querySelectorAll('[data-local-captcha-trigger]').forEach(button => {
-            // 根据按钮的类型执行不同的操作
-            if (button.id === 'get-email-code') {
-                // 如果是获取邮箱验证码的按钮，需要先检查邮箱
-                button.addEventListener('click', async function(e) {
-                    e.preventDefault();
-                    e.stopPropagation(); // 阻止事件冒泡，防止email_code.js也处理此事件
-                    
-                    // 检查是否正在进行倒计时
-                    if (this.disabled) {
-                        return; // 如果按钮被禁用（倒计时中），则不执行任何操作
-                    }
-                    
-                    // 首先检查邮箱是否已填写
-                    const emailField = document.querySelector('input[type="email"]');
-                    if (!emailField || !emailField.value) {
-                        alert('请先填写邮箱地址');
-                        emailField?.focus(); // 聚焦到邮箱输入框
-                        return; // 退出函数，不再继续执行
-                    }
-                    
-                    const adapter = new LocalCaptchaAdapter({
-                        product: 'popup'
-                    });
-                    
-                    const result = await adapter.showBox();
-                    
-                    if (result && result.status === 'success') {
-                        // 将结果存储到隐藏字段中（模拟Geetest字段）
-                        document.getElementById('lot_number_login')?.setAttribute('value', result.lot_number);
-                        document.getElementById('captcha_output_login')?.setAttribute('value', result.captcha_output);
-                        document.getElementById('pass_token_login')?.setAttribute('value', result.pass_token);
-                        document.getElementById('gen_time_login')?.setAttribute('value', result.gen_time);
-                        
-                        document.getElementById('lot_number_reg')?.setAttribute('value', result.lot_number);
-                        document.getElementById('captcha_output_reg')?.setAttribute('value', result.captcha_output);
-                        document.getElementById('pass_token_reg')?.setAttribute('value', result.pass_token);
-                        document.getElementById('gen_time_reg')?.setAttribute('value', result.gen_time);
-                        
-                        document.getElementById('lot_number_forgot')?.setAttribute('value', result.lot_number);
-                        document.getElementById('captcha_output_forgot')?.setAttribute('value', result.captcha_output);
-                        document.getElementById('pass_token_forgot')?.setAttribute('value', result.pass_token);
-                        document.getElementById('gen_time_forgot')?.setAttribute('value', result.gen_time);
-                        
-                        // 发送邮箱验证码请求
-                        sendEmailCodeRequest(this); // 传递按钮引用以启用倒计时
-                    }
-                });
-            } else {
-                // 如果是其他类型的按钮（如提交按钮），直接执行相应操作
-                button.addEventListener('click', async function(e) {
-                    e.preventDefault();
-                    e.stopPropagation(); // 阻止事件冒泡
-                    
-                    const adapter = new LocalCaptchaAdapter({
-                        product: 'popup'
-                    });
-                    
-                    const result = await adapter.showBox();
-                    
-                    if (result && result.status === 'success') {
-                        // 将结果存储到隐藏字段中（模拟Geetest字段）
-                        document.getElementById('lot_number_login')?.setAttribute('value', result.lot_number);
-                        document.getElementById('captcha_output_login')?.setAttribute('value', result.captcha_output);
-                        document.getElementById('pass_token_login')?.setAttribute('value', result.pass_token);
-                        document.getElementById('gen_time_login')?.setAttribute('value', result.gen_time);
-                        
-                        document.getElementById('lot_number_reg')?.setAttribute('value', result.lot_number);
-                        document.getElementById('captcha_output_reg')?.setAttribute('value', result.captcha_output);
-                        document.getElementById('pass_token_reg')?.setAttribute('value', result.pass_token);
-                        document.getElementById('gen_time_reg')?.setAttribute('value', result.gen_time);
-                        
-                        document.getElementById('lot_number_forgot')?.setAttribute('value', result.lot_number);
-                        document.getElementById('captcha_output_forgot')?.setAttribute('value', result.captcha_output);
-                        document.getElementById('pass_token_forgot')?.setAttribute('value', result.pass_token);
-                        document.getElementById('gen_time_forgot')?.setAttribute('value', result.gen_time);
-                        
-                        // 触发原始按钮的后续操作
-                        if (this.dataset.action === 'get-code') {
-                            // 如果是获取邮箱验证码的按钮，现在可以发送请求
-                            sendEmailCodeRequest(this); // 传递按钮引用以启用倒计时
-                        } else if (this.dataset.action === 'submit') {
-                            // 如果是提交按钮，直接提交表单
-                            // 找到最近的表单或者页面中的表单
-                            let form = this.closest('form');
-                            if (!form) {
-                                form = document.querySelector('form');
-                            }
-                            if (form) {
-                                // 提交表单
-                                form.submit();
-                            }
-                        }
-                    }
-                });
-            }
-        });
-    }
-    // 对于非本地验证码（如Geetest或Turnstile），不执行任何特殊处理，让原有逻辑处理
-});
-
-// 确保只有当使用本地验证码时才处理本地验证码逻辑
-// 其他验证码提供商（如Geetest/Turnstile）会由其各自适配器处理
-
-// 辅助函数：发送邮箱验证码请求
-function sendEmailCodeRequest(button) {
-    // 注意：在这个函数中，邮箱应该已经被检查过了，所以这里不再重复检查
+function _sendEmailCodeRequest(button) {
     const emailField = document.querySelector('input[type="email"]');
-    // 注意：这里我们假定邮箱已经被检查过了，所以不再显示alert
-    
-    // 根据当前页面判断是注册还是找回密码
+    if (!emailField || !emailField.value) {
+        alert('请先填写邮箱地址');
+        return;
+    }
+
     let endpoint;
     if (window.location.pathname.includes('/register/')) {
         endpoint = '/accounts/email/send-code/';
@@ -469,28 +235,15 @@ function sendEmailCodeRequest(button) {
         return;
     }
 
-    // 收集Geetest字段值（即使使用本地验证码也可能需要这些字段）
-    const lotNumber = document.getElementById('lot_number_login')?.value || 
-                      document.getElementById('lot_number_reg')?.value ||
-                      document.getElementById('lot_number_forgot')?.value;
-    const captchaOutput = document.getElementById('captcha_output_login')?.value ||
-                          document.getElementById('captcha_output_reg')?.value ||
-                          document.getElementById('captcha_output_forgot')?.value;
-    const passToken = document.getElementById('pass_token_login')?.value ||
-                      document.getElementById('pass_token_reg')?.value ||
-                      document.getElementById('pass_token_forgot')?.value;
-    const genTime = document.getElementById('gen_time_login')?.value ||
-                    document.getElementById('gen_time_reg')?.value ||
-                    document.getElementById('gen_time_forgot')?.value;
-
+    const result = window._localCaptchaResult;
     const formData = new FormData();
     formData.append('email', emailField.value);
-    
-    // 添加可能需要的验证字段
-    if (lotNumber) formData.append('lot_number', lotNumber);
-    if (captchaOutput) formData.append('captcha_output', captchaOutput);
-    if (passToken) formData.append('pass_token', passToken);
-    if (genTime) formData.append('gen_time', genTime);
+    if (result) {
+        if (result.lot_number) formData.append('lot_number', result.lot_number);
+        if (result.captcha_output) formData.append('captcha_output', result.captcha_output);
+        if (result.pass_token) formData.append('pass_token', result.pass_token);
+        if (result.gen_time) formData.append('gen_time', result.gen_time);
+    }
 
     fetch(endpoint, {
         method: 'POST',
@@ -503,32 +256,85 @@ function sendEmailCodeRequest(button) {
     .then(data => {
         if (data.status === 'ok') {
             alert('验证码已发送到您的邮箱');
-            // 开始倒计时
-            if (button) {
-                startCountdown(button, '获取验证码');
-            }
+            _startCountdown(button, '获取验证码');
         } else {
             alert(data.message || '发送验证码失败');
-            // 即使发送失败，也应该恢复按钮状态
-            if (button && countdownTimer) {
-                clearInterval(countdownTimer);
-                countdownTimer = null;
-                button.disabled = false;
-                const originalText = '获取验证码';
-                button.textContent = originalText;
-            }
         }
     })
     .catch(error => {
         console.error('Error:', error);
         alert('发送验证码时发生错误');
-        // 发生错误时也要恢复按钮状态
-        if (button && countdownTimer) {
-            clearInterval(countdownTimer);
-            countdownTimer = null;
-            button.disabled = false;
-            const originalText = '获取验证码';
-            button.textContent = originalText;
-        }
     });
 }
+
+let _countdownTimer = null;
+
+function _startCountdown(button, initialText) {
+    if (_countdownTimer) clearInterval(_countdownTimer);
+
+    let count = 60;
+    const originalText = initialText || '获取验证码';
+    button.disabled = true;
+    button.textContent = `${originalText} (${count}s)`;
+
+    _countdownTimer = setInterval(() => {
+        count--;
+        button.textContent = `${originalText} (${count}s)`;
+        if (count <= 0) {
+            clearInterval(_countdownTimer);
+            _countdownTimer = null;
+            button.disabled = false;
+            button.textContent = originalText;
+        }
+    }, 1000);
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    if (window.CAPTCHA_PROVIDER !== 'local') return;
+
+    document.querySelectorAll('#get-email-code[data-local-captcha-trigger]').forEach(button => {
+        const newBtn = button.cloneNode(true);
+        button.parentNode.replaceChild(newBtn, button);
+
+        newBtn.addEventListener('click', async function (e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (this.disabled) return;
+
+            const emailField = document.querySelector('input[type="email"]');
+            if (!emailField || !emailField.value) {
+                alert('请先填写邮箱地址');
+                emailField?.focus();
+                return;
+            }
+
+            const adapter = new LocalCaptchaAdapter({ product: 'popup' });
+            const result = await adapter.showBox();
+
+            if (result && result.status === 'success') {
+                _fillHiddenFields(result);
+                _sendEmailCodeRequest(this);
+            }
+        });
+    });
+
+    document.querySelectorAll('[data-local-captcha-trigger]:not(#get-email-code)').forEach(button => {
+        button.addEventListener('click', async function (e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+
+            const adapter = new LocalCaptchaAdapter({ product: 'popup' });
+            const result = await adapter.showBox();
+
+            if (result && result.status === 'success') {
+                _fillHiddenFields(result);
+
+                const action = this.dataset.action;
+                if (action === 'submit') {
+                    let form = this.closest('form');
+                    if (form) form.submit();
+                }
+            }
+        });
+    });
+});

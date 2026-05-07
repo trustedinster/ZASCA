@@ -129,13 +129,11 @@ def generate_captcha():
     """
     captcha_text, image_data = generate_captcha_image()
     
-    # 生成唯一的验证码ID
     captcha_id = 'captcha_' + ''.join(random.choices(string.ascii_letters + string.digits, k=16))
     
-    # 将验证码文本存储到缓存中，设置过期时间为5分钟
     cache.set(captcha_id, captcha_text.lower(), 300)
-    # 同时初始化尝试次数计数器
-    cache.set(f"captcha_attempts_{captcha_id}", 0, 300)  # 5分钟内最多尝试
+    cache.set(f"captcha_attempts_{captcha_id}", 0, 300)
+    cache.set(f"captcha_image_{captcha_id}", image_data, 300)
     
     logger.debug(f"Generated captcha: ID={captcha_id}")
     
@@ -175,9 +173,9 @@ def verify_captcha(captcha_id, user_input, consume=True, max_attempts=5, check_a
         # 如果已达到最大尝试次数，拒绝进一步尝试
         if attempts >= max_attempts:
             logger.warning(f"Captcha {captcha_id} reached max attempts ({max_attempts}). Invalidating captcha.")
-            # 额外保护：超过尝试次数后直接使验证码失效
-            cache.delete(captcha_id)  # 删除验证码
-            cache.delete(attempts_key)  # 删除尝试计数
+            cache.delete(captcha_id)
+            cache.delete(attempts_key)
+            cache.delete(f"captcha_image_{captcha_id}")
             return False
     
         # 增加尝试次数
@@ -197,14 +195,13 @@ def verify_captcha(captcha_id, user_input, consume=True, max_attempts=5, check_a
     is_valid = correct_captcha.lower() == user_input.lower()
     logger.info(f"Captcha verification result for {captcha_id}: {is_valid}")
     
-    # 如果验证成功且需要消费（一次性使用），则删除缓存中的验证码
     if is_valid and consume:
         logger.info(f"Consuming captcha {captcha_id} (deleting from cache)")
         cache.delete(captcha_id)
-        cache.delete(f"captcha_attempts_{captcha_id}")  # 同时删除尝试计数
+        cache.delete(f"captcha_attempts_{captcha_id}")
+        cache.delete(f"captcha_image_{captcha_id}")
         logger.debug(f"Captcha {captcha_id} consumed and removed from cache")
     
-    # 如果验证失败且已达到最大尝试次数，删除验证码以强制用户重新获取
     if not is_valid and check_attempts:
         attempts_key = f"captcha_attempts_{captcha_id}"
         current_attempts = cache.get(attempts_key, 0)
@@ -212,37 +209,22 @@ def verify_captcha(captcha_id, user_input, consume=True, max_attempts=5, check_a
             logger.warning(f"Failed attempt reached max limit for {captcha_id}. Invalidating captcha.")
             cache.delete(captcha_id)
             cache.delete(attempts_key)
+            cache.delete(f"captcha_image_{captcha_id}")
 
     return is_valid
 
 
 def get_captcha_image(request, captcha_id):
-    """
-    获取验证码图片的视图函数
-    
-    Args:
-        request: HTTP请求对象
-        captcha_id: 验证码ID
-    
-    Returns:
-        HTTP响应对象，包含验证码图片
-    """
     logger.debug(f"Serving captcha image: {captcha_id}")
     
     if not captcha_id:
-        # 如果没有提供captcha_id，则生成一个新的
         result = generate_captcha()
-        captcha_id = result['captcha_id']
         image_data = result['image_data']
     else:
-            captcha_text = cache.get(captcha_id)
-            if not captcha_text:
-                logger.warning(f"Requested captcha not found: {captcha_id}, generating new one")
-                result = generate_captcha()
-                captcha_id = result['captcha_id']
-                image_data = result['image_data']
-            else:
-                logger.debug(f"Returning existing captcha image for {captcha_id}")
-                _, image_data = generate_captcha_image()
+        image_data = cache.get(f"captcha_image_{captcha_id}")
+        if not image_data:
+            logger.warning(f"Requested captcha not found: {captcha_id}, generating new one")
+            result = generate_captcha()
+            image_data = result['image_data']
     
     return HttpResponse(image_data, content_type='image/png')
