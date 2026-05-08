@@ -158,7 +158,7 @@ def admin_required(view_func=None, redirect_field_name=REDIRECT_FIELD_NAME,
                     redirect_field_name=redirect_field_name,
                 )
             user = request.user
-            if not (user.is_superuser or is_provider(user)):
+            if not (user.is_staff or is_provider(user)):
                 return HttpResponseForbidden(
                     '您没有后台访问权限。'
                 )
