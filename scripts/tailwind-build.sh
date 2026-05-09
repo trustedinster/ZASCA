@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-# ZASCA - Tailwind CSS v4 Build Script
+# 2c2a - Tailwind CSS v4 Build Script
 # ============================================================================
 # Usage:
 #   ./scripts/tailwind-build.sh          # One-time build

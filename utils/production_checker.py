@@ -63,7 +63,7 @@ def print_production_status():
     errors, warnings = check_production_readiness()
 
     print("\n" + "="*60)
-    print("ZASCA 生产环境安全性检查报告")
+    print("2c2a 生产环境安全性检查报告")
     print("="*60)
     print(f"生产模式: {'是' if not settings.DEBUG else '否'}")
     print(f"DEBUG 模式: {'是' if settings.DEBUG else '否'}")

@@ -47,7 +47,7 @@ def send_ticket_email(subject, template_name, context, recipient_list):
     if config and config.smtp_from_email:
         from_email = config.smtp_from_email
     else:
-        from_email = 'noreply@zasca.com'
+        from_email = 'noreply@2c2a.com'
 
     # 使用 EmailService 发送邮件
     if config:
@@ -104,7 +104,7 @@ def notify_ticket_created(ticket):
 
     if recipients:
         send_ticket_email(
-            subject=f'[ZASCA] 新工单分配 - {ticket.ticket_no}',
+            subject=f'[2c2a] 新工单分配 - {ticket.ticket_no}',
             template_name='tickets/email/assigned.html',
             context=context,
             recipient_list=recipients
@@ -140,7 +140,7 @@ def notify_ticket_assigned(ticket, old_assignee=None):
         return
 
     send_ticket_email(
-        subject=f'[ZASCA] 工单分配通知 - {ticket.ticket_no}',
+        subject=f'[2c2a] 工单分配通知 - {ticket.ticket_no}',
         template_name='tickets/email/assigned.html',
         context=context,
         recipient_list=recipients
@@ -166,7 +166,7 @@ def notify_ticket_status_changed(ticket, old_status, new_status):
     }
 
     send_ticket_email(
-        subject=f'[ZASCA] 工单状态更新 - {ticket.ticket_no}',
+        subject=f'[2c2a] 工单状态更新 - {ticket.ticket_no}',
         template_name='tickets/email/status_update.html',
         context=context,
         recipient_list=[ticket.creator.email]
@@ -188,7 +188,7 @@ def notify_ticket_closed(ticket):
     }
 
     send_ticket_email(
-        subject=f'[ZASCA] 工单已关闭 - {ticket.ticket_no}',
+        subject=f'[2c2a] 工单已关闭 - {ticket.ticket_no}',
         template_name='tickets/email/closed.html',
         context=context,
         recipient_list=[ticket.creator.email]
@@ -223,7 +223,7 @@ def notify_new_comment(comment):
     }
 
     send_ticket_email(
-        subject=f'[ZASCA] 工单新评论 - {ticket.ticket_no}',
+        subject=f'[2c2a] 工单新评论 - {ticket.ticket_no}',
         template_name='tickets/email/new_comment.html',
         context=context,
         recipient_list=recipients
@@ -259,7 +259,7 @@ def notify_overdue_ticket(ticket):
         return
 
     send_ticket_email(
-        subject=f'[ZASCA] 工单即将超时 - {ticket.ticket_no}',
+        subject=f'[2c2a] 工单即将超时 - {ticket.ticket_no}',
         template_name='tickets/email/overdue.html',
         context=context,
         recipient_list=recipients

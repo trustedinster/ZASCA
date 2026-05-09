@@ -19,7 +19,7 @@ from apps.accounts.provider_decorators import superadmin_required
 from .models import ThemeConfig, PageContent, WidgetLayout
 from .forms_admin import ThemeConfigForm, PageContentForm, WidgetLayoutForm
 
-logger = logging.getLogger('zasca')
+logger = logging.getLogger('2c2a')
 
 
 # ============================================================

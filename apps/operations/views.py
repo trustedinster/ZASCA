@@ -625,3 +625,58 @@ def product_invite_view(request, token):
         'product': invite_token.product,
         'product_group': invite_token.product_group,
     })
+
+
+@login_required
+def rdp_connect(request, product_id):
+    from django.http import HttpResponse
+    from django.conf import settings
+    from utils.gateway_client import GatewayClient
+    from apps.dashboard.models import SystemConfig
+
+    product = get_object_or_404(Product, pk=product_id)
+
+    cloud_user = CloudComputerUser.objects.filter(
+        product=product,
+        status='active',
+    ).filter(
+        Q(owner=request.user) |
+        Q(created_from_request__applicant=request.user)
+    ).first()
+
+    if cloud_user is None:
+        messages.error(request, '您没有访问此云电脑的权限。')
+        return redirect('operations:my_cloud_computers')
+
+    host = product.host
+    if not host or not host.tunnel_token:
+        messages.error(request, '该产品关联的主机未配置隧道，无法通过RD Gateway连接。')
+        return redirect('operations:my_cloud_computers')
+
+    gateway_address = getattr(settings, 'GATEWAY_ADDRESS', 'rdp.2c2a.com')
+    gateway_port = getattr(settings, 'GATEWAY_PORT', 443)
+    expires_in = getattr(settings, 'GATEWAY_PAA_TOKEN_EXPIRY_SECONDS', 600)
+
+    client_ip = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip()
+    if not client_ip:
+        client_ip = request.META.get('REMOTE_ADDR')
+
+    client = GatewayClient()
+    paa_token = client.issue_paa_token(
+        user_email=request.user.email,
+        tunnel_token=host.tunnel_token,
+        client_ip=client_ip,
+        expires_in=expires_in,
+    )
+
+    rdp_content = client.generate_rdp_file(
+        gateway_address=gateway_address,
+        gateway_port=gateway_port,
+        user_email=request.user.email,
+        paa_token=paa_token,
+    )
+
+    filename = f'{product.display_name}.rdp'
+    response = HttpResponse(rdp_content, content_type='application/x-rdp')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response

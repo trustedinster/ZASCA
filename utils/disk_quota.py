@@ -10,7 +10,7 @@ import os
 import re
 from typing import Dict, List, Optional, Any
 
-logger = logging.getLogger("zasca")
+logger = logging.getLogger("2c2a")
 
 DISK_LETTER_PATTERN = re.compile(r'^[A-Za-z]:\\?$')
 MB_TO_BYTES = 1024 * 1024
@@ -43,7 +43,7 @@ def get_disk_info_via_client(client) -> List[Dict[str, Any]]:
     Returns:
         List[Dict]: 磁盘信息列表，每项包含 drive, total_mb, free_mb
     """
-    if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+    if os.environ.get('2C2A_DEMO', '').lower() == '1':
         logger.info("DEMO模式: 返回模拟磁盘信息")
         return [
             {"drive": "C:", "total_mb": 102400, "free_mb": 51200},
@@ -112,7 +112,7 @@ def set_disk_quota_via_client(client, username: str, disk_letter: str, quota_mb:
     else:
         validate_quota_value(warning_mb, "警告阈值")
 
-    if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+    if os.environ.get('2C2A_DEMO', '').lower() == '1':
         logger.info(f"DEMO模式: 模拟设置用户 {username} 在 {disk_letter} 的配额为 {quota_mb}MB")
         return {"success": True, "message": f"DEMO模式: 已设置用户 {username} 在 {disk_letter} 的配额为 {quota_mb}MB"}
 
@@ -196,7 +196,7 @@ def get_disk_quota_via_client(client, username: str, disk_letter: str) -> Dict[s
     """
     validate_disk_letter(disk_letter)
 
-    if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+    if os.environ.get('2C2A_DEMO', '').lower() == '1':
         logger.info(f"DEMO模式: 模拟获取用户 {username} 在 {disk_letter} 的配额")
         return {"success": True, "quota_mb": 10240, "warning_mb": 8192, "used_mb": 5120}
 
@@ -264,7 +264,7 @@ def remove_disk_quota_via_client(client, username: str, disk_letter: str) -> Dic
     """
     validate_disk_letter(disk_letter)
 
-    if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+    if os.environ.get('2C2A_DEMO', '').lower() == '1':
         logger.info(f"DEMO模式: 模拟删除用户 {username} 在 {disk_letter} 的配额")
         return {"success": True, "message": f"DEMO模式: 已删除用户 {username} 在 {disk_letter} 的配额"}
 

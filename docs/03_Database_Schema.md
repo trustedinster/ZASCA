@@ -1,8 +1,8 @@
-# ZASCA 数据库 Schema 设计文档
+# 2c2a 数据库 Schema 设计文档
 
 ## 1. 数据库概览
 
-ZASCA 使用 PostgreSQL 作为主数据库，采用关系型数据模型设计，支持完整的 RBAC 权限体系和审计追踪功能。
+2c2a 使用 PostgreSQL 作为主数据库，采用关系型数据模型设计，支持完整的 RBAC 权限体系和审计追踪功能。
 
 ### 1.1 数据库版本要求
 - PostgreSQL 12+ （推荐 14+）

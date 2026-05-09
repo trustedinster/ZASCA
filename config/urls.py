@@ -1,5 +1,5 @@
 """
-ZASCA URL Configuration
+2c2a URL Configuration
 """
 from django.contrib.staticfiles.views import serve
 from django.urls import path, include

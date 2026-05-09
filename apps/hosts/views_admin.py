@@ -739,7 +739,7 @@ def admin_host_wizard(request):
 
     gateway_url = os.environ.get(
         'TUNNEL_GATEWAY_URL',
-        'wss://gateway.zasca.com:9000'
+        'wss://gateway.2c2a.com:9000'
     )
     server_base_url = os.environ.get(
         'TUNNEL_SERVER_BASE_URL',
@@ -774,7 +774,7 @@ def admin_host_wizard_generate_token(request):
         token = secrets.token_urlsafe(32)
         gateway_url = os.environ.get(
             'TUNNEL_GATEWAY_URL',
-            'wss://gateway.zasca.com:9000'
+            'wss://gateway.2c2a.com:9000'
         )
         server_base_url = os.environ.get(
             'TUNNEL_SERVER_BASE_URL',

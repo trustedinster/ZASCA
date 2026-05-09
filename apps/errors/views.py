@@ -5,7 +5,7 @@ from django.http import HttpResponseBadRequest, HttpResponseNotFound, HttpRespon
 from django.shortcuts import render
 import logging
 
-logger = logging.getLogger('zasca')
+logger = logging.getLogger('2c2a')
 
 
 def handler400(request, exception=None):

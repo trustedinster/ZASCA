@@ -225,7 +225,7 @@ class SystemConfig(models.Model):
     # 其他配置
     site_name = models.CharField(
         max_length=100,
-        default='ZASCA',
+        default='2c2a',
         verbose_name='站点名称',
         help_text='系统显示的站点名称'
     )

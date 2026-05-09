@@ -151,7 +151,7 @@ class Host(models.Model):
             )
 
     def test_connection(self):
-        if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+        if os.environ.get('2C2A_DEMO', '').lower() == '1':
             Host.objects.filter(pk=self.pk).update(status='online')
             return
 
@@ -178,7 +178,7 @@ class Host(models.Model):
         except Exception as e:
             new_status = 'error'
             import logging
-            logger = logging.getLogger("zasca")
+            logger = logging.getLogger("2c2a")
             logger.error(
                 f"测试主机连接失败: {self.name}, 错误: {str(e)}"
             )

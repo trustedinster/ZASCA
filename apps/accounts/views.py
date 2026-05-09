@@ -458,7 +458,7 @@ def send_register_email_code(request):
     cache_key = f'register_email_code:{email}'
     cache.set(cache_key, code, timeout=10 * 60)
 
-    subject = 'ZASCA 注册验证码'
+    subject = '2c2a 注册验证码'
     message_body = f'您的注册验证码是: {code}，有效期10分钟。'
     html_body = f'''
     <!DOCTYPE html>
@@ -484,18 +484,18 @@ def send_register_email_code(request):
     <body>
         <div class="container">
             <div class="header">
-                <h2>ZASCA 验证码服务</h2>
+                <h2>2c2a 验证码服务</h2>
             </div>
             <div class="content">
                 <p>您好！</p>
-                <p>感谢您注册ZASCA账户。</p>
+                <p>感谢您注册2c2a账户。</p>
                 <p>您的验证码是：</p>
                 <div class="code">{code}</div>
                 <p>此验证码将在10分钟后失效，请及时使用。</p>
                 <p>如果您没有进行相关操作，请忽略此邮件。</p>
             </div>
             <div class="footer">
-                <p>© 2026 ZASCA. All rights reserved.</p>
+                <p>© 2026 2c2a. All rights reserved.</p>
                 <p>此邮件由系统自动发送，请勿回复。</p>
             </div>
         </div>
@@ -824,14 +824,14 @@ def send_forgot_password_email_code(request):
     cache.set(cache_key, code, timeout=10 * 60)
 
     import os
-    if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+    if os.environ.get('2C2A_DEMO', '').lower() == '1':
         import logging as _logging
         _logging.getLogger(__name__).info(
             f'DEMO模式: 模拟发送忘记密码验证码邮件至 {email}'
         )
         return JsonResponse({'status': 'ok'})
 
-    subject = 'ZASCA 重置密码验证码'
+    subject = '2c2a 重置密码验证码'
     message_body = f'您的重置密码验证码是: {code}，有效期10分钟。'
     html_body = f'''
     <!DOCTYPE html>
@@ -857,18 +857,18 @@ def send_forgot_password_email_code(request):
     <body>
         <div class="container">
             <div class="header">
-                <h2>ZASCA 验证码服务</h2>
+                <h2>2c2a 验证码服务</h2>
             </div>
             <div class="content">
                 <p>您好！</p>
-                <p>您正在重置ZASCA账户的密码。</p>
+                <p>您正在重置2c2a账户的密码。</p>
                 <p>您的验证码是：</p>
                 <div class="code">{code}</div>
                 <p>此验证码将在10分钟后失效，请及时使用。</p>
                 <p>如果您没有进行相关操作，请忽略此邮件。</p>
             </div>
             <div class="footer">
-                <p>© 2026 ZASCA. All rights reserved.</p>
+                <p>© 2026 2c2a. All rights reserved.</p>
                 <p>此邮件由系统自动发送，请勿回复。</p>
             </div>
         </div>

@@ -1,8 +1,8 @@
 <div align="center">
 
-![ZASCA Logo](./docs/images/logo.svg)
+![2c2a Logo](./docs/images/logo.svg)
 
-<h1>ZASCA - Zero Agent Security Control Architecture</h1>
+<h1>2c2a - Zero Agent Security Control Architecture</h1>
 
 <p>
   <strong>基于 Django 的企业级 Windows 主机远程管理平台</strong><br>
@@ -30,28 +30,28 @@
 - **Material Design 3**：现代化的前端用户体验，支持多主题切换
 - **RBAC 权限控制**：细粒度的角色和权限管理，满足企业合规要求
 - **安全审计**：完整的操作日志和安全监控，支持行为分析
-- **松耦合设计**：Gateway 为可选组件，ZASCA 可独立运行
+- **松耦合设计**：Gateway 为可选组件，2c2a 可独立运行
 
 ## 系统架构
 
 ![系统架构](./docs/images/architecture-v2.svg)
 
-ZASCA 采用四层架构设计：
+2c2a 采用四层架构设计：
 
 | 层级 | 组件 | 说明 |
 |------|------|------|
 | **管理层** | Django Admin | RBAC、审计、工单、插件、主题、主机保护配置 |
-| **核心层** | ZASCA Django | WinRM 客户端、Celery 任务、GatewayClient、证书管理 |
+| **核心层** | 2c2a Django | WinRM 客户端、Celery 任务、GatewayClient、证书管理 |
 | **网关层** | Gateway (Go) | RDP 代理 (SNI 路由)、WSS 隧道服务、控制面 (可选) |
-| **边缘层** | zasca-tunnel (Go) | Windows 服务、WSS 客户端、多路复用、远程执行 |
+| **边缘层** | 2c2a-tunnel (Go) | Windows 服务、WSS 客户端、多路复用、远程执行 |
 
-> **Gateway 为可选组件**：不部署 Gateway 时，ZASCA 通过 WinRM 直连管理主机，功能完全可用。部署 Gateway 后可启用主机保护模式，实现零公网 IP 的安全 RDP 访问。
+> **Gateway 为可选组件**：不部署 Gateway 时，2c2a 通过 WinRM 直连管理主机，功能完全可用。部署 Gateway 后可启用主机保护模式，实现零公网 IP 的安全 RDP 访问。
 
 ## 生态项目
 
 | 项目 | 语言 | 说明 |
 |------|------|------|
-| [ZASCA](.) | Python/Django | 核心管理平台，Web 后台 + API |
+| [2c2a](.) | Python/Django | 核心管理平台，Web 后台 + API |
 | [Gateway](../gateway) | Go | 隧道网关，RDP 代理 + WSS 服务 + 控制面 |
 | [Tunnel](../tunnel) | Go | 边缘代理，Windows 服务 + WSS 客户端 |
 
@@ -88,23 +88,23 @@ SECRET_KEY=your-secret-key-here
 # 数据库配置 (PostgreSQL)
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=zasca_dev
-DB_USER=zasca_user
+DB_NAME=2c2a_dev
+DB_USER=2c2a_user
 DB_PASSWORD=your_password
 
 # Gateway (可选)
 GATEWAY_ENABLED=False
-GATEWAY_CONTROL_SOCKET=/run/zasca/control.sock
+GATEWAY_CONTROL_SOCKET=/run/2c2a/control.sock
 
 # 演示模式 (快速体验)
-ZASCA_DEMO=1
+2C2A_DEMO=1
 ```
 
 ### 开发环境搭建
 
 ```bash
-git clone https://github.com/zascateam/ZASCA.git
-cd ZASCA
+git clone https://github.com/2c2a/2c2a.git
+cd 2c2a
 
 uv sync
 uv run python manage.py migrate
@@ -119,10 +119,10 @@ uv run python manage.py runserver
 ```bash
 # 1. 构建并启动 Gateway
 cd ../gateway
-go build -o zasca-gateway ./cmd/gateway/
-./zasca-gateway -config configs/gateway.yaml
+go build -o 2c2a-gateway ./cmd/gateway/
+./2c2a-gateway -config configs/gateway.yaml
 
-# 2. 在 ZASCA .env 中启用
+# 2. 在 2c2a .env 中启用
 GATEWAY_ENABLED=True
 
 # 3. 启动事件监听
@@ -135,10 +135,10 @@ uv run python manage.py generate_tunnel_token <host_id>
 ### 部署 Tunnel 到 Windows 主机
 
 ```bash
-# 下载 zasca-tunnel.exe (从 GitHub Release)
+# 下载 2c2a-tunnel.exe (从 GitHub Release)
 # 或通过 CI/CD 自动打包
 
-zasca-tunnel.exe install \
+2c2a-tunnel.exe install \
   -token <TOKEN> \
   -server wss://gateway.example.com:9000
 ```
@@ -148,7 +148,7 @@ zasca-tunnel.exe install \
 ## 项目结构
 
 ```
-ZASCA/
+2c2a/
 ├── apps/                 # 应用模块
 │   ├── accounts/        # 用户认证
 │   ├── hosts/          # 主机管理 + 隧道连接
@@ -211,14 +211,14 @@ ZASCA/
 
 ## 联系我们
 
-- 组织主页: https://github.com/zascateam
-- ZASCA 仓库: https://github.com/zascateam/ZASCA
-- 问题反馈: [GitHub Issues](https://github.com/zascateam/ZASCA/issues)
+- 组织主页: https://github.com/2c2a
+- 2c2a 仓库: https://github.com/2c2a/2c2a
+- 问题反馈: [GitHub Issues](https://github.com/2c2a/2c2a/issues)
 
 ---
 
 <div align="center">
 
-*ZASCA - 让 Windows 主机管理更简单、更安全*
+*2c2a - 让 Windows 主机管理更简单、更安全*
 
 </div>

@@ -30,9 +30,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        if os.environ.get('ZASCA_DEMO', '').lower() != '1':
+        if os.environ.get('2C2A_DEMO', '').lower() != '1':
             self.stdout.write(
-                self.style.ERROR('请设置 ZASCA_DEMO=1 环境变量以在DEMO模式下运行此命令')
+                self.style.ERROR('请设置 2C2A_DEMO=1 环境变量以在DEMO模式下运行此命令')
             )
             return
 

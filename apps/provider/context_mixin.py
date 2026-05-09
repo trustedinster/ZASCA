@@ -7,7 +7,7 @@ class ProviderContextMixin:
     {% if user.is_superuser %} 条件渲染实现差异化。
     """
 
-    provider_page_title = 'ZASCA 提供商后台'
+    provider_page_title = '2c2a 提供商后台'
 
     def get_provider_context(self):
         return {

@@ -291,7 +291,7 @@ def install_certificates_on_host(self, host_id, cert_pem, cert_filename, operato
         safe_filename = cert_filename.replace('"', '').replace("'", '').replace(';', '')
         
         ps_script = f'''
-        $tempDir = "$env:TEMP\\ZASCA_Certs"
+        $tempDir = "$env:TEMP\\2c2a_Certs"
         if (!(Test-Path $tempDir)) {{
             New-Item -ItemType Directory -Path $tempDir -Force
         }}

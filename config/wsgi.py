@@ -1,5 +1,5 @@
 """
-WSGI config for ZASCA project.
+WSGI config for 2c2a project.
 """
 
 import os

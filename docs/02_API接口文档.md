@@ -1,4 +1,4 @@
-# ZASCA API 接口文档
+# 2c2a API 接口文档
 
 ## 1. API 设计规范
 
@@ -486,7 +486,7 @@ GET /api/v1/audit/logs/
 import requests
 import json
 
-class ZASCAClient:
+class 2c2aClient:
     def __init__(self, base_url, username, password):
         self.base_url = base_url.rstrip('/')
         self.session = requests.Session()
@@ -526,7 +526,7 @@ class ZASCAClient:
         return response.json()['data']
 
 # 使用示例
-client = ZASCAClient('http://localhost:8000', 'admin', 'password')
+client = 2c2aClient('http://localhost:8000', 'admin', 'password')
 products = client.get_products(is_available=True)
 print(f"可用产品数量: {len(products['results'])}")
 ```

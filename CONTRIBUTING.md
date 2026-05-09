@@ -1,6 +1,6 @@
 # 贡献指南 (Contributing Guide)
 
-感谢您有兴趣为 ZASCA 项目做出贡献！本文档旨在为您提供有关如何参与项目开发的详细指导。
+感谢您有兴趣为 2c2a 项目做出贡献！本文档旨在为您提供有关如何参与项目开发的详细指导。
 
 ## 目录
 
@@ -28,8 +28,8 @@
 
 1. Fork 仓库
 ```bash
-git clone https://github.com/YOUR_USERNAME/ZASCA.git
-cd ZASCA
+git clone https://github.com/YOUR_USERNAME/2c2a.git
+cd 2c2a
 ```
 
 2. 创建虚拟环境
@@ -194,7 +194,7 @@ type(scope): 描述信息
 ### 项目结构
 
 ```
-ZASCA/
+2c2a/
 ├── apps/
 │   ├── accounts/       # 用户管理应用
 │   ├── hosts/          # 主机管理应用

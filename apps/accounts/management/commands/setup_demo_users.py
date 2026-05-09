@@ -12,7 +12,7 @@ class Command(BaseCommand):
     help = '初始化DEMO模式下的用户和权限'
 
     def handle(self, *args, **options):
-        if os.environ.get('ZASCA_DEMO', '').lower() != '1':
+        if os.environ.get('2C2A_DEMO', '').lower() != '1':
             self.stdout.write(
                 self.style.WARNING('非DEMO模式，跳过用户初始化')
             )

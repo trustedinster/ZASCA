@@ -30,7 +30,7 @@ plugins/                           # 插件系统根目录
 
 ## 核心组件 (core/)
 
-- **base.py**: 定义了[PluginInterface](file:///Users/Supercmd/Desktop/Python/ZASCA/plugins/core/base.py#L8-L48)抽象基类和其他核心接口
+- **base.py**: 定义了[PluginInterface](file:///Users/Supercmd/Desktop/Python/2c2a/plugins/core/base.py#L8-L48)抽象基类和其他核心接口
 - **plugin_manager.py**: 实现插件的加载、管理、运行和卸载功能
 - **__init__.py**: 核心模块初始化
 
@@ -39,8 +39,8 @@ plugins/                           # 插件系统根目录
 每个插件都有自己的目录，包含该插件的所有相关文件：
 
 - **qq_verification/**: QQ验证插件
-  - [qq_checker.py](file:///Users/Supercmd/Desktop/Python/ZASCA/plugins/qq_verification/qq_checker.py): 实现QQ群验证的核心功能
-  - [qq_verification_plugin.py](file:///Users/Supercmd/Desktop/Python/ZASCA/plugins/qq_verification/qq_verification_plugin.py): 实现[PluginInterface](file:///Users/Supercmd/Desktop/Python/ZASCA/plugins/core/base.py#L8-L48)的具体插件类
+  - [qq_checker.py](file:///Users/Supercmd/Desktop/Python/2c2a/plugins/qq_verification/qq_checker.py): 实现QQ群验证的核心功能
+  - [qq_verification_plugin.py](file:///Users/Supercmd/Desktop/Python/2c2a/plugins/qq_verification/qq_verification_plugin.py): 实现[PluginInterface](file:///Users/Supercmd/Desktop/Python/2c2a/plugins/core/base.py#L8-L48)的具体插件类
   - **__init__.py**: 插件初始化
 
 ## 配置文件

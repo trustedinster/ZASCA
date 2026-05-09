@@ -1,6 +1,6 @@
 {% extends "admin_base/base.html" %}
 
-{% block title %}ZASCA 超级管理员 - 添加主机向导{% endblock %}
+{% block title %}2c2a 超级管理员 - 添加主机向导{% endblock %}
 
 {% block breadcrumb %}
 <a href="{% url 'admin:admin_hosts:host_list' %}" class="text-white/70 hover:text-cyan-400 transition">主机管理</a>
@@ -646,9 +646,9 @@ function hostWizard() {
             const token = this.tunnelToken;
 
             if (this.shellType === 'powershell') {
-                return `Invoke-WebRequest -Uri "${downloadUrl}" -OutFile "zasca-tunnel.exe"; .\\zasca-tunnel.exe install -token ${token} -server ${gatewayUrl}`;
+                return `Invoke-WebRequest -Uri "${downloadUrl}" -OutFile "2c2a-tunnel.exe"; .\\2c2a-tunnel.exe install -token ${token} -server ${gatewayUrl}`;
             } else {
-                return `curl -o zasca-tunnel.exe ${downloadUrl} && zasca-tunnel.exe install -token ${token} -server ${gatewayUrl}`;
+                return `curl -o 2c2a-tunnel.exe ${downloadUrl} && 2c2a-tunnel.exe install -token ${token} -server ${gatewayUrl}`;
             }
         },
 

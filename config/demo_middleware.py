@@ -20,7 +20,7 @@ class DemoModeMiddleware:
     """
     def __init__(self, get_response):
         self.get_response = get_response
-        self.demo_mode = os.environ.get('ZASCA_DEMO', '').lower() == '1'
+        self.demo_mode = os.environ.get('2C2A_DEMO', '').lower() == '1'
         if self.demo_mode:
             self.setup_demo_users()
 
@@ -101,7 +101,7 @@ class DemoModeMiddleware:
             }
         )
         if created:
-            user.set_password(os.environ.get('ZASCA_DEMO_USER_PASSWORD', _secrets.token_urlsafe(16)))
+            user.set_password(os.environ.get('2C2A_DEMO_USER_PASSWORD', _secrets.token_urlsafe(16)))
             user.save()
 
         # 创建Admin用户
@@ -116,7 +116,7 @@ class DemoModeMiddleware:
             }
         )
         if created:
-            admin.set_password(os.environ.get('ZASCA_DEMO_ADMIN_PASSWORD', _secrets.token_urlsafe(16)))
+            admin.set_password(os.environ.get('2C2A_DEMO_ADMIN_PASSWORD', _secrets.token_urlsafe(16)))
             # 分配特定权限
             self.assign_demo_permissions(admin)
             admin.save()
@@ -156,4 +156,4 @@ def is_demo_mode():
     """
     检查是否处于DEMO模式
     """
-    return os.environ.get('ZASCA_DEMO', '').lower() == '1'
+    return os.environ.get('2C2A_DEMO', '').lower() == '1'

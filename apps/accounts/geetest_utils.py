@@ -11,7 +11,7 @@ import hmac
 import hashlib
 from apps.dashboard.models import SystemConfig
 
-logger = logging.getLogger('zasca')
+logger = logging.getLogger('2c2a')
 
 # v4 validate endpoint base
 GEETEST_V4_API_SERVER = 'https://gcaptcha4.geetest.com'

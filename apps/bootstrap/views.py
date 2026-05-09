@@ -931,7 +931,7 @@ def auto_register_host(request):
         encoded_str = encoded_bytes.decode('utf-8')
         
         # 生成 PowerShell 脚本（下载并运行）
-        download_url = "https://zasca.cc.cd/zascateam/HostInitBash/releases/latest/download/h_side_init.exe"
+        download_url = "https://2c2a.cc.cd/2c2a/HostInitBash/releases/latest/download/h_side_init.exe"
         script = f'''$exe = "$env:TEMP\\h_side_init.exe"
 Invoke-WebRequest -Uri "{download_url}" -OutFile $exe -UseBasicParsing
 & $exe "{encoded_str}"'''

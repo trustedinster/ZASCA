@@ -62,7 +62,7 @@ class CertificateAuthority(models.Model):
             x509.NameAttribute(NameOID.COUNTRY_NAME, "CN"),
             x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "Beijing"),
             x509.NameAttribute(NameOID.LOCALITY_NAME, "Beijing"),
-            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "ZASCA Corp"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "2c2a Corp"),
             x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, "Security Department"),
             x509.NameAttribute(NameOID.COMMON_NAME, self.name),
         ])
@@ -298,7 +298,7 @@ class ClientCertificate(models.Model):
 
         subject = x509.Name([
             x509.NameAttribute(NameOID.COMMON_NAME, name),
-            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "ZASCA Corp"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "2c2a Corp"),
             x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, "Control Center"),
         ])
 

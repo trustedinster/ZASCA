@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="csrf-token" content="{{ csrf_token }}">
-    <title>{% block title %}ZASCA{% endblock %}</title>
+    <title>{% block title %}2c2a{% endblock %}</title>
 
     <!-- Tailwind CSS -->
     <link href="{% static 'css/provider.css' %}" rel="stylesheet">
@@ -30,7 +30,7 @@
     <nav class="bg-md-surface/80 backdrop-blur-xl border-b border-white/10 shadow-sm sticky top-0 z-30">
         <div class="flex items-center justify-between h-16 max-w-7xl mx-auto px-4 lg:px-6">
             <a class="flex items-center no-underline hover:opacity-90 transition" href="{% url 'dashboard:index' %}">
-                <img src="/static/img/favicon.svg" alt="ZASCA" class="h-8 w-auto">
+                <img src="/static/img/favicon.svg" alt="2c2a" class="h-8 w-auto">
             </a>
 
             <button class="md-navbar-toggler hidden max-md:block bg-transparent border-none text-md-on-surface cursor-pointer p-2 rounded-md hover:bg-md-surface-variant transition" id="navbarToggle">
@@ -193,7 +193,7 @@
     <!-- 页脚 -->
     <footer class="relative z-10 bg-md-surface-container/70 backdrop-blur-xl border-t border-white/10 mt-8 py-4">
         <div class="max-w-7xl mx-auto text-center px-4">
-            <p class="mb-1 text-md-on-surface-variant text-sm">&copy; {% now "Y" %} ZASCA. All rights reserved.</p>
+            <p class="mb-1 text-md-on-surface-variant text-sm">&copy; {% now "Y" %} 2c2a. All rights reserved.</p>
             {% if system_config %}
                 <div class="mb-1">
                     {% if system_config.icp_number %}
@@ -271,7 +271,7 @@
                 // 触发自定义事件
                 window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme } }));
 
-                console.log(`[ZASCA] 主题已切换为: ${theme}`);
+                console.log(`[2c2a] 主题已切换为: ${theme}`);
             },
 
             // 切换主题
@@ -382,7 +382,7 @@
                 }, 300);
             }
 
-            console.log('[ZASCA] 界面初始化完成 - 快捷键: Ctrl+D 切换主题');
+            console.log('[2c2a] 界面初始化完成 - 快捷键: Ctrl+D 切换主题');
         });
     </script>
 </body>

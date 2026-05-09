@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
-    <title>{% block title %}{% block page_title %}ZASCA{% endblock %}{% endblock %}</title>
+    <title>{% block title %}{% block page_title }%}2c2a{% endblock %}{% endblock %}</title>
 
     <link href="{% static 'css/provider.css' %}" rel="stylesheet">
 
@@ -87,9 +87,9 @@
         >
             <div class="flex items-center gap-3 px-4 py-5 border-b border-white/10"
                  :class="sidebarExpanded ? '' : 'justify-center px-2'">
-                <img src="{% static 'img/favicon.svg' %}" alt="ZASCA" class="h-8 w-8 shrink-0">
+                <img src="{% static 'img/favicon.svg' %}" alt="2c2a" class="h-8 w-8 shrink-0">
                 <div x-show="sidebarExpanded" x-transition class="flex-1 min-w-0">
-                    <h1 class="text-white font-bold text-lg leading-tight">ZASCA</h1>
+                    <h1 class="text-white font-bold text-lg leading-tight">2c2a</h1>
                     {% if user.is_superuser %}
                     <p class="text-white/70 text-xs">超级管理员</p>
                     {% else %}

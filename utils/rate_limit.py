@@ -11,7 +11,7 @@ from django.conf import settings
 from django.http import JsonResponse
 import logging
 
-logger = logging.getLogger('zasca')
+logger = logging.getLogger('2c2a')
 
 
 class RateLimitExceeded(Exception):

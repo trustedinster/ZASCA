@@ -1,7 +1,7 @@
 [project]
-name = "zasca"
+name = "2c2a"
 version = "1.0.0"
-description = "ZASCA - Django Web Application"
+description = "2c2a - Django Web Application"
 license = "AGPL-3.0-only"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -48,8 +48,9 @@ dependencies = [
     "toml",
     "black>=26.3.1",
     "pymysql>=1.1.2",
-    "django-cotton @ git+https://github.com/trustedinster/django-cotton.git@feature/x-prefix-tag-support",
+    "django-cotton @ git+https://github.com/2c2a/django-cotton.git@feature/x-prefix-tag-support",
     "django-formtools>=2.5.1",
+    "PyJWT>=2.8.0",
 ]
 
 [project.optional-dependencies]

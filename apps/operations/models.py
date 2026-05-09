@@ -755,7 +755,7 @@ class AccountOpeningRequest(models.Model):
                         user_disk_quota[disk] = capacity
 
         # DEMO模式
-        if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+        if os.environ.get('2C2A_DEMO', '').lower() == '1':
             logger.info(f'DEMO模式: 模拟创建用户 {self.username}')
             password = CloudComputerUser.generate_complex_password()
 
@@ -1047,7 +1047,7 @@ class CloudComputerUser(models.Model):
 
     def disable_remote_user(self):
         import os
-        if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+        if os.environ.get('2C2A_DEMO', '').lower() == '1':
             import logging
             logger = logging.getLogger(__name__)
             logger.info(f'DEMO模式: 模拟禁用用户 {self.username} 在产品 {self.product.display_name}')
@@ -1075,7 +1075,7 @@ class CloudComputerUser(models.Model):
 
     def enable_remote_user(self):
         import os
-        if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+        if os.environ.get('2C2A_DEMO', '').lower() == '1':
             import logging
             logger = logging.getLogger(__name__)
             logger.info(f'DEMO模式: 模拟启用用户 {self.username} 在产品 {self.product.display_name}')
@@ -1103,7 +1103,7 @@ class CloudComputerUser(models.Model):
 
     def delete_remote_user(self):
         import os
-        if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+        if os.environ.get('2C2A_DEMO', '').lower() == '1':
             import logging
             logger = logging.getLogger(__name__)
             logger.info(f'DEMO模式: 模拟删除用户 {self.username} 在产品 {self.product.display_name}')
@@ -1147,7 +1147,7 @@ class CloudComputerUser(models.Model):
 
     def reset_windows_password(self, new_password):
         import os
-        if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+        if os.environ.get('2C2A_DEMO', '').lower() == '1':
             import logging
             logger = logging.getLogger(__name__)
             logger.info(f'DEMO模式: 模拟重置用户 {self.username} 的密码')
@@ -1205,10 +1205,14 @@ class CloudComputerUser(models.Model):
 
 
 class RdpDomainRoute(models.Model):
+    """
+    RDP域名路由（SNI路由已弃用，现使用RD Gateway + tunnel_token路由）
+    domain字段仅用于显示和追踪，不再用于SNI路由
+    """
     domain = models.CharField(
         max_length=255, unique=True,
         verbose_name=_('RDP域名'),
-        help_text=_('分配给用户的临时RDP访问域名')
+        help_text=_('分配给用户的临时RDP访问域名（仅用于显示/追踪，不再用于SNI路由）')
     )
     product = models.ForeignKey(
         Product,
@@ -1223,9 +1227,9 @@ class RdpDomainRoute(models.Model):
         help_text=_('被分配此RDP域名的用户')
     )
     tunnel_token = models.CharField(
-        max_length=64,
+        max_length=64, blank=True,
         verbose_name=_('隧道Token'),
-        help_text=_('关联主机的隧道Token')
+        help_text=_('关联主机的隧道Token，用于RD Gateway路由')
     )
     is_active = models.BooleanField(
         default=True,
@@ -1272,7 +1276,7 @@ class RdpDomainRoute(models.Model):
         )
         from django.conf import settings as django_settings
         base_domain = getattr(
-            django_settings, 'RDP_DOMAIN', 'zasca.com'
+            django_settings, 'RDP_DOMAIN', '2c2a.com'
         )
         return f'rdp-{prefix}.{base_domain}'
 
@@ -1280,12 +1284,6 @@ class RdpDomainRoute(models.Model):
         return timezone.now() > self.expires_at
 
     def deactivate(self):
-        from utils.gateway_client import GatewayClient
-        try:
-            client = GatewayClient()
-            client.domain_unbind(self.domain)
-        except Exception:
-            pass
         self.is_active = False
         self.save(update_fields=['is_active'])
 

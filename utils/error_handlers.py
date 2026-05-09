@@ -8,7 +8,7 @@ from django.db import DatabaseError, IntegrityError
 from django.core.exceptions import ValidationError, PermissionDenied
 from rest_framework.exceptions import APIException
 
-logger = logging.getLogger('zasca')
+logger = logging.getLogger('2c2a')
 
 
 class SecurityException(Exception):

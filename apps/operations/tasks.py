@@ -174,7 +174,6 @@ def process_opening_request(self, request_id, operator_id):
 def cleanup_expired_rdp_domains():
     from django.utils import timezone
     from apps.operations.models import RdpDomainRoute
-    from utils.gateway_client import GatewayClient, is_gateway_enabled
 
     expired_routes = RdpDomainRoute.objects.filter(
         is_active=True,
@@ -182,22 +181,10 @@ def cleanup_expired_rdp_domains():
     )
 
     cleaned = 0
-
-    if is_gateway_enabled():
-        client = GatewayClient()
-        for route in expired_routes:
-            try:
-                client.domain_unbind(route.domain)
-            except Exception:
-                pass
-            route.is_active = False
-            route.save(update_fields=['is_active'])
-            cleaned += 1
-    else:
-        for route in expired_routes:
-            route.is_active = False
-            route.save(update_fields=['is_active'])
-            cleaned += 1
+    for route in expired_routes:
+        route.is_active = False
+        route.save(update_fields=['is_active'])
+        cleaned += 1
 
     logger.info(f"Cleaned up {cleaned} expired RDP domain routes")
     return {'cleaned': cleaned}
@@ -209,7 +196,6 @@ def allocate_rdp_domain(user_id, product_id):
     from django.utils import timezone
     from datetime import timedelta
     from apps.operations.models import RdpDomainRoute, Product
-    from utils.gateway_client import GatewayClient, is_gateway_enabled
 
     User = get_user_model()
 
@@ -224,12 +210,6 @@ def allocate_rdp_domain(user_id, product_id):
                 'error': 'Host protection not enabled for this product',
             }
 
-        if not is_gateway_enabled():
-            return {
-                'success': False,
-                'error': 'Gateway not enabled on server',
-            }
-
         if host.connection_type != 'tunnel' or not host.tunnel_token:
             return {
                 'success': False,
@@ -237,15 +217,6 @@ def allocate_rdp_domain(user_id, product_id):
             }
 
         domain = RdpDomainRoute.generate_domain()
-
-        client = GatewayClient()
-        bound = client.domain_bind(domain, host.tunnel_token)
-
-        if not bound:
-            return {
-                'success': False,
-                'error': 'Failed to bind domain on gateway',
-            }
 
         route = RdpDomainRoute.objects.create(
             domain=domain,

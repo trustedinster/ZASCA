@@ -22,7 +22,7 @@
   <rect width="800" height="400" fill="#f8fafc" rx="12"/>
 
   <!-- 标题 -->
-  <text x="400" y="30" font-family="system-ui, sans-serif" font-size="18" font-weight="bold" fill="#1e293b" text-anchor="middle">ZASCA 零代理安全管控架构</text>
+  <text x="400" y="30" font-family="system-ui, sans-serif" font-size="18" font-weight="bold" fill="#1e293b" text-anchor="middle">2c2a 零代理安全管控架构</text>
 
   <!-- 管理层 -->
   <rect x="50" y="60" width="700" height="80" fill="#e0e7ff" stroke="#c7d2fe" stroke-width="1" rx="8"/>

@@ -1,6 +1,6 @@
 # 插件系统
 
-插件系统为ZASCA提供可扩展的功能模块支持，采用松耦合设计，支持动态加载和管理插件。
+插件系统为2c2a提供可扩展的功能模块支持，采用松耦合设计，支持动态加载和管理插件。
 
 ## 架构设计
 
@@ -59,7 +59,7 @@ class NewPlugin(PluginInterface):
 
 ### 3. 注册插件
 
-在 [available_plugins.py](file:///Users/Supercmd/Desktop/Python/ZASCA/plugins/available_plugins.py) 文件中注册插件：
+在 [available_plugins.py](file:///Users/Supercmd/Desktop/Python/2c2a/plugins/available_plugins.py) 文件中注册插件：
 
 ```python
 BUILTIN_PLUGINS = {
@@ -86,7 +86,7 @@ BUILTIN_PLUGINS = {
 
 ## 目录结构
 
-参见 [STRUCTURE.md](file:///Users/Supercmd/Desktop/Python/ZASCA/plugins/STRUCTURE.md) 文件了解详细的目录结构说明。
+参见 [STRUCTURE.md](file:///Users/Supercmd/Desktop/Python/2c2a/plugins/STRUCTURE.md) 文件了解详细的目录结构说明。
 
 ## 运行时管理
 

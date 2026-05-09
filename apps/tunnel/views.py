@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 TUNNEL_RELEASES_URL = os.environ.get(
     'TUNNEL_RELEASES_URL',
-    'https://api.github.com/repos/zascateam/tunnel/releases/latest'
+    'https://api.github.com/repos/2c2a/tunnel/releases/latest'
 )
 TUNNEL_DOWNLOAD_DIR = os.path.join(settings.MEDIA_ROOT, 'tunnel_clients')
 
@@ -33,7 +33,7 @@ def download_tunnel_client(request):
                 'error': 'Invalid architecture. Use amd64 or arm64'
             }, status=400)
 
-        filename = f'zasca-tunnel-windows-{arch}.exe'
+        filename = f'2c2a-tunnel-windows-{arch}.exe'
         local_path = os.path.join(TUNNEL_DOWNLOAD_DIR, filename)
 
         if os.path.exists(local_path):
@@ -134,7 +134,7 @@ def get_tunnel_config(request):
 
         gateway_url = os.environ.get(
             'TUNNEL_GATEWAY_URL',
-            'wss://gateway.zasca.com:9000'
+            'wss://gateway.2c2a.com:9000'
         )
 
         return JsonResponse({
@@ -208,7 +208,7 @@ def install_tunnel_service(request):
                 'message': 'Tunnel service installation initiated',
                 'tunnel_token': tunnel_token,
                 'gateway_url': gateway_url,
-                'install_command': f'zasca-tunnel.exe install -token {tunnel_token} -server {gateway_url}'
+                'install_command': f'2c2a-tunnel.exe install -token {tunnel_token} -server {gateway_url}'
             }
         })
 

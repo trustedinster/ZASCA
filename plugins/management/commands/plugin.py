@@ -20,8 +20,8 @@ import shutil
 import urllib.request
 import urllib.error
 
-PLUGIN_REGISTRY_URL = "https://raw.githubusercontent.com/ZASCAteam/zasca-plugin-registry/main/plugins.json"
-PLUGIN_REGISTRY_RAW_API = "https://api.github.com/repos/ZASCAteam/zasca-plugin-registry/contents/plugins.json"
+PLUGIN_REGISTRY_URL = "https://raw.githubusercontent.com/2c2a/2c2a-plugin-registry/main/plugins.json"
+PLUGIN_REGISTRY_RAW_API = "https://api.github.com/repos/2c2a/2c2a-plugin-registry/contents/plugins.json"
 
 
 class Command(BaseCommand):
@@ -93,7 +93,7 @@ class Command(BaseCommand):
     def _fetch_registry(self, registry_url=None):
         url = registry_url or PLUGIN_REGISTRY_URL
         try:
-            req = urllib.request.Request(url, headers={'User-Agent': 'ZASCA-PluginManager/1.0'})
+            req = urllib.request.Request(url, headers={'User-Agent': '2c2a-PluginManager/1.0'})
             with urllib.request.urlopen(req, timeout=15) as resp:
                 data = json.loads(resp.read().decode('utf-8'))
             return data.get('plugins', {})
@@ -103,7 +103,7 @@ class Command(BaseCommand):
         try:
             result = subprocess.run(
                 ['gh', 'api', '-H', 'Accept: application/vnd.github.v3.raw',
-                 'repos/ZASCAteam/zasca-plugin-registry/contents/plugins.json'],
+                 'repos/2c2a/2c2a-plugin-registry/contents/plugins.json'],
                 capture_output=True, text=True, timeout=15
             )
             if result.returncode == 0 and result.stdout.strip():

@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, Optional
 
-logger = logging.getLogger('zasca')
+logger = logging.getLogger('2c2a')
 
 
 class GatewayError(Exception):
@@ -14,9 +14,7 @@ def _get_gateway_service():
 
     pm = get_plugin_manager()
     service = pm.get_service('gateway')
-    if service is not None and isinstance(
-        service, GatewayServiceInterface
-    ):
+    if service is not None and isinstance(service, GatewayServiceInterface):
         return service
     return None
 
@@ -27,14 +25,6 @@ def is_gateway_enabled() -> bool:
         return service.is_enabled()
     from django.conf import settings
     return getattr(settings, 'GATEWAY_ENABLED', False)
-
-
-def get_gateway_socket_path() -> str:
-    from django.conf import settings
-    return getattr(
-        settings, 'GATEWAY_CONTROL_SOCKET',
-        '/run/zasca/control.sock'
-    )
 
 
 class GatewayClient:
@@ -66,31 +56,29 @@ class GatewayClient:
             return service.is_available()
         return False
 
-    def domain_bind(self, domain: str, token: str) -> bool:
-        service = self._get_service()
-        if service:
-            return service.domain_bind(domain, token)
-        return False
-
-    def domain_unbind(self, domain: str) -> bool:
-        service = self._get_service()
-        if service:
-            return service.domain_unbind(domain)
-        return False
-
     def tunnel_kick(self, token: str) -> bool:
         service = self._get_service()
         if service:
             return service.tunnel_kick(token)
         return False
 
-    def tunnel_stats(
-        self, token: Optional[str] = None
-    ) -> Optional[Any]:
+    def tunnel_stats(self, token: Optional[str] = None) -> Optional[Any]:
         service = self._get_service()
         if service:
             return service.tunnel_stats(token)
         return None
+
+    def rdp_session_stats(self) -> Optional[Any]:
+        service = self._get_service()
+        if service:
+            return service.rdp_session_stats()
+        return None
+
+    def rdp_session_kick(self, session_id: str) -> bool:
+        service = self._get_service()
+        if service:
+            return service.rdp_session_kick(session_id)
+        return False
 
     def remote_exec(
         self,
@@ -103,10 +91,36 @@ class GatewayClient:
         service = self._get_service()
         if service:
             return service.remote_exec(
-                token, script, encrypted_key,
-                signature, pub_key_id
+                token, script, encrypted_key, signature, pub_key_id
             )
         return None
+
+    def issue_paa_token(
+        self, user_email: str, tunnel_token: str,
+        client_ip: Optional[str] = None, expires_in: int = 600
+    ) -> str:
+        service = self._get_service()
+        if service:
+            return service.issue_paa_token(
+                user_email, tunnel_token, client_ip, expires_in
+            )
+        return ''
+
+    def generate_rdp_file(
+        self, gateway_address: str, gateway_port: int,
+        user_email: str, paa_token: str,
+        enable_clipboard: bool = True, enable_printers: bool = True,
+        enable_drive: bool = True, enable_port: bool = False,
+        enable_pnp: bool = False
+    ) -> str:
+        service = self._get_service()
+        if service:
+            return service.generate_rdp_file(
+                gateway_address, gateway_port, user_email, paa_token,
+                enable_clipboard, enable_printers, enable_drive,
+                enable_port, enable_pnp
+            )
+        return ''
 
 
 class GatewayEventListener:
@@ -129,8 +143,7 @@ class GatewayEventListener:
             listener.start()
         else:
             logger.warning(
-                'Gateway plugin not available, '
-                'event listener not starting'
+                'Gateway plugin not available, event listener not starting'
             )
 
     def stop(self):

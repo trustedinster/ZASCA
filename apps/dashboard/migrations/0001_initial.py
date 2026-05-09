@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
                 ('register_captcha_provider', models.CharField(blank=True, choices=[('none', '无'), ('geetest', 'Geetest (极验 v4)'), ('turnstile', 'Cloudflare Turnstile'), ('local', '本地图片验证码')], help_text='注册场景的验证码提供器（留空则使用全局配置）', max_length=32, null=True, verbose_name='注册验证码提供器')),
                 ('register_captcha_id', models.CharField(blank=True, help_text='注册场景验证码服务的公共ID（如果为空，则使用全局配置）', max_length=255, null=True, verbose_name='注册验证码 ID')),
                 ('register_captcha_key', models.CharField(blank=True, help_text='注册场景验证码服务的密钥（如果为空，则使用全局配置）', max_length=255, null=True, verbose_name='注册验证码密钥')),
-                ('site_name', models.CharField(default='ZASCA', help_text='系统显示的站点名称', max_length=100, verbose_name='站点名称')),
+                ('site_name', models.CharField(default='2c2a', help_text='系统显示的站点名称', max_length=100, verbose_name='站点名称')),
                 ('enable_registration', models.BooleanField(default=False, help_text='是否开启用户注册功能，默认为关闭', verbose_name='启用用户注册')),
                 ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='创建时间')),
                 ('updated_at', models.DateTimeField(auto_now=True, verbose_name='更新时间')),

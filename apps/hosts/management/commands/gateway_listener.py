@@ -5,7 +5,7 @@ import sys
 from django.core.management.base import BaseCommand
 from django.conf import settings
 
-logger = logging.getLogger('zasca')
+logger = logging.getLogger('2c2a')
 
 
 class Command(BaseCommand):
@@ -36,7 +36,7 @@ class Command(BaseCommand):
 
         socket_path = options.get('socket') or getattr(
             settings, 'GATEWAY_CONTROL_SOCKET',
-            '/run/zasca/control.sock'
+            '/run/2c2a/control.sock'
         )
 
         self.stdout.write(
@@ -52,10 +52,10 @@ class Command(BaseCommand):
             'tunnel_offline', self._handle_tunnel_offline
         )
         listener.register_handler(
-            'rdp_connect', self._handle_rdp_connect
+            'rdp_gateway_connect', self._handle_rdp_gateway_connect
         )
         listener.register_handler(
-            'rdp_disconnect', self._handle_rdp_disconnect
+            'rdp_gateway_disconnect', self._handle_rdp_gateway_disconnect
         )
         listener.register_handler(
             'remote_exec_result', self._handle_remote_exec_result
@@ -146,11 +146,13 @@ class Command(BaseCommand):
                 f'Tunnel offline event for unknown token: {token}'
             )
 
-    def _handle_rdp_connect(self, event_type, payload):
+    def _handle_rdp_gateway_connect(self, event_type, payload):
         from apps.audit.models import AuditLog
 
         token = payload.get('token', '')
-        domain = payload.get('domain', '')
+        session_id = payload.get('session_id', '')
+        target_host = payload.get('target_host', '')
+        user = payload.get('user', '')
         client_ip = payload.get('client_ip', '')
 
         try:
@@ -159,32 +161,35 @@ class Command(BaseCommand):
 
             AuditLog.objects.create(
                 host=host,
-                action='rdp_connect',
+                action='rdp_gateway_connect',
                 ip_address=client_ip,
                 details={
-                    'domain': domain,
+                    'session_id': session_id,
                     'token': token,
+                    'target_host': target_host,
+                    'user': user,
                 }
             )
 
             logger.info(
-                f'RDP connect: host={host.name}, '
-                f'domain={domain}, ip={client_ip}'
+                f'RDP gateway connect: host={host.name}, '
+                f'session_id={session_id}, user={user}, ip={client_ip}'
             )
 
         except Host.DoesNotExist:
             logger.warning(
-                f'RDP connect event for unknown token: {token}'
+                f'RDP gateway connect event for unknown token: {token}'
             )
 
-    def _handle_rdp_disconnect(self, event_type, payload):
+    def _handle_rdp_gateway_disconnect(self, event_type, payload):
         from apps.audit.models import AuditLog
 
         token = payload.get('token', '')
-        domain = payload.get('domain', '')
+        session_id = payload.get('session_id', '')
+        target_host = payload.get('target_host', '')
+        user = payload.get('user', '')
+        client_ip = payload.get('client_ip', '')
         duration = payload.get('duration', 0)
-        bytes_in = payload.get('bytes_in', 0)
-        bytes_out = payload.get('bytes_out', 0)
 
         try:
             from apps.hosts.models import Host
@@ -192,22 +197,25 @@ class Command(BaseCommand):
 
             AuditLog.objects.create(
                 host=host,
-                action='rdp_disconnect',
+                action='rdp_gateway_disconnect',
+                ip_address=client_ip,
                 details={
-                    'domain': domain,
+                    'session_id': session_id,
+                    'token': token,
+                    'target_host': target_host,
+                    'user': user,
                     'duration': duration,
-                    'bytes_in': bytes_in,
-                    'bytes_out': bytes_out,
                 }
             )
 
             logger.info(
-                f'RDP disconnect: host={host.name}, domain={domain}'
+                f'RDP gateway disconnect: host={host.name}, '
+                f'session_id={session_id}, user={user}, duration={duration}'
             )
 
         except Host.DoesNotExist:
             logger.warning(
-                f'RDP disconnect event for unknown token: {token}'
+                f'RDP gateway disconnect event for unknown token: {token}'
             )
 
     def _handle_remote_exec_result(self, event_type, payload):

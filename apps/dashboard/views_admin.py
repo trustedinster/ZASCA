@@ -18,7 +18,7 @@ from apps.accounts.provider_decorators import superadmin_required
 from .models import DashboardWidget, SystemConfig
 from .forms_admin import DashboardWidgetForm, SystemConfigForm
 
-logger = logging.getLogger('zasca')
+logger = logging.getLogger('2c2a')
 
 
 # ============================================================
@@ -170,7 +170,7 @@ def systemconfig_send_test_email(request):
             messages.error(request, '未提供测试邮箱地址。')
             return redirect('admin:admin_dashboard_config:systemconfig_edit')
 
-        subject = 'ZASCA 测试邮件'
+        subject = '2c2a 测试邮件'
         html_body = f'''
         <!DOCTYPE html>
         <html>
@@ -214,7 +214,7 @@ def systemconfig_send_test_email(request):
         <body>
             <div class="container">
                 <div class="header">
-                    <h2>ZASCA 验证码服务</h2>
+                    <h2>2c2a 验证码服务</h2>
                 </div>
                 <div class="content">
                     <p>您好！</p>
@@ -225,7 +225,7 @@ def systemconfig_send_test_email(request):
                     <p>测试时间: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
                 </div>
                 <div class="footer">
-                    <p>&copy; 2026 ZASCA. All rights reserved.</p>
+                    <p>&copy; 2026 2c2a. All rights reserved.</p>
                     <p>此邮件由系统自动发送，请勿回复。</p>
                 </div>
             </div>

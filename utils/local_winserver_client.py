@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from typing import Optional, Dict, Any
 from django.conf import settings
 
-logger = logging.getLogger("zasca")
+logger = logging.getLogger("2c2a")
 
 USERNAME_PATTERN = re.compile(r'^[a-zA-Z0-9_]{1,150}$')
 GROUPNAME_PATTERN = re.compile(r'^[a-zA-Z0-9_\-\s]{1,256}$')
@@ -145,7 +145,7 @@ class LocalWinServerClient:
             LocalWinServerResult对象，包含执行结果
         """
         # 如果是DEMO模式，模拟执行命令而不实际执行
-        if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+        if os.environ.get('2C2A_DEMO', '').lower() == '1':
             logger.info(f"DEMO模式: 模拟执行本地命令: {command}, 参数: {arguments}")
             # 模拟成功执行的结果
             return LocalWinServerResult(
@@ -221,7 +221,7 @@ class LocalWinServerClient:
             LocalWinServerResult对象，包含执行结果
         """
         # 如果是DEMO模式，模拟执行PowerShell而不实际执行
-        if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+        if os.environ.get('2C2A_DEMO', '').lower() == '1':
             logger.info(f"DEMO模式: 模拟执行本地PowerShell脚本: {script[:50]}...")
             # 模拟成功执行的结果
             return LocalWinServerResult(

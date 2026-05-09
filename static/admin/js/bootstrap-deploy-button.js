@@ -284,7 +284,7 @@ var deployFlowModule = (function() {
                         <div class="register-info">
                             <p><strong>命令说明：</strong></p>
                             <ul>
-                                <li>自动下载并运行ZASCA主机初始化程序</li>
+                                <li>自动下载并运行2c2a主机初始化程序</li>
                                 <li>自动收集主机信息并注册到系统</li>
                                 <li>完成后会显示配对码，请在下方输入完成验证</li>
                             </ul>
@@ -363,7 +363,7 @@ var deployFlowModule = (function() {
                             <div class="step-instructions">
                                 <p>请下载最新版本的H端部署客户端：</p>
                                 <div class="download-section">
-                                    <a href="https://github.com/trustedinster/ZASCAHB/releases/latest" 
+                                    <a href="https://github.com/2c2a/2c2aHB/releases/latest" 
                                        target="_blank" 
                                        class="download-btn" 
                                        id="download-client-btn">

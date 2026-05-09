@@ -54,7 +54,7 @@ class Command(BaseCommand):
                 f'  Token: {token}\n'
                 f'  连接类型已设置为: tunnel\n'
                 f'\n'
-                f'请将此Token配置到边缘端 zasca-tunnel:\n'
-                f'  zasca-tunnel.exe install -token {token} -server wss://<gateway>:9000'
+                f'请将此Token配置到边缘端 2c2a-tunnel:\n'
+                f'  2c2a-tunnel.exe install -token {token} -server wss://<gateway>:9000'
             )
         )

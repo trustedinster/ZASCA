@@ -6,7 +6,7 @@
 import logging
 from django.http import HttpResponse
 
-logger = logging.getLogger('zasca')
+logger = logging.getLogger('2c2a')
 
 LOCAL_IPS = frozenset({
     '127.0.0.1',

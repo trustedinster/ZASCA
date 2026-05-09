@@ -68,7 +68,7 @@ class UserRegistrationForm(UserCreationForm):
         """在DEMO模式下，对密码不做复杂度要求"""
         import os
         password = self.cleaned_data.get('password1')
-        if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+        if os.environ.get('2C2A_DEMO', '').lower() == '1':
             # 在DEMO模式下，接受任何密码
             return password
         else:
@@ -84,7 +84,7 @@ class UserRegistrationForm(UserCreationForm):
         if password1 and password2 and password1 != password2:
             raise forms.ValidationError(_('两次输入的密码不一致'))
         
-        if os.environ.get('ZASCA_DEMO', '').lower() == '1':
+        if os.environ.get('2C2A_DEMO', '').lower() == '1':
             # 在DEMO模式下，接受任何密码
             return password2
         else:

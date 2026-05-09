@@ -34,4 +34,6 @@ urlpatterns = [
 
     # 邀请链接相关URL
     path('invite/<str:token>/', views.product_invite_view, name='product_invite'),
+
+    path('rdp/connect/<int:product_id>/', views.rdp_connect, name='rdp_connect'),
 ]

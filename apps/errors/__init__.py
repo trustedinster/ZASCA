@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.http import HttpResponseServerError, HttpResponseNotFound, HttpResponseForbidden
 import logging
 
-logger = logging.getLogger('zasca')
+logger = logging.getLogger('2c2a')
 
 
 def handler403(request, exception=None):

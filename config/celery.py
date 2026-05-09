@@ -5,7 +5,7 @@ from django.conf import settings
 # 设置Django环境
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
-app = Celery('zasca')
+app = Celery('2c2a')
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
 # 自动发现任务

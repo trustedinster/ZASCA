@@ -10,14 +10,14 @@ def show_demo_startup_message():
     """
     显示DEMO模式启动提示信息
     """
-    if os.environ.get('ZASCA_DEMO', '').lower() != '1':
+    if os.environ.get('2C2A_DEMO', '').lower() != '1':
         return
 
     style = color_style()
 
     demo_message = """
 ********************************************************************************
-*                           ZASCA DEMO MODE ACTIVATED                          *
+*                           2C2A DEMO MODE ACTIVATED                          *
 ********************************************************************************
 *                                                                              *
 *  当前系统运行在DEMO模式下，具有以下特性：                                      *
