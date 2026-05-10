@@ -1,9 +1,10 @@
 """
 自定义错误处理视图
 """
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.static import serve
 from django.conf import settings
+from django.http import HttpResponseNotFound
 import os
 
 
@@ -54,3 +55,41 @@ def favicon_svg_view(request):
         favicon_path = os.path.join(settings.STATICFILES_DIRS[0], 'img', 'favicon.svg')
     
     return serve(request, os.path.basename(favicon_path), document_root=os.path.dirname(favicon_path))
+
+
+# Static 文件降级服务域名
+STATIC_FALLBACK_HOST = 'https://static.2c2a.cc.cd'
+
+
+def static_fallback_view(request, path):
+    """
+    生产环境 static 文件降级视图
+
+    逻辑：
+    1. 先尝试从本地 STATIC_ROOT 或 STATICFILES_DIRS 中查找并 serve 文件
+    2. 如果本地文件不存在，则 302 重定向到外部 static 服务
+
+    Args:
+        request: HTTP请求对象
+        path: static 文件路径
+
+    Returns:
+        HttpResponse: 本地文件或 302 重定向响应
+    """
+    document_root = None
+
+    if settings.STATIC_ROOT and os.path.exists(settings.STATIC_ROOT):
+        document_root = settings.STATIC_ROOT
+    elif settings.STATICFILES_DIRS:
+        for static_dir in settings.STATICFILES_DIRS:
+            if os.path.exists(static_dir):
+                document_root = static_dir
+                break
+
+    if document_root:
+        file_path = os.path.join(document_root, path)
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            return serve(request, path, document_root=document_root)
+
+    # 本地未找到文件，重定向到外部 static 服务
+    return redirect(f"{STATIC_FALLBACK_HOST}/static/{path}", permanent=False)

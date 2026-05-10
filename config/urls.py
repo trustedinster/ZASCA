@@ -2,7 +2,7 @@
 2c2a URL Configuration
 """
 from django.contrib.staticfiles.views import serve
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
@@ -28,6 +28,12 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+else:
+    # 生产环境：static 文件降级逻辑
+    # 本地找不到时自动重定向到 static.2c2a.cc.cd
+    urlpatterns += [
+        re_path(r'^static/(?P<path>.*)$', views.static_fallback_view),
+    ]
 
 handler404 = 'config.views.custom_404'
 handler500 = 'config.views.custom_500'
