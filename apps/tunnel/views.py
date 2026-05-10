@@ -2,12 +2,15 @@ import os
 import logging
 import secrets
 import requests
+import time
 from django.http import JsonResponse, FileResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.conf import settings
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required, permission_required
+from django.core.cache import cache
+from utils.helpers import get_client_ip
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +21,33 @@ TUNNEL_RELEASES_URL = os.environ.get(
 TUNNEL_DOWNLOAD_DIR = os.path.join(settings.MEDIA_ROOT, 'tunnel_clients')
 
 
+def _tunnel_rate_limit(key_prefix, rate='10/m'):
+    limit, period = rate.lower().split('/')
+    limit = int(limit)
+    period_map = {'s': 1, 'm': 60, 'h': 3600, 'd': 86400}
+    period_seconds = period_map.get(period, 60)
+
+    def decorator(view_func):
+        def wrapper(request, *args, **kwargs):
+            ip = get_client_ip(request)
+            window = int(time.time() // period_seconds)
+            cache_key = f'rl:{key_prefix}:{ip}:{window}'
+            current = cache.get(cache_key, 0)
+            if current >= limit:
+                return JsonResponse(
+                    {'success': False, 'error': 'Too many requests'},
+                    status=429,
+                )
+            cache.set(cache_key, current + 1, timeout=period_seconds + 1)
+            return view_func(request, *args, **kwargs)
+        wrapper.__name__ = view_func.__name__
+        return wrapper
+    return decorator
+
+
 @csrf_exempt
 @require_http_methods(["GET"])
+@_tunnel_rate_limit('tunnel_download', '5/m')
 def download_tunnel_client(request):
     """
     下载tunnel客户端
@@ -92,6 +120,7 @@ def download_tunnel_client(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+@_tunnel_rate_limit('tunnel_config', '10/m')
 def get_tunnel_config(request):
     """
     获取tunnel配置
@@ -122,6 +151,13 @@ def get_tunnel_config(request):
                 'error': 'Invalid or expired session token'
             }, status=401)
 
+        client_ip = get_client_ip(request)
+        if active_session.bound_ip != client_ip:
+            return JsonResponse({
+                'success': False,
+                'error': 'IP address mismatch'
+            }, status=403)
+
         host = active_session.host
 
         if not host.tunnel_token:
@@ -142,8 +178,6 @@ def get_tunnel_config(request):
             'data': {
                 'tunnel_token': host.tunnel_token,
                 'gateway_url': gateway_url,
-                'host_id': host.id,
-                'hostname': host.hostname,
             }
         })
 
@@ -162,6 +196,7 @@ def get_tunnel_config(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+@_tunnel_rate_limit('tunnel_install', '5/m')
 def install_tunnel_service(request):
     """
     一键安装tunnel服务

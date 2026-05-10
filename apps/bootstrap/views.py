@@ -13,14 +13,42 @@ from django.shortcuts import get_object_or_404
 import json
 import logging
 from django.utils import timezone
+from django.core.cache import cache
 import secrets
 import uuid
+import time
+import hmac
+
+from utils.helpers import get_client_ip
 
 
 logger = logging.getLogger(__name__)
 
 
-@csrf_exempt
+def _bootstrap_rate_limit(key_prefix, rate='10/m'):
+    limit, period = rate.lower().split('/')
+    limit = int(limit)
+    period_map = {'s': 1, 'm': 60, 'h': 3600, 'd': 86400}
+    period_seconds = period_map.get(period, 60)
+
+    def decorator(view_func):
+        def wrapper(request, *args, **kwargs):
+            ip = get_client_ip(request)
+            window = int(time.time() // period_seconds)
+            cache_key = f'rl:{key_prefix}:{ip}:{window}'
+            current = cache.get(cache_key, 0)
+            if current >= limit:
+                return JsonResponse(
+                    {'success': False, 'error': 'Too many requests'},
+                    status=429,
+                )
+            cache.set(cache_key, current + 1, timeout=period_seconds + 1)
+            return view_func(request, *args, **kwargs)
+        wrapper.__name__ = view_func.__name__
+        return wrapper
+    return decorator
+
+
 @require_http_methods(["POST"])
 @login_required
 @permission_required('hosts.delete_host', raise_exception=True)
@@ -43,17 +71,12 @@ def revoke_pending_host(request):
             initial_token = InitialToken.objects.get(token=token)
             host = initial_token.host
             
-            logger.info(f"吊销主机: {host.hostname} (Token: {token[:10]}...)")
-            
             initial_token.delete()
-            
             host.delete()
-            
-            logger.info(f"主机 {host.hostname} 及其令牌已成功吊销")
             
             return JsonResponse({
                 'success': True,
-                'message': f'主机 {host.hostname} 已成功吊销'
+                'message': 'Host revoked successfully'
             })
             
         except InitialToken.DoesNotExist:
@@ -75,7 +98,6 @@ def revoke_pending_host(request):
         }, status=500)
 
 
-@csrf_exempt
 @require_http_methods(["GET"])
 @login_required
 @permission_required('bootstrap.view_initialtoken', raise_exception=True)
@@ -203,6 +225,7 @@ def create_initial_token(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+@_bootstrap_rate_limit('pairing_verify', '5/m')
 def verify_pairing_code(request):
     """配对码验证接口 - 简化的认证机制
     
@@ -228,10 +251,8 @@ def verify_pairing_code(request):
                 'error': 'Either host_id or token is required'
             }, status=400)
         
-        # 查找对应的初始令牌
         try:
             if token:
-                # 通过 token 查找
                 try:
                     token_obj = InitialToken.objects.get(
                         token=token,
@@ -239,16 +260,12 @@ def verify_pairing_code(request):
                         expires_at__gt=timezone.now()
                     )
                     
-                    logger.info(f"通过token验证配对码: token={token[:10]}..., host_id={token_obj.host.id}")
-                    
                     if token_obj.verify_pairing_code(pairing_code):
-                        logger.info(f"配对码验证成功: {pairing_code}")
                         return JsonResponse({
                             'success': True,
                             'message': 'Pairing code verification successful'
                         })
                     else:
-                        logger.info(f"配对码验证失败: {pairing_code}")
                         return JsonResponse({
                             'success': False,
                             'error': 'Invalid or expired pairing code'
@@ -257,10 +274,9 @@ def verify_pairing_code(request):
                 except InitialToken.DoesNotExist:
                     return JsonResponse({
                         'success': False,
-                        'error': 'No valid initial token found'
-                    }, status=404)
+                        'error': 'Invalid request'
+                    }, status=400)
             else:
-                # 通过 host_id 查找
                 initial_tokens = InitialToken.objects.filter(
                     host_id=host_id,
                     status='ISSUED',
@@ -270,20 +286,14 @@ def verify_pairing_code(request):
                 if not initial_tokens.exists():
                     return JsonResponse({
                         'success': False,
-                        'error': 'No valid initial token found for this host'
-                    }, status=404)
+                        'error': 'Invalid request'
+                    }, status=400)
                 
-                # 尝试验证配对码
                 verified = False
                 for token_obj in initial_tokens:
-                    logger.info(f"验证配对码: token={token_obj.token[:10]}..., host_id={token_obj.host.id}")
-                    
                     if token_obj.verify_pairing_code(pairing_code):
                         verified = True
-                        logger.info(f"配对码验证成功: {pairing_code}")
                         break
-                    else:
-                        logger.info(f"配对码验证失败: {pairing_code}")
                 
                 if verified:
                     return JsonResponse({
@@ -466,6 +476,7 @@ def trigger_host_bootstrap(request):
 
 @csrf_exempt
 @require_http_methods(["GET"])
+@_bootstrap_rate_limit('bootstrap_status', '10/m')
 def check_bootstrap_status(request):
     """检查引导状态API"""
     try:
@@ -479,7 +490,6 @@ def check_bootstrap_status(request):
             }, status=400)
         
         if token:
-            # 通过令牌查询
             try:
                 initial_token = InitialToken.objects.get(token=token)
                 host = initial_token.host
@@ -489,7 +499,6 @@ def check_bootstrap_status(request):
                     'error': 'Invalid token'
                 }, status=404)
         else:
-            # 通过主机ID查询
             try:
                 host = Host.objects.get(id=host_id)
             except Host.DoesNotExist:
@@ -505,9 +514,6 @@ def check_bootstrap_status(request):
                 'hostname': host.hostname,
                 'init_status': host.init_status if hasattr(host, 'init_status') else 'unknown',
                 'initialized_at': getattr(host, 'initialized_at', None),
-                'certificate_thumbprint': getattr(host, 'certificate_thumbprint', None),
-                'ip_address': host.ip_address,
-                'port': host.port
             }
         })
         
@@ -521,6 +527,7 @@ def check_bootstrap_status(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+@_bootstrap_rate_limit('token_validate', '10/m')
 def validate_bootstrap_token(request):
     """验证引导令牌有效性"""
     try:
@@ -536,7 +543,7 @@ def validate_bootstrap_token(request):
         try:
             token_obj = InitialToken.objects.get(
                 token=token,
-                status__in=['ISSUED', 'PAIRED'],  # 未消耗的令牌
+                status__in=['ISSUED', 'PAIRED'],
                 expires_at__gt=timezone.now()
             )
             
@@ -544,8 +551,6 @@ def validate_bootstrap_token(request):
                 'success': True,
                 'data': {
                     'valid': True,
-                    'host_id': token_obj.host.id,
-                    'hostname': token_obj.host.hostname,
                     'expires_at': token_obj.expires_at.isoformat(),
                     'status': token_obj.status
                 }
@@ -571,14 +576,12 @@ def validate_bootstrap_token(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+@_bootstrap_rate_limit('session_token', '10/m')
 def get_session_token(request):
     """获取会话令牌接口 - H端初始化流程的第一步"""
     try:
-        # 记录请求详细信息
         client_ip = get_client_ip(request)
         auth_header = request.META.get('HTTP_AUTHORIZATION', '')
-        
-        logger.info(f"Get session token request received - IP: {client_ip}")
         
         if not auth_header.startswith('Bearer '):
             return JsonResponse({
@@ -588,11 +591,10 @@ def get_session_token(request):
         
         initial_token = auth_header.split(' ')[1]
         
-        # 验证InitialToken
         try:
             token_obj = InitialToken.objects.get(
                 token=initial_token,
-                status__in=['ISSUED', 'PAIRED'],  # 允许已签发或已配对的令牌
+                status__in=['ISSUED', 'PAIRED'],
                 expires_at__gt=timezone.now()
             )
         except InitialToken.DoesNotExist:
@@ -625,13 +627,7 @@ def get_session_token(request):
         return JsonResponse({
             'success': True,
             'session_token': session_token,
-            'expires_in': 3600,  # 1小时（秒）
-            'details': {
-                'host_name': token_obj.host.name,
-                'host_id': token_obj.host.id,
-                'bound_ip': ip,
-                'session_expires_at': active_session.expires_at.isoformat()
-            }
+            'expires_in': 3600,
         })
         
     except Exception as e:
@@ -644,10 +640,10 @@ def get_session_token(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+@_bootstrap_rate_limit('exchange_token', '10/m')
 def exchange_token(request):
     """令牌交换接口 - 根据规范"""
     try:
-        # 记录请求详细信息
         client_ip = get_client_ip(request)
         auth_header = request.META.get('HTTP_AUTHORIZATION', '')
         
@@ -659,7 +655,6 @@ def exchange_token(request):
         
         session_token = auth_header.split(' ')[1]
         
-        # 验证ActiveSession
         try:
             active_session = ActiveSession.objects.get(
                 session_token=session_token,
@@ -688,13 +683,7 @@ def exchange_token(request):
         return JsonResponse({
             'success': True,
             'session_token': session_token,
-            'expires_in': 604800,  # 7天（秒）
-            'details': {
-                'host_name': active_session.host.name,
-                'host_id': active_session.host.id,
-                'bound_ip': active_session.bound_ip,
-                'session_expires_at': active_session.expires_at.isoformat()
-            }
+            'expires_in': 604800,
         })
         
     except Exception as e:
@@ -707,6 +696,7 @@ def exchange_token(request):
 
 @csrf_exempt
 @require_http_methods(["GET"])
+@_bootstrap_rate_limit('pairing_status', '10/m')
 def check_pairing_status(request):
     """检查配对状态接口"""
     try:
@@ -731,20 +721,16 @@ def check_pairing_status(request):
                 return JsonResponse({
                     'paired': True,
                     'message': 'Pairing completed',
-                    'host_id': token_obj.host.id,
-                    'hostname': token_obj.host.hostname
                 })
             elif token_obj.status == 'ISSUED':
                 return JsonResponse({
                     'paired': False,
                     'message': 'Waiting for pairing code verification',
-                    'host_id': token_obj.host.id
                 })
             elif token_obj.status == 'CONSUMED':
                 return JsonResponse({
                     'paired': True,
                     'message': 'Token already consumed',
-                    'host_id': token_obj.host.id
                 })
             else:
                 return JsonResponse({
@@ -803,7 +789,6 @@ def revoke_session(request):
         }, status=500)
 
 
-@csrf_exempt
 @require_http_methods(["POST"])
 @login_required
 @permission_required('hosts.add_host', raise_exception=True)
@@ -885,7 +870,6 @@ def complete_auto_register(request):
         }, status=500)
 
 
-@csrf_exempt
 @require_http_methods(["POST"])
 @login_required
 @permission_required('hosts.add_host', raise_exception=True)

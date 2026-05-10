@@ -65,8 +65,13 @@ if DEBUG:
         'https://2c2a.supercmd.dpdns.org',
     ]
 else:
-    ALLOWED_HOSTS = _env('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+    ALLOWED_HOSTS = _env('ALLOWED_HOSTS', '').split(',')
     CSRF_TRUSTED_ORIGINS = _env('CSRF_TRUSTED_ORIGINS', 'https://localhost,https://127.0.0.1').split(',')
+    _ALLOWED_HOSTS_ENV = _env('ALLOWED_HOSTS', '')
+    if not _ALLOWED_HOSTS_ENV or _ALLOWED_HOSTS_ENV == 'localhost,127.0.0.1':
+        raise ImproperlyConfigured(
+            'ALLOWED_HOSTS 环境变量必须在生产环境中显式配置为实际域名'
+        )
 
 # Application definition
 
@@ -143,16 +148,17 @@ INSTALLED_APPS += _discover_plugin_apps()
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'config.maintenance_middleware.MaintenanceModeMiddleware',  # 维护模式中间件
-    'config.local_lock_middleware.LocalLockMiddleware',  # 本地访问限制中间件
+    'config.maintenance_middleware.MaintenanceModeMiddleware',
+    'config.local_lock_middleware.LocalLockMiddleware',
+    'config.security_middleware.SecurityHeadersMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'apps.bootstrap.middleware.SessionValidationMiddleware',  # 主机引导系统的会话验证中间件
-    'config.demo_middleware.DemoModeMiddleware',  # DEMO模式中间件
+    'apps.bootstrap.middleware.SessionValidationMiddleware',
+    'config.demo_middleware.DemoModeMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
@@ -354,6 +360,12 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+
+if not DEBUG:
+    SECURE_CROSS_ORIGIN_EMBEDDER_POLICY = 'require-corp'
+    SECURE_CROSS_ORIGIN_RESOURCE_POLICY = 'same-origin'
+
 USE_X_FORWARDED_FOR = _env(
     'USE_X_FORWARDED_FOR', 'False'
 ).lower() == 'true'
@@ -406,6 +418,12 @@ GATEWAY_CONTROL_SOCKET = _env(
 GATEWAY_PAA_TOKEN_SIGNING_KEY = _env(
     'GATEWAY_PAA_TOKEN_SIGNING_KEY', 'change-me-32-chars-minimum!!'
 )
+
+_INSECURE_GATEWAY_KEY = 'change-me-32-chars-minimum!!'
+if not DEBUG and GATEWAY_ENABLED and GATEWAY_PAA_TOKEN_SIGNING_KEY == _INSECURE_GATEWAY_KEY:
+    raise ImproperlyConfigured(
+        'GATEWAY_PAA_TOKEN_SIGNING_KEY 环境变量必须设置，不允许在生产环境使用默认不安全密钥'
+    )
 GATEWAY_PAA_TOKEN_EXPIRY_SECONDS = int(_env(
     'GATEWAY_PAA_TOKEN_EXPIRY_SECONDS', '600'
 ))
@@ -459,3 +477,9 @@ os.makedirs(BASE_DIR / 'logs', exist_ok=True)
 
 # Bootstrap认证配置
 BOOTSTRAP_SHARED_SALT = _env('BOOTSTRAP_SHARED_SALT', '')
+
+if not DEBUG and not BOOTSTRAP_SHARED_SALT:
+    import logging as _bootstrap_logging
+    _bootstrap_logging.getLogger('2c2a').warning(
+        'BOOTSTRAP_SHARED_SALT 未设置，建议在生产环境中配置此值以增强引导认证安全性'
+    )

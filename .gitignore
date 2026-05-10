@@ -147,3 +147,5 @@ tools/tailwindcss
 static/vendor/**/*.exe
 static/vendor/**/node
 tools/*
+# attack
+attack/*

@@ -319,6 +319,7 @@ def geetest_validate(request):
 
 @login_required
 @require_http_methods(["POST"])
+@rate_limit.general_api_rate_limit
 def password_change_api(request):
     """密码更改API端点"""
     if hasattr(request, 'is_demo_mode') and request.is_demo_mode:
@@ -699,6 +700,7 @@ def local_captcha_verify(request):
         return JsonResponse({'result': 'failure'}, status=400)
 
 
+@method_decorator(rate_limit.register_rate_limit, name='dispatch')
 class ForgotPasswordView(TemplateView):
     """忘记密码视图"""
     
@@ -754,15 +756,13 @@ class ForgotPasswordView(TemplateView):
         cache_key = f'forgot_password_email_code:{email}'
         expected = cache.get(cache_key)
         if not hmac.compare_digest(str(expected or ''), str(email_code or '')):
-            messages.error(request, '邮箱验证码错误或已过期')
+            messages.error(request, '验证码错误或已过期')
             return self.render_to_response(self.get_context_data())
         
-        # 查找用户
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            messages.error(request, '该邮箱对应的用户不存在')
-            return self.render_to_response(self.get_context_data())
+        user_exists = User.objects.filter(email=email).exists()
+        if not user_exists:
+            messages.success(request, '如果该邮箱已注册，密码重置邮件已发送')
+            return redirect('accounts:login')
         
         from .captcha_service import validate_captcha
         is_valid, error_msg = validate_captcha(request, scene='email')
@@ -771,7 +771,7 @@ class ForgotPasswordView(TemplateView):
             messages.error(request, error_msg)
             return self.render_to_response(self.get_context_data())
         
-        # 重置用户密码
+        user = User.objects.get(email=email)
         user.set_password(new_password1)
         user.save()
         
