@@ -197,13 +197,27 @@ uv run python manage.py generate_tunnel_token <host_id>
 
 我们欢迎任何形式的贡献！请先阅读我们的[开发规范指南](./docs/00_开发规范指南.md)。
 
+### 分支规范（分阶段发布模型）
+
+本项目采用 **5 级分阶段分支模型**，所有生态仓库（包括 [webServer](https://github.com/2c2a/webServer)）统一遵循：
+
+| 分支 | 阶段 | 用途 | 部署环境 |
+|------|------|------|----------|
+| `master` | 生产版本 | 线上稳定运行，仅接受 hotfix 合并 | 生产服务器 |
+| `beta` | 公测版本 | 服务器端集成测试，QA 验证通过后方可合入 master | 预发布/测试服务器 |
+| `alpha` | 内测版本 | 本地开发机测试，功能验证与联调 | 本地开发环境 |
+| `hotfix` | 热修补 | 紧急修复线上问题，从 master 切出，修复后合并回 master 并同步 beta/alpha | 临时生产修复 |
+| `feat` | 功能开发 | 新功能迭代分支，开发完成后合并至 alpha 进入内测 | 本地开发环境 |
+
+**合并流向**：`feat` → `alpha` → `beta` → `master`，`hotfix` 可直接回灌各分支。
+
 ### 开发流程
 
 1. Fork 项目
-2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
-3. 提交更改 (`git commit -m 'Add some amazing feature'`)
-4. 推送到分支 (`git push origin feature/amazing-feature`)
-5. 开启 Pull Request
+2. 从 `feat` 切出功能子分支 (`git checkout -b feat/xxx origin/feat`)
+3. 开发完成后合并至 `alpha` 进行本地测试
+4. 通过测试后提 PR 合并至 `beta` 进行服务器公测
+5. QA 通过后由维护者合并至 `master` 发布
 
 ## 许可证
 

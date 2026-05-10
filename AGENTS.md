@@ -133,6 +133,52 @@ uv run python manage.py migrate --run-syncdb
 # 普通用户：user / user
 ```
 
+## 5. 分支规范（分阶段发布模型）
+
+所有 2c2a 生态仓库统一采用 **5 级分阶段分支模型**：
+
+| 分支 | 阶段 | 用途 | 部署环境 |
+|------|------|------|----------|
+| `master` | 生产版本 | 线上稳定运行，仅接受 hotfix 合并 | 生产服务器 |
+| `beta` | 公测版本 | 服务器端集成测试，QA 验证通过后方可合入 master | 预发布/测试服务器 |
+| `alpha` | 内测版本 | 本地开发机测试，功能验证与联调 | 本地开发环境 |
+| `hotfix` | 热修补 | 紧急修复线上问题，从 master 切出，修复后合并回 master 并同步 beta/alpha | 临时生产修复 |
+| `feat` | 功能开发 | 新功能迭代分支，开发完成后合并至 alpha 进入内测 | 本地开发环境 |
+
+**合并流向**：`feat` → `alpha` → `beta` → `master`，`hotfix` 可直接回灌各分支。
+
+### 5.1 开发工作流
+
+```bash
+# 1. 从 feat 切出功能分支
+git checkout -b feat/user-auth origin/feat
+
+# 2. 开发完成后合并至 alpha 进行本地测试
+git checkout alpha
+git merge feat/user-auth
+
+# 3. 本地测试通过后提 PR 合并至 beta 进行服务器公测
+gh pr create --base beta --head alpha --title "feat: user auth"
+
+# 4. QA 通过后由维护者合并至 master 发布
+gh pr create --base master --head beta --title "release: user auth"
+```
+
+### 5.2 热修补紧急流程
+
+```bash
+# 从 master 切出 hotfix
+git checkout -b hotfix/critical-bug origin/master
+
+# 修复后合并回 master
+git checkout master
+git merge hotfix/critical-bug
+
+# 同步回灌 beta / alpha
+git checkout beta && git merge master
+git checkout alpha && git merge master
+```
+
 ***
 
 **系统提示：作为 AI Agent，在生成模板代码时，必须首先判断当前路由属于“前台”还是“后台”，严禁跨区域套用样式公式。凡是触发“❌ 绝对禁止”项的，必须自我纠正。**
