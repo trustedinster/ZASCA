@@ -178,8 +178,12 @@ def verify_captcha(captcha_id, user_input, consume=True, max_attempts=5, check_a
             cache.delete(f"captcha_image_{captcha_id}")
             return False
     
-        # 增加尝试次数
-        cache.incr(attempts_key)
+        # 增加尝试次数（兼容 locmem 等不支持 incr 对不存在 key 操作的缓存后端）
+        current_attempts = cache.get(attempts_key)
+        if current_attempts is None:
+            cache.set(attempts_key, 1, 300)
+        else:
+            cache.incr(attempts_key)
         logger.debug(f"Incremented attempts for {captcha_id}, now: {cache.get(attempts_key)}")
 
     # 从缓存中获取正确的验证码
