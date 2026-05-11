@@ -1,6 +1,5 @@
 from django.conf import settings
 
-
 class SecurityHeadersMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
@@ -11,11 +10,11 @@ class SecurityHeadersMiddleware:
         if not settings.DEBUG:
             csp_parts = [
                 "default-src 'self'",
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-                "style-src 'self' 'unsafe-inline'",
-                "img-src 'self' data: blob:",
-                "font-src 'self'",
-                "connect-src 'self' wss: ws:",
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.2c2a.cc.cd https://static.geetest.com https://static.geevisit.com https://gcaptcha4.geetest.com https://gcaptcha4.geevisit.com",
+                "style-src 'self' 'unsafe-inline' https://static.2c2a.cc.cd",
+                "img-src 'self' data: blob: https://static.2c2a.cc.cd https://static.geetest.com https://static.geevisit.com",
+                "font-src 'self' https://static.2c2a.cc.cd",
+                "connect-src 'self' wss: ws: https://gcaptcha4.geetest.com https://gcaptcha4.geevisit.com",
                 "frame-ancestors 'none'",
                 "base-uri 'self'",
                 "form-action 'self'",
