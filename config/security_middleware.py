@@ -10,11 +10,32 @@ class SecurityHeadersMiddleware:
         if not settings.DEBUG:
             csp_parts = [
                 "default-src 'self'",
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.2c2a.cc.cd https://static.geetest.com https://static.geevisit.com https://gcaptcha4.geetest.com https://gcaptcha4.geevisit.com",
-                "style-src 'self' 'unsafe-inline' https://static.2c2a.cc.cd",
-                "img-src 'self' data: blob: https://static.2c2a.cc.cd https://static.geetest.com https://static.geevisit.com",
-                "font-src 'self' https://static.2c2a.cc.cd",
-                "connect-src 'self' wss: ws: https://gcaptcha4.geetest.com https://gcaptcha4.geevisit.com",
+
+                # JS：极验 + 你的静态站
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' "
+                "https://static.2c2a.cc.cd "
+                "https://static.geetest.com https://static.geevisit.com "
+                "https://gcaptcha4.geetest.com https://gcaptcha4.geevisit.com",
+
+                # CSS：极验 + 你的静态站（关键：之前这里没加极验域名，所以 CSS 被拦）
+                "style-src 'self' 'unsafe-inline' "
+                "https://static.2c2a.cc.cd "
+                "https://static.geetest.com https://static.geevisit.com",
+
+                # 图片：极验 + 你的静态站
+                "img-src 'self' data: blob: "
+                "https://static.2c2a.cc.cd "
+                "https://static.geetest.com https://static.geevisit.com",
+
+                # 字体：极验 + 你的静态站（极验也用到了字体）
+                "font-src 'self' "
+                "https://static.2c2a.cc.cd "
+                "https://static.geetest.com https://static.geevisit.com",
+
+                # AJAX / WebSocket：极验接口
+                "connect-src 'self' wss: ws: "
+                "https://gcaptcha4.geetest.com https://gcaptcha4.geevisit.com",
+
                 "frame-ancestors 'none'",
                 "base-uri 'self'",
                 "form-action 'self'",
