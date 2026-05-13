@@ -112,6 +112,27 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
         all_products = list(products_qs.order_by("-created_at"))
 
+        user = self.request.user
+        existing_cloud_users = {}
+        if not (user.is_staff or user.is_superuser):
+            cloud_user_qs = CloudComputerUser.objects.filter(
+                Q(owner=user) | Q(created_from_request__applicant=user),
+                status__in=['active', 'inactive', 'disabled'],
+            ).values_list('product_id', 'pk')
+            for product_id, cloud_user_pk in cloud_user_qs:
+                if product_id not in existing_cloud_users:
+                    existing_cloud_users[product_id] = cloud_user_pk
+
+        pending_request_ids = {}
+        if not (user.is_staff or user.is_superuser):
+            request_qs = AccountOpeningRequest.objects.filter(
+                applicant=user,
+                status__in=['pending', 'approved', 'processing'],
+            ).values_list('target_product_id', 'pk')
+            for product_id, request_pk in request_qs:
+                if product_id not in pending_request_ids:
+                    pending_request_ids[product_id] = request_pk
+
         grouped_products: list[dict[str, Any]] = []
         for group in product_groups:
             products = [p for p in all_products if p.product_group_id == group.id]
@@ -121,6 +142,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         ungrouped = [p for p in all_products if p.product_group_id is None]
         if ungrouped:
             grouped_products.append({"group": None, "products": ungrouped})
+
+        context["existing_cloud_users"] = existing_cloud_users
+        context["pending_request_ids"] = pending_request_ids
 
         context["grouped_products"] = grouped_products
 

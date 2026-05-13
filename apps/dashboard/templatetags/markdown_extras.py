@@ -6,6 +6,13 @@ register = template.Library()
 
 
 @register.filter
+def get_item(dictionary, key):
+    if dictionary is None:
+        return None
+    return dictionary.get(key)
+
+
+@register.filter
 def markdown_filter(value):
     """
     将 Markdown 文本转换为 HTML
