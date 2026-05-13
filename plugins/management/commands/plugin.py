@@ -22,6 +22,7 @@ import urllib.error
 
 PLUGIN_REGISTRY_URL = "https://raw.githubusercontent.com/2c2a/2c2a-plugin-registry/main/plugins.json"
 PLUGIN_REGISTRY_RAW_API = "https://api.github.com/repos/2c2a/2c2a-plugin-registry/contents/plugins.json"
+PLUGIN_REGISTRY_GITEE_URL = "https://raw.giteeusercontent.com/Bilibili-Supercmd/plugin-registry/raw/main/plugins.json"
 
 
 class Command(BaseCommand):
@@ -35,12 +36,20 @@ class Command(BaseCommand):
         parser.add_argument('--no-migrate', action='store_true', help='跳过数据库迁移')
         parser.add_argument('--debug', action='store_true', help='输出调试信息')
         parser.add_argument('--registry', type=str, default=PLUGIN_REGISTRY_URL, help='插件仓库地址')
+        parser.add_argument('--force-github', action='store_true', help='强制使用 GitHub 插件仓库')
+        parser.add_argument('--force-gitee', action='store_true', help='强制使用 Gitee 插件仓库镜像')
 
     def handle(self, *args, **options):
         action = options['action']
         plugin_name = options.get('plugin_name')
         no_migrate = options.get('no_migrate', False)
         self.debug = options.get('debug', False)
+
+        registry_url = options.get('registry')
+        if options.get('force_gitee'):
+            registry_url = PLUGIN_REGISTRY_GITEE_URL
+        elif options.get('force_github'):
+            registry_url = PLUGIN_REGISTRY_URL
 
         if action == 'list':
             self.list_plugins()
@@ -51,13 +60,13 @@ class Command(BaseCommand):
                 plugin_name,
                 options.get('source'),
                 options.get('force'),
-                options.get('registry'),
+                registry_url,
                 no_migrate=no_migrate,
             )
         elif action == 'upgrade':
             if not plugin_name:
                 raise CommandError('升级插件需要指定插件名称')
-            self.upgrade_plugin(plugin_name, options.get('registry'))
+            self.upgrade_plugin(plugin_name, registry_url)
         elif action == 'uninstall':
             if not plugin_name:
                 raise CommandError('卸载插件需要指定插件名称')
@@ -72,7 +81,7 @@ class Command(BaseCommand):
             self.plugin_info(plugin_name)
         elif action == 'search':
             keyword = plugin_name or ''
-            self.search_plugins(keyword, options.get('registry'))
+            self.search_plugins(keyword, registry_url)
         elif action == 'login':
             self.login_github()
         elif action == 'enable':
@@ -92,13 +101,25 @@ class Command(BaseCommand):
 
     def _fetch_registry(self, registry_url=None):
         url = registry_url or PLUGIN_REGISTRY_URL
-        try:
-            req = urllib.request.Request(url, headers={'User-Agent': '2c2a-PluginManager/1.0'})
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                data = json.loads(resp.read().decode('utf-8'))
-            return data.get('plugins', {})
-        except Exception:
-            pass
+        urls_to_try = []
+
+        if url == PLUGIN_REGISTRY_GITEE_URL:
+            urls_to_try = [PLUGIN_REGISTRY_GITEE_URL, PLUGIN_REGISTRY_URL]
+        elif url == PLUGIN_REGISTRY_URL:
+            urls_to_try = [PLUGIN_REGISTRY_URL, PLUGIN_REGISTRY_GITEE_URL]
+        else:
+            urls_to_try = [url, PLUGIN_REGISTRY_GITEE_URL, PLUGIN_REGISTRY_URL]
+
+        last_error = None
+        for try_url in urls_to_try:
+            try:
+                req = urllib.request.Request(try_url, headers={'User-Agent': '2c2a-PluginManager/1.0'})
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    data = json.loads(resp.read().decode('utf-8'))
+                return data.get('plugins', {})
+            except Exception as e:
+                last_error = e
+                continue
 
         try:
             result = subprocess.run(
