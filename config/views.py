@@ -1,10 +1,12 @@
 """
 自定义错误处理视图
 """
+import re
+
 from django.shortcuts import render, redirect
 from django.views.static import serve
 from django.conf import settings
-from django.http import HttpResponseNotFound
+from django.http import HttpResponseNotFound, Http404
 import os
 
 
@@ -93,3 +95,17 @@ def static_fallback_view(request, path):
 
     # 本地未找到文件，重定向到外部 static 服务
     return redirect(f"{STATIC_FALLBACK_HOST}/static/{path}", permanent=False)
+
+
+USER_DOCS_FILE = settings.BASE_DIR / 'USER_DOCS.md'
+
+
+def docs_index(request):
+    md_text = ''
+    if USER_DOCS_FILE.exists():
+        with open(USER_DOCS_FILE, 'r', encoding='utf-8') as f:
+            md_text = f.read()
+    return render(request, 'docs/index.html', {
+        'doc_title': '用户手册',
+        'md_text': md_text,
+    })

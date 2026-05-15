@@ -54,6 +54,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+redis = [
+    "redis>=5.0.0",
+]
+postgresql = [
+    "psycopg2-binary>=2.9.9",
+]
 kerberos = [
     "gssapi>=1.11.1",
     "krb5>=0.9.0",
