@@ -99,10 +99,10 @@ def get_audit_logs(request):
         
         return JsonResponse(result)
         
-    except ValueError as e:
+    except ValueError:
         return JsonResponse({
             'success': False,
-            'error': f'Invalid parameter: {str(e)}'
+            'error': 'Invalid parameter value'
         }, status=400)
     except Exception as e:
         logger.error(f"Error getting audit logs: {str(e)}", exc_info=True)
@@ -175,10 +175,10 @@ def get_sensitive_operations(request):
         
         return JsonResponse(result)
         
-    except ValueError as e:
+    except ValueError:
         return JsonResponse({
             'success': False,
-            'error': f'Invalid parameter: {str(e)}'
+            'error': 'Invalid parameter value'
         }, status=400)
     except Exception as e:
         logger.error(f"Error getting sensitive operations: {str(e)}", exc_info=True)
@@ -258,10 +258,10 @@ def get_security_events(request):
         
         return JsonResponse(result)
         
-    except ValueError as e:
+    except ValueError:
         return JsonResponse({
             'success': False,
-            'error': f'Invalid parameter: {str(e)}'
+            'error': 'Invalid parameter value'
         }, status=400)
     except Exception as e:
         logger.error(f"Error getting security events: {str(e)}", exc_info=True)
@@ -364,10 +364,10 @@ def get_user_session_activity(request):
         
         return JsonResponse(result)
         
-    except ValueError as e:
+    except ValueError:
         return JsonResponse({
             'success': False,
-            'error': f'Invalid parameter: {str(e)}'
+            'error': 'Invalid parameter value'
         }, status=400)
     except Exception as e:
         logger.error(f"Error getting user session activity: {str(e)}", exc_info=True)

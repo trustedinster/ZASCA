@@ -2,11 +2,12 @@
 自定义错误处理视图
 """
 import re
+from urllib.parse import urlparse
 
 from django.shortcuts import render, redirect
 from django.views.static import serve
 from django.conf import settings
-from django.http import HttpResponseNotFound, Http404
+from django.http import HttpResponseNotFound, Http404, HttpResponseBadRequest
 import os
 
 
@@ -93,8 +94,13 @@ def static_fallback_view(request, path):
         if os.path.exists(file_path) and os.path.isfile(file_path):
             return serve(request, path, document_root=document_root)
 
-    # 本地未找到文件，重定向到外部 static 服务
-    return redirect(f"{STATIC_FALLBACK_HOST}/static/{path}", permanent=False)
+    sanitized = path.replace('\\', '/')
+    parsed = urlparse(sanitized)
+    if parsed.scheme or parsed.netloc:
+        return HttpResponseBadRequest('Invalid path')
+
+    redirect_url = f"{STATIC_FALLBACK_HOST}/static/{sanitized}"
+    return redirect(redirect_url, permanent=False)
 
 
 USER_DOCS_FILE = settings.BASE_DIR / 'USER_DOCS.md'
