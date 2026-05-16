@@ -11,6 +11,10 @@ on:
       - 'static/**'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  actions: write
+
 jobs:
   collectstatic:
     runs-on: ubuntu-latest
