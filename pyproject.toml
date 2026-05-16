@@ -77,7 +77,7 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "pytest",
+    "pytest>=9.0.3",
     "pytest-django",
     "black",
     "flake8",
