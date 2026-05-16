@@ -98,7 +98,7 @@ requires-dist = [
     { name = "click-plugins", specifier = "==1.1.1.2" },
     { name = "click-repl", specifier = "==0.3.0" },
     { name = "cryptography", specifier = "==46.0.3" },
-    { name = "django", specifier = "==4.2.27" },
+    { name = "django", specifier = "==4.2.30" },
     { name = "django-cors-headers", specifier = "==4.3.1" },
     { name = "django-cotton", git = "https://github.com/2c2a/django-cotton.git?rev=feature%2Fx-prefix-tag-support" },
     { name = "django-formtools", specifier = ">=2.5.1" },
@@ -570,16 +570,16 @@ wheels = [
 
 [[package]]
 name = "django"
-version = "4.2.27"
+version = "4.2.30"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple" }
 dependencies = [
     { name = "asgiref" },
     { name = "sqlparse" },
     { name = "tzdata", marker = "sys_platform == 'win32'" },
 ]
-sdist = { url = "https://mirrors.aliyun.com/pypi/packages/ce/ff/6aa5a94b85837af893ca82227301ac6ddf4798afda86151fb2066d26ca0a/django-4.2.27.tar.gz", hash = "sha256:b865fbe0f4a3d1ee36594c5efa42b20db3c8bbb10dff0736face1c6e4bda5b92" }
+sdist = { url = "https://mirrors.aliyun.com/pypi/packages/11/b5/f1a53dc68da6429d6e0345bb848161e2381a2e9f02700148911e8582c2b3/django-4.2.30.tar.gz", hash = "sha256:4ebc7a434e3819db6cf4b399fb5b3f536310a30e8486f08b66886840be84b37c" }
 wheels = [
-    { url = "https://mirrors.aliyun.com/pypi/packages/dd/f5/1a2319cc090870bfe8c62ef5ad881a6b73b5f4ce7330c5cf2cb4f9536b12/django-4.2.27-py3-none-any.whl", hash = "sha256:f393a394053713e7d213984555c5b7d3caeee78b2ccb729888a0774dff6c11a8" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/39/b7/a7c96f239cf91313a6589233fed55111c7063b26683b226802732c455dbc/django-4.2.30-py3-none-any.whl", hash = "sha256:4d07aaf1c62f9984842b67c2874ebbf7056a17be253860299b93ae1881faad65" },
 ]
 
 [[package]]
