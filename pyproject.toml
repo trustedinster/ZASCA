@@ -83,6 +83,7 @@ dev = [
     "flake8",
     "django-stubs>=6.0.2",
     "pyrefly>=0.60.0",
+    "redis>=7.4.0",
 ]
 
 [tool.hatch.metadata]
@@ -90,6 +91,14 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["."]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+pythonpath = ["."]
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short --import-mode=importlib"
 
 [tool.pyright]
 venvPath = "."

@@ -80,6 +80,7 @@ dev = [
     { name = "pyrefly" },
     { name = "pytest" },
     { name = "pytest-django" },
+    { name = "redis" },
 ]
 
 [package.metadata]
@@ -148,6 +149,7 @@ dev = [
     { name = "pyrefly", specifier = ">=0.60.0" },
     { name = "pytest", specifier = ">=9.0.3" },
     { name = "pytest-django" },
+    { name = "redis", specifier = ">=7.4.0" },
 ]
 
 [[package]]
