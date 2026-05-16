@@ -1,9 +1,12 @@
 """
 限流装饰器模块
 提供 API 限流和登录保护
+
+使用标准 Django cache API（get/set），兼容所有缓存后端：
+- Redis（django-redis）：高性能，支持分布式
+- LocMemCache：本地内存，无需额外依赖
 """
 import time
-import hashlib
 from functools import wraps
 from typing import Optional, Callable, Any
 from django.core.cache import cache
@@ -15,13 +18,49 @@ logger = logging.getLogger('2c2a')
 
 
 class RateLimitExceeded(Exception):
-    """限流异常"""
     pass
+
+
+def _cache_incr(key: str, period: int) -> int:
+    """
+    兼容所有缓存后端的原子计数器。
+
+    使用 get/set 替代 incr/expire，确保 LocMemCache 等后端也能正常工作。
+    Redis 后端下 django-redis 会自动处理并发安全。
+
+    Args:
+        key: 缓存键
+        period: 过期时间（秒）
+
+    Returns:
+        int: 递增后的计数值
+    """
+    current = cache.get(key, 0)
+    new_count = current + 1
+    cache.set(key, new_count, timeout=period + 1)
+    return new_count
+
+
+def _cache_ttl_fallback(key: str, default: int = 0) -> int:
+    """
+    获取缓存键的剩余 TTL，不兼容时返回默认值。
+
+    cache.ttl() 是 django-redis 专有方法，
+    LocMemCache 等后端不支持，此时返回默认值。
+    """
+    if hasattr(cache, 'ttl'):
+        try:
+            ttl = cache.ttl(key)
+            if ttl is not None and ttl > 0:
+                return int(ttl)
+        except Exception:
+            pass
+    return default
 
 
 def rate_limit(key_prefix: str, limit: int, period: int = 60, per_user: bool = True):
     """
-    限流装饰器
+    限流装饰器（固定窗口计数器）
 
     Args:
         key_prefix: 缓存键前缀
@@ -32,7 +71,6 @@ def rate_limit(key_prefix: str, limit: int, period: int = 60, per_user: bool = T
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(request, *args, **kwargs):
-            # 构建限流键
             if per_user and hasattr(request, 'user') and request.user.is_authenticated:
                 key_parts = [key_prefix, request.user.username]
             else:
@@ -40,28 +78,22 @@ def rate_limit(key_prefix: str, limit: int, period: int = 60, per_user: bool = T
 
             rate_limit_key = f"rate_limit:{':'.join(key_parts)}"
 
-            # 获取当前计数
             current_count = cache.get(rate_limit_key, 0)
 
             if current_count >= limit:
-                remaining_time = cache.ttl(rate_limit_key)
+                remaining_time = _cache_ttl_fallback(rate_limit_key, period)
                 logger.warning(f"Rate limit exceeded for {rate_limit_key} ({current_count}/{limit})")
 
-                # 返回限流响应
                 return JsonResponse({
                     'success': False,
                     'error': {
                         'type': 'RateLimitExceeded',
                         'message': f'请求过于频繁，请在 {remaining_time} 秒后重试',
-                        'retry_after': remaining_time
-                    }
+                        'retry_after': remaining_time,
+                    },
                 }, status=429)
 
-            # 增加计数
-            new_count = cache.incr(rate_limit_key, delta=1)
-            if new_count == 1:
-                # 第一次访问，设置过期时间
-                cache.expire(rate_limit_key, period)
+            _cache_incr(rate_limit_key, period)
 
             return func(request, *args, **kwargs)
         return wrapper
@@ -88,33 +120,32 @@ def get_client_ip(request) -> str:
     return ip or 'unknown'
 
 
-# 用于 accounts 应用的限流装饰器
 def register_rate_limit(view_func):
     """注册限流装饰器"""
     @wraps(view_func)
     def wrapped_view(self, request, *args, **kwargs):
-        # 按 IP 地址限流注册请求
+        from django.contrib import messages
+        from django.shortcuts import redirect
+
         rate_limit_key = f"rate_limit:register:{get_client_ip(request)}"
-        limit = 5  # 每小时最多 5 次注册
-        period = 3600  # 1小时
+        limit = 5
+        period = 3600
 
         current_count = cache.get(rate_limit_key, 0)
 
         if current_count >= limit:
+            remaining = _cache_ttl_fallback(rate_limit_key, period)
+            minutes = max(1, remaining // 60)
             logger.warning(f"Registration rate limit exceeded for IP {get_client_ip(request)}")
-            messages.error(request, f'注册过于频繁，请在 {cache.ttl(rate_limit_key)} 分钟后重试')
+            messages.error(request, f'注册过于频繁，请在 {minutes} 分钟后重试')
             return redirect('accounts:register')
 
-        # 增加计数
-        new_count = cache.incr(rate_limit_key, delta=1)
-        if new_count == 1:
-            cache.expire(rate_limit_key, period)
+        _cache_incr(rate_limit_key, period)
 
         return view_func(self, request, *args, **kwargs)
     return wrapped_view
 
 
-# 用于操作限流的辅助函数
 def check_operation_rate_limit(operation_type: str, identifier: str, limit: int = 10, period: int = 60) -> bool:
     """
     检查操作是否达到限流
@@ -135,15 +166,10 @@ def check_operation_rate_limit(operation_type: str, identifier: str, limit: int 
         logger.warning(f"Operation rate limit exceeded: {key} ({current_count}/{limit})")
         return False
 
-    # 增加计数
-    new_count = cache.incr(key, delta=1)
-    if new_count == 1:
-        cache.expire(key, period)
-
+    _cache_incr(key, period)
     return True
 
 
-# 用于视图类的限流装饰器
 class RateLimitMixin:
     """在视图类中添加限流功能的 mixin"""
 
@@ -153,7 +179,6 @@ class RateLimitMixin:
 
     def dispatch(self, request, *args, **kwargs):
         if self.rate_limit_key and self.rate_limit_count:
-            # 构建限流键
             if hasattr(request, 'user') and request.user.is_authenticated:
                 identifier = request.user.username
             else:
@@ -167,19 +192,15 @@ class RateLimitMixin:
                     'success': False,
                     'error': {
                         'type': 'RateLimitExceeded',
-                        'message': f'操作过于频繁，请稍后再试'
-                    }
+                        'message': '操作过于频繁，请稍后再试',
+                    },
                 }, status=429)
 
-            # 增加计数
-            new_count = cache.incr(key, delta=1)
-            if new_count == 1:
-                cache.expire(key, self.rate_limit_period)
+            _cache_incr(key, self.rate_limit_period)
 
         return super().dispatch(request, *args, **kwargs)
 
 
-# 用于中间件的限流函数
 def rate_limit_ip(ip: str, key: str, limit: int, period: int = 60) -> bool:
     """
     基于 IP 的限流函数
@@ -191,9 +212,5 @@ def rate_limit_ip(ip: str, key: str, limit: int, period: int = 60) -> bool:
         logger.warning(f"IP rate limit exceeded: {cache_key} ({current_count}/{limit})")
         return False
 
-    # 增加计数
-    new_count = cache.incr(cache_key, delta=1)
-    if new_count == 1:
-        cache.expire(cache_key, period)
-
+    _cache_incr(cache_key, period)
     return True

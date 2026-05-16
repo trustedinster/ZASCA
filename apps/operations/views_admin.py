@@ -1204,7 +1204,8 @@ def admin_cloud_user_set_quota(request, pk):
         if not result['success']:
             return JsonResponse({'success': False, 'message': f'远程设置配额失败: {result["message"]}'})
     except Exception as e:
-        logger.error(f'远程设置磁盘配额失败: {e}')
+        logger.error(f'远程设置磁盘配额失败: {e}', exc_info=True)
+        return JsonResponse({'success': False, 'message': '远程设置配额失败'})
 
     return JsonResponse({
         'success': True,

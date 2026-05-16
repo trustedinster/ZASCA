@@ -222,7 +222,7 @@ class LocalWinServerClient:
         """
         # 如果是DEMO模式，模拟执行PowerShell而不实际执行
         if os.environ.get('2C2A_DEMO', '').lower() == '1':
-            logger.info(f"DEMO模式: 模拟执行本地PowerShell脚本: {script[:50]}...")
+            logger.info("DEMO模式: 模拟执行本地PowerShell脚本")
             # 模拟成功执行的结果
             return LocalWinServerResult(
                 status_code=0,
@@ -230,7 +230,7 @@ class LocalWinServerClient:
                 std_err=""
             )
         
-        logger.info(f"执行本地PowerShell脚本: {script[:50]}...")
+        logger.info("执行本地PowerShell脚本")
 
         try:
             # 使用PowerShell执行脚本
