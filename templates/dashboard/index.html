@@ -123,10 +123,22 @@
                         {% endif %}
 
                         <div class="mt-6 text-center pt-4 border-t border-md-outline-variant/30">
+                            {% if existing_cloud_users|get_item:product.id %}
+                            <a href="{% url 'operations:my_cloud_computer_detail' pk=existing_cloud_users|get_item:product.id %}" class="inline-flex items-center justify-center h-10 px-6 bg-md-secondary-container text-md-on-secondary-container rounded-full text-sm font-medium shadow-md transition hover:shadow-lg no-underline">
+                                <i class="material-icons align-middle mr-2 text-lg">desktop_windows</i>
+                                <span class="relative z-10 font-medium">查看已有账户</span>
+                            </a>
+                            {% elif pending_request_ids|get_item:product.id %}
+                            <a href="{% url 'operations:account_opening_detail' pk=pending_request_ids|get_item:product.id %}" class="inline-flex items-center justify-center h-10 px-6 bg-md-tertiary-container text-md-on-tertiary-container rounded-full text-sm font-medium shadow-md transition hover:shadow-lg no-underline">
+                                <i class="material-icons align-middle mr-2 text-lg">schedule</i>
+                                <span class="relative z-10 font-medium">查看申请详细</span>
+                            </a>
+                            {% else %}
                             <a href="{% url 'operations:account_opening_create' %}?target_product={{ product.id }}" class="inline-flex items-center justify-center h-10 px-6 bg-md-primary text-md-on-primary rounded-full text-sm font-medium shadow-md transition hover:shadow-lg no-underline">
                                 <i class="material-icons align-middle mr-2 text-lg">cloud</i>
                                 <span class="relative z-10 font-medium">立即申请</span>
                             </a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

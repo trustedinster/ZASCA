@@ -8,8 +8,11 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 import json
+import logging
 
 from . import plugin_manager
+
+logger = logging.getLogger(__name__)
 
 
 def initialize_plugins():
@@ -109,10 +112,11 @@ def plugin_api_view(request, plugin_id, action):
                     'success': False
                 }, status=400)
         except Exception as e:
+            logger.error("Plugin action execution failed", exc_info=True)
             return JsonResponse({
-                'error': str(e),
+                'error': 'Internal server error',
                 'success': False
-            }, status=500)
+        }, status=500)
     else:
         return JsonResponse({
             'error': f'Action {action} not found in plugin {plugin_id}',
@@ -160,13 +164,13 @@ def plugin_management_api(request):
                 }, status=400)
                 
         except Exception as e:
+            logger.error("Plugin management action failed", exc_info=True)
             return JsonResponse({
-                'error': str(e),
+                'error': 'Internal server error',
                 'success': False
             }, status=500)
 
 
-# Django中间件示例
 class PluginMiddleware:
     """
     插件中间件

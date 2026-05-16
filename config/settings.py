@@ -14,9 +14,6 @@ import importlib
 from pathlib import Path
 from django.core.exceptions import ImproperlyConfigured
 
-import pymysql
-pymysql.install_as_MySQLdb()
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -39,6 +36,51 @@ def _env(key, default=None):
 
 
 # ========== 核心配置（必须在初始化时定义） ==========
+
+# Database
+# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+DB_ENGINE = _env('DB_ENGINE', 'sqlite').lower()
+
+if DB_ENGINE == 'mysql':
+    import pymysql
+    pymysql.install_as_MySQLdb()
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': _env('DB_NAME', '2c2a'),
+            'USER': _env('DB_USER', 'root'),
+            'PASSWORD': _env('DB_PASSWORD', ''),
+            'HOST': _env('DB_HOST', '127.0.0.1'),
+            'PORT': _env('DB_PORT', '3306'),
+            'CONN_MAX_AGE': int(_env('DB_CONN_MAX_AGE', '60')),
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+                'init_command': (
+                    "SET sql_mode='STRICT_TRANS_TABLES'"
+                ),
+            },
+        }
+    }
+elif DB_ENGINE == 'postgresql':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': _env('DB_NAME', '2c2a'),
+            'USER': _env('DB_USER', 'postgres'),
+            'PASSWORD': _env('DB_PASSWORD', ''),
+            'HOST': _env('DB_HOST', '127.0.0.1'),
+            'PORT': _env('DB_PORT', '5432'),
+            'CONN_MAX_AGE': int(_env('DB_CONN_MAX_AGE', '60')),
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # SECURITY WARNING: keep the secret key used in production secret!
 _INSECURE_SECRET_KEY = 'django-insecure-change-this-in-production'
@@ -187,37 +229,6 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Custom user model
 AUTH_USER_MODEL = 'accounts.User'
-
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
-DB_ENGINE = _env('DB_ENGINE', 'sqlite').lower()
-
-if DB_ENGINE == 'mysql':
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': _env('DB_NAME', '2c2a'),
-            'USER': _env('DB_USER', 'root'),
-            'PASSWORD': _env('DB_PASSWORD', ''),
-            'HOST': _env('DB_HOST', '127.0.0.1'),
-            'PORT': _env('DB_PORT', '3306'),
-            'CONN_MAX_AGE': int(_env('DB_CONN_MAX_AGE', '60')),
-            'OPTIONS': {
-                'charset': 'utf8mb4',
-                'init_command': (
-                    "SET sql_mode='STRICT_TRANS_TABLES'"
-                ),
-            },
-        }
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -391,21 +402,80 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# Redis 配置 (保留用于兼容性检查，实际不再使用)
-REDIS_URL = _env('REDIS_URL', 'redis://localhost:6379/0')
+# ========== Redis 可选配置 ==========
+# Redis 是锦上添花的增强组件，不配置时程序使用本地替代方案。
+# 配置 REDIS_URL 且 Redis 服务可达时，自动用于缓存、会话、Celery。
+# import redis 采用延迟导入：REDIS_URL 未配置时不 import，redis 包未安装也不报错。
+REDIS_URL = _env('REDIS_URL', '')
 
-# Celery 配置 (使用 SQLite 替代 Redis)
-CELERY_BROKER_URL = _env(
-    'CELERY_BROKER_URL',
-    f'sqla+sqlite:///{BASE_DIR / "celery_broker.sqlite3"}'
-)
-CELERY_RESULT_BACKEND = _env(
-    'CELERY_RESULT_BACKEND',
-    f'db+sqlite:///{BASE_DIR / "celery_results.sqlite3"}'
-)
-CELERY_BROKER_TRANSPORT_OPTIONS = {
-    'polling_interval': 1,
-}
+def _check_redis_available():
+    """检测 Redis 是否配置且可达（延迟导入 redis 包）"""
+    if not REDIS_URL:
+        return False
+    try:
+        import redis as _redis
+        client = _redis.Redis.from_url(REDIS_URL, socket_connect_timeout=3)
+        client.ping()
+        return True
+    except Exception:
+        return False
+
+REDIS_ENABLED = _check_redis_available()
+
+# ========== 缓存配置 ==========
+if REDIS_ENABLED:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+            'KEY_PREFIX': '2c2a',
+            'TIMEOUT': 300,
+        },
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': '2c2a-inmemory',
+            'KEY_PREFIX': '2c2a',
+            'TIMEOUT': 300,
+            'OPTIONS': {
+                'MAX_ENTRIES': 1000,
+            },
+        },
+    }
+
+# ========== 会话引擎 ==========
+if REDIS_ENABLED:
+    SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+    SESSION_CACHE_ALIAS = 'default'
+else:
+    SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
+# ========== Celery 配置 ==========
+if REDIS_ENABLED:
+    CELERY_BROKER_URL = _env(
+        'CELERY_BROKER_URL',
+        REDIS_URL.replace('/0', '/1') if REDIS_URL else 'redis://localhost:6379/1',
+    )
+    CELERY_RESULT_BACKEND = _env(
+        'CELERY_RESULT_BACKEND',
+        REDIS_URL.replace('/0', '/2') if REDIS_URL else 'redis://localhost:6379/2',
+    )
+    CELERY_BROKER_TRANSPORT_OPTIONS = {
+        'polling_interval': 1,
+        'max_connections': 20,
+    }
+else:
+    CELERY_BROKER_URL = f'sqla+sqlite:///{BASE_DIR / "celery_broker.sqlite3"}'
+    CELERY_RESULT_BACKEND = f'db+sqlite:///{BASE_DIR / "celery_results.sqlite3"}'
+    CELERY_BROKER_TRANSPORT_OPTIONS = {
+        'polling_interval': 1,
+    }
+
+# ========== 限流配置 ==========
+LOGIN_RATE_LIMIT = int(_env('LOGIN_RATE_LIMIT', '5'))
+API_RATE_LIMIT = int(_env('API_RATE_LIMIT', '100'))
 
 # Gateway 控制面配置
 GATEWAY_ENABLED = _env(

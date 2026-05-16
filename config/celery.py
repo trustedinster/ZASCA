@@ -26,6 +26,7 @@ app.conf.task_routes = {
     'hosts.tasks.*': {'queue': 'hosts'},
     'operations.tasks.*': {'queue': 'operations'},
     'bootstrap.tasks.*': {'queue': 'bootstrap'},
+    'plugins.beta_push.tasks.*': {'queue': 'beta_push'},
 }
 
 # 任务重试配置

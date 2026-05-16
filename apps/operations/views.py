@@ -475,7 +475,7 @@ def get_password_and_burn(request, pk):
         return JsonResponse({'success': True, 'password': password})
     except Exception as e:
         logger.error(f"获取密码失败: {str(e)}", exc_info=True)
-        return JsonResponse({'success': False, 'error': str(e)})
+        return JsonResponse({'success': False, 'error': 'Failed to retrieve password'})
 
 
 @login_required

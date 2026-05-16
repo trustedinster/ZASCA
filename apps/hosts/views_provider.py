@@ -421,7 +421,7 @@ class HostDeployCommandView(View):
             )
             return JsonResponse({
                 'success': False,
-                'error': f'生成部署命令失败: {str(e)}'
+                'error': '生成部署命令失败'
             }, status=500)
 
 

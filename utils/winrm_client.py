@@ -304,7 +304,7 @@ class WinrmClient:
         import os
         # 如果是DEMO模式，模拟执行PowerShell而不实际执行
         if os.environ.get('2C2A_DEMO', '').lower() == '1':
-            logger.info(f"DEMO模式: 模拟执行PowerShell脚本: {script[:50]}...")
+            logger.info("DEMO模式: 模拟执行PowerShell脚本")
             # 模拟成功执行的结果
             return WinrmResult(
                 status_code=0,
@@ -312,7 +312,7 @@ class WinrmClient:
                 std_err=""
             )
         
-        logger.info(f"执行PowerShell脚本: {script[:50]}...")
+        logger.info("执行PowerShell脚本")
 
         for attempt in range(self.max_retries):
             try:
