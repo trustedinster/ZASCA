@@ -109,7 +109,7 @@ const Auth = {
 
             if (response.ok) {
                 // 登录成功，重定向到指定页面或首页
-                const redirectUrl = new URLSearchParams(window.location.search).get('next') || '/';
+                const redirectUrl = this.getSafeRedirectUrl();
                 window.location.href = redirectUrl;
             } else {
                 const errorData = await response.json();
@@ -120,6 +120,36 @@ const Auth = {
             Utils.showAlert('登录失败，请稍后重试', 'danger');
         } finally {
             Utils.hideLoading();
+        }
+    },
+
+    /**
+     * 获取安全的重定向地址（仅允许站内相对路径）
+     */
+    getSafeRedirectUrl() {
+        const next = new URLSearchParams(window.location.search).get('next');
+        if (!next) {
+            return '/';
+        }
+
+        // 拒绝协议相对URL（如 //evil.com）
+        if (next.startsWith('//')) {
+            return '/';
+        }
+
+        try {
+            const url = new URL(next, window.location.origin);
+            // 仅允许同源地址
+            if (url.origin !== window.location.origin) {
+                return '/';
+            }
+            // 仅允许以 / 开头的站内路径
+            if (!url.pathname.startsWith('/')) {
+                return '/';
+            }
+            return `${url.pathname}${url.search}${url.hash}`;
+        } catch (e) {
+            return '/';
         }
     },
 

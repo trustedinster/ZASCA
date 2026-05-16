@@ -90,9 +90,12 @@ def static_fallback_view(request, path):
                 break
 
     if document_root:
-        file_path = os.path.join(document_root, path)
+        real_root = os.path.realpath(document_root)
+        file_path = os.path.realpath(os.path.join(document_root, path))
+        if not file_path.startswith(real_root + os.sep) and file_path != real_root:
+            return HttpResponseBadRequest('Invalid path')
         if os.path.exists(file_path) and os.path.isfile(file_path):
-            return serve(request, path, document_root=document_root)
+            return serve(request, os.path.relpath(file_path, real_root), document_root=real_root)
 
     sanitized = path.replace('\\', '/')
     parsed = urlparse(sanitized)
