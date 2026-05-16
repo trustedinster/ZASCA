@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import curses
 from pathlib import Path
+import secrets
 from datetime import datetime
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -499,7 +500,7 @@ def _page_progress(stdscr, step, total_steps, message):
     stdscr.refresh()
 
 
-def _page_result(stdscr, success, answers, backup_name=None):
+def _page_result(stdscr, success, answers, backup_name=None, env_configured=False, env_backup_name=None):
     _init_colors()
     stdscr.clear()
     max_y, max_x = stdscr.getmaxyx()
@@ -512,16 +513,23 @@ def _page_result(stdscr, success, answers, backup_name=None):
 
     if success:
         title = " ✔ 部署完成 "
-        steps = [
-            "1. 配置 .env 文件          (参考 .env.example)",
-            "2. 初始化数据库            uv run python manage.py migrate",
-            "3. 创建管理员              uv run python manage.py createsuperuser",
-            "4. 启动服务                uv run python manage.py runserver",
-        ]
+        steps = []
+        n = 1
+        if env_configured:
+            steps.append(f"{n}. .env 已配置              (可手动编辑调整)")
+        else:
+            steps.append(f"{n}. 配置 .env 文件          (参考 .env.example)")
+        n += 1
+        steps.append(f"{n}. 初始化数据库            uv run python manage.py migrate")
+        n += 1
+        steps.append(f"{n}. 创建管理员              uv run python manage.py createsuperuser")
+        n += 1
+        steps.append(f"{n}. 启动服务                uv run python manage.py runserver")
         if answers.get("celery"):
-            steps.append("5. 启动 Celery             uv run celery -A config worker -l info")
+            n += 1
+            steps.append(f"{n}. 启动 Celery             uv run celery -A config worker -l info")
 
-        box_h = 4 + len(steps) + (2 if not answers.get("redis") and answers.get("celery") else 0) + (1 if backup_name else 0)
+        box_h = 4 + len(steps) + (2 if not answers.get("redis") and answers.get("celery") else 0) + (1 if backup_name else 0) + (1 if env_backup_name else 0)
         box_h = max(box_h, 8)
 
         _draw_box(stdscr, box_y, box_x, box_h, box_w)
@@ -538,6 +546,9 @@ def _page_result(stdscr, success, answers, backup_name=None):
 
         if backup_name:
             _safe_addstr(stdscr, row, box_x + 3, f"备份: {backup_name}", curses.color_pair(C_DESC))
+            row += 1
+        if env_backup_name:
+            _safe_addstr(stdscr, row, box_x + 3, f".env 备份: {env_backup_name}", curses.color_pair(C_DESC))
     else:
         box_h = 8
         _draw_box(stdscr, box_y, box_x, box_h, box_w)
@@ -602,7 +613,383 @@ def _tui_main(stdscr):
     except subprocess.TimeoutExpired:
         success = False
 
-    _page_result(stdscr, success, answers, backup_name)
+    env_configured = False
+    env_backup_name = None
+    if success:
+        env_values = _configure_env(stdscr, answers)
+        if env_values is not None:
+            env_path = BASE_DIR / ".env"
+            backup_env = backup_file(env_path)
+            env_backup_name = backup_env.name if backup_env else None
+            env_content = generate_env_content(answers, env_values)
+            env_path.write_text(env_content, encoding="utf-8")
+            env_configured = True
+
+    _page_result(stdscr, success, answers, backup_name, env_configured, env_backup_name)
+
+
+def _load_existing_env(env_path):
+    values = {}
+    if env_path.exists():
+        for line in env_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            if '=' in line:
+                key, _, val = line.partition('=')
+                values[key.strip()] = val.strip()
+    return values
+
+
+def _get_env_items(answers):
+    db = answers.get("db", "sqlite")
+    db_port_default = {"mysql": "3306", "postgresql": "5432"}.get(db, "3306")
+    db_user_default = {"mysql": "root", "postgresql": "postgres"}.get(db, "root")
+
+    items = []
+
+    items.append(("group", "核心配置"))
+    items.append(("field", {"key": "DEBUG", "default": "True", "desc": "调试模式（生产环境必须 False）"}))
+    items.append(("field", {"key": "DJANGO_SECRET_KEY", "default": "", "desc": "Django 密钥（留空自动生成）", "secret": True}))
+    items.append(("field", {"key": "ALLOWED_HOSTS", "default": "localhost,127.0.0.1", "desc": "允许访问的主机"}))
+    items.append(("field", {"key": "CSRF_TRUSTED_ORIGINS", "default": "https://localhost,https://127.0.0.1", "desc": "CSRF 可信来源"}))
+
+    items.append(("group", "数据库配置"))
+    items.append(("field", {"key": "DB_ENGINE", "default": db, "desc": "数据库引擎", "auto": True}))
+    if db != "sqlite":
+        items.append(("field", {"key": "DB_HOST", "default": "127.0.0.1", "desc": "数据库主机"}))
+        items.append(("field", {"key": "DB_PORT", "default": db_port_default, "desc": "数据库端口"}))
+        items.append(("field", {"key": "DB_NAME", "default": "zasca", "desc": "数据库名称"}))
+        items.append(("field", {"key": "DB_USER", "default": db_user_default, "desc": "数据库用户"}))
+        items.append(("field", {"key": "DB_PASSWORD", "default": "", "desc": "数据库密码", "secret": True}))
+
+    if answers.get("redis"):
+        items.append(("group", "Redis 配置"))
+        items.append(("field", {"key": "REDIS_URL", "default": "redis://localhost:6379/0", "desc": "Redis 连接地址"}))
+
+    if answers.get("celery"):
+        items.append(("group", "Celery 配置"))
+        items.append(("field", {"key": "CELERY_BROKER_URL", "default": "", "desc": "Celery Broker（留空自动选择）"}))
+        items.append(("field", {"key": "CELERY_RESULT_BACKEND", "default": "", "desc": "Celery 结果后端（留空自动选择）"}))
+
+    items.append(("group", "演示模式"))
+    items.append(("field", {"key": "ZASCA_DEMO", "default": "0", "desc": "演示模式（1=启用）"}))
+
+    items.append(("group", "安全配置"))
+    items.append(("field", {"key": "SECURE_SSL_REDIRECT", "default": "False", "desc": "SSL 重定向"}))
+    items.append(("field", {"key": "SESSION_COOKIE_SECURE", "default": "False", "desc": "会话 Cookie 安全"}))
+    items.append(("field", {"key": "CSRF_COOKIE_SECURE", "default": "False", "desc": "CSRF Cookie 安全"}))
+
+    items.append(("group", "日志配置"))
+    items.append(("field", {"key": "LOG_LEVEL", "default": "DEBUG", "desc": "日志级别"}))
+    items.append(("field", {"key": "LOG_FILE", "default": "/var/log/2c2a/application.log", "desc": "日志文件路径"}))
+
+    if answers.get("winrm"):
+        items.append(("group", "WinRM 配置"))
+        items.append(("field", {"key": "WINRM_TIMEOUT", "default": "30", "desc": "WinRM 超时(秒)"}))
+        items.append(("field", {"key": "WINRM_RETRY_COUNT", "default": "3", "desc": "WinRM 重试次数"}))
+
+    items.append(("group", "Gateway 配置"))
+    items.append(("field", {"key": "GATEWAY_ENABLED", "default": "False", "desc": "Gateway 开关"}))
+    items.append(("field", {"key": "GATEWAY_CONTROL_SOCKET", "default": "/run/zasca/control.sock", "desc": "Gateway 控制套接字"}))
+
+    items.append(("group", "Beta 数据库配置（可选）"))
+    items.append(("field", {"key": "BETA_DB_NAME", "default": "", "desc": "Beta 数据库名称"}))
+    items.append(("field", {"key": "BETA_DB_USER", "default": "", "desc": "Beta 数据库用户"}))
+    items.append(("field", {"key": "BETA_DB_PASSWORD", "default": "", "desc": "Beta 数据库密码", "secret": True}))
+    items.append(("field", {"key": "BETA_DB_HOST", "default": "", "desc": "Beta 数据库主机"}))
+    items.append(("field", {"key": "BETA_DB_PORT", "default": "", "desc": "Beta 数据库端口"}))
+
+    items.append(("group", "Bootstrap 认证配置"))
+    items.append(("field", {"key": "BOOTSTRAP_SHARED_SALT", "default": "", "desc": "Bootstrap 共享盐值", "secret": True}))
+
+    return items
+
+
+def _page_env(stdscr, items, values, cursor, scroll):
+    _init_colors()
+    stdscr.clear()
+    max_y, max_x = stdscr.getmaxyx()
+
+    box_w = min(76, max_x - 4)
+    box_h = max_y - 5
+    box_x = max(0, (max_x - box_w) // 2)
+    box_y = 1
+
+    _draw_banner(stdscr, 0, max_x)
+    _draw_box(stdscr, box_y, box_x, box_h, box_w)
+
+    title = " 环境变量配置 (.env) "
+    tx = box_x + max(0, (box_w - len(title)) // 2)
+    _safe_addstr(stdscr, box_y, tx, title, curses.color_pair(C_TITLE) | curses.A_BOLD)
+
+    field_indices = [i for i, (kind, _) in enumerate(items) if kind == "field"]
+    cursor_item_idx = field_indices[cursor] if cursor < len(field_indices) else 0
+
+    max_visible = box_h - 3
+    total_items = len(items)
+    max_scroll = max(0, total_items - max_visible)
+
+    if cursor_item_idx < scroll:
+        scroll = cursor_item_idx
+    elif cursor_item_idx >= scroll + max_visible:
+        scroll = cursor_item_idx - max_visible + 1
+    scroll = max(0, min(scroll, max_scroll))
+
+    visible = items[scroll:scroll + max_visible]
+    current_visible_idx = cursor_item_idx - scroll
+
+    for i, (kind, data) in enumerate(visible):
+        ry = box_y + 1 + i
+        rx = box_x + 2
+        remaining = box_w - 5
+
+        if kind == "group":
+            _safe_addstr(stdscr, ry, rx, f"  {data}", curses.color_pair(C_SUBTITLE) | curses.A_BOLD)
+        elif kind == "field":
+            is_active = (i == current_visible_idx)
+            key = data["key"]
+            val = values.get(key, data["default"])
+            is_secret = data.get("secret", False)
+            is_auto = data.get("auto", False)
+            display_val = "******" if is_secret and val else val
+            auto_tag = "  (自动)" if is_auto else ""
+            line = f"  {key} = {display_val}{auto_tag}"
+
+            if is_active:
+                _safe_addstr(stdscr, ry, rx, line[:remaining], curses.color_pair(C_HIGHLIGHT) | curses.A_BOLD)
+            else:
+                color = C_DESC if is_auto else C_UNSELECTED
+                _safe_addstr(stdscr, ry, rx, line[:remaining], curses.color_pair(color))
+
+    desc_y = box_y + box_h - 2
+    if 0 <= current_visible_idx < len(visible) and visible[current_visible_idx][0] == "field":
+        field_data = visible[current_visible_idx][1]
+        desc = field_data.get("desc", "")
+        if desc:
+            desc_text = f"  {desc}"
+            _safe_addstr(stdscr, desc_y, box_x + 3, desc_text[:box_w - 6], curses.color_pair(C_DESC))
+
+    if max_scroll > 0:
+        scroll_info = f" [{scroll + 1}-{min(scroll + max_visible, total_items)}/{total_items}] "
+        _safe_addstr(stdscr, desc_y, box_x + box_w - len(scroll_info) - 2, scroll_info, curses.color_pair(C_DESC))
+
+    hint_y = box_y + box_h + 1
+    hint = "↑↓ 移动  Enter 编辑  S 保存生成  Esc 跳过"
+    if max_scroll > 0:
+        hint = "↑↓/PgUp/PgDn 滚动  " + hint
+    _draw_hint(stdscr, hint_y, box_x + 2, hint)
+
+    stdscr.refresh()
+    return scroll
+
+
+def _input_dialog(stdscr, key_name, current_value, y, x, max_w):
+    curses.curs_set(1)
+    buf = list(current_value)
+    pos = len(buf)
+
+    while True:
+        prompt = f"  {key_name}: "
+        _safe_addstr(stdscr, y, x, " " * max_w, curses.color_pair(C_BORDER))
+        _safe_addstr(stdscr, y, x, prompt, curses.color_pair(C_SUBTITLE) | curses.A_BOLD)
+
+        input_x = x + len(prompt)
+        input_w = max_w - len(prompt) - 1
+
+        _safe_addstr(stdscr, y, input_x, " " * input_w, curses.color_pair(C_HIGHLIGHT))
+
+        text = "".join(buf)
+        if len(text) > input_w:
+            start = max(0, pos - input_w + 1)
+            visible_text = text[start:start + input_w]
+            cursor_offset = pos - start
+        else:
+            visible_text = text
+            cursor_offset = pos
+
+        _safe_addstr(stdscr, y, input_x, visible_text[:input_w], curses.color_pair(C_HIGHLIGHT))
+
+        _draw_hint(stdscr, y + 1, x, "Enter 确认  Esc 取消  Ctrl+U 清空")
+
+        try:
+            stdscr.move(y, input_x + min(cursor_offset, input_w - 1))
+        except curses.error:
+            pass
+
+        stdscr.refresh()
+
+        ch = stdscr.getch()
+
+        if ch in (curses.KEY_ENTER, 10, 13):
+            curses.curs_set(0)
+            return "".join(buf)
+        elif ch == 27:
+            curses.curs_set(0)
+            return None
+        elif ch in (curses.KEY_BACKSPACE, 127, 8):
+            if pos > 0:
+                buf.pop(pos - 1)
+                pos -= 1
+        elif ch == curses.KEY_DC:
+            if pos < len(buf):
+                buf.pop(pos)
+        elif ch == curses.KEY_LEFT:
+            if pos > 0:
+                pos -= 1
+        elif ch == curses.KEY_RIGHT:
+            if pos < len(buf):
+                pos += 1
+        elif ch == curses.KEY_HOME:
+            pos = 0
+        elif ch == curses.KEY_END:
+            pos = len(buf)
+        elif ch == 21:
+            buf.clear()
+            pos = 0
+        elif 32 <= ch < 127:
+            buf.insert(pos, chr(ch))
+            pos += 1
+
+
+def _configure_env(stdscr, answers):
+    items = _get_env_items(answers)
+    field_indices = [i for i, (kind, _) in enumerate(items) if kind == "field"]
+
+    existing = _load_existing_env(BASE_DIR / ".env")
+    values = {}
+    for kind, data in items:
+        if kind == "field":
+            key = data["key"]
+            if key in existing:
+                values[key] = existing[key]
+            else:
+                values[key] = data["default"]
+
+    cursor = 0
+    scroll = 0
+
+    while True:
+        scroll = _page_env(stdscr, items, values, cursor, scroll)
+        key = stdscr.getch()
+
+        if key == curses.KEY_UP:
+            cursor = max(0, cursor - 1)
+        elif key == curses.KEY_DOWN:
+            cursor = min(len(field_indices) - 1, cursor + 1)
+        elif key == curses.KEY_PPAGE:
+            cursor = max(0, cursor - 5)
+        elif key == curses.KEY_NPAGE:
+            cursor = min(len(field_indices) - 1, cursor + 5)
+        elif key in (curses.KEY_ENTER, 10, 13):
+            field_data = items[field_indices[cursor]][1]
+            if not field_data.get("auto", False):
+                max_y, max_x = stdscr.getmaxyx()
+                box_w = min(76, max_x - 4)
+                box_x = max(0, (max_x - box_w) // 2)
+                input_y = max_y - 3
+                new_val = _input_dialog(
+                    stdscr, field_data["key"],
+                    values.get(field_data["key"], field_data["default"]),
+                    input_y, box_x + 2, box_w - 4
+                )
+                if new_val is not None:
+                    values[field_data["key"]] = new_val
+        elif key in (ord('s'), ord('S')):
+            return values
+        elif key == 27:
+            return None
+
+
+def generate_env_content(answers, values):
+    lines = []
+    lines.append("# ZASCA 环境配置文件")
+    lines.append("# 由 deploy.py 自动生成")
+    lines.append("")
+
+    lines.append("# ========== 核心配置 ==========")
+    lines.append(f"DEBUG={values.get('DEBUG', 'True')}")
+
+    secret_key = values.get('DJANGO_SECRET_KEY', '')
+    if not secret_key:
+        secret_key = secrets.token_urlsafe(50)
+    lines.append(f"DJANGO_SECRET_KEY={secret_key}")
+
+    lines.append(f"ALLOWED_HOSTS={values.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')}")
+    lines.append(f"CSRF_TRUSTED_ORIGINS={values.get('CSRF_TRUSTED_ORIGINS', 'https://localhost,https://127.0.0.1')}")
+    lines.append("")
+
+    db = answers.get("db", "sqlite")
+    lines.append("# ========== 数据库配置 ==========")
+    lines.append(f"DB_ENGINE={values.get('DB_ENGINE', db)}")
+    if db != "sqlite":
+        lines.append(f"DB_HOST={values.get('DB_HOST', '127.0.0.1')}")
+        lines.append(f"DB_PORT={values.get('DB_PORT', '3306')}")
+        lines.append(f"DB_NAME={values.get('DB_NAME', 'zasca')}")
+        lines.append(f"DB_USER={values.get('DB_USER', 'root')}")
+        lines.append(f"DB_PASSWORD={values.get('DB_PASSWORD', '')}")
+    lines.append("")
+
+    if answers.get("redis"):
+        lines.append("# ========== Redis 配置 ==========")
+        lines.append(f"REDIS_URL={values.get('REDIS_URL', 'redis://localhost:6379/0')}")
+        lines.append("")
+
+    if answers.get("celery"):
+        lines.append("# ========== Celery 配置 ==========")
+        broker = values.get('CELERY_BROKER_URL', '')
+        backend = values.get('CELERY_RESULT_BACKEND', '')
+        if not broker and answers.get("redis"):
+            redis_url = values.get('REDIS_URL', 'redis://localhost:6379/0')
+            broker = redis_url.replace('/0', '/1')
+        if not backend and answers.get("redis"):
+            redis_url = values.get('REDIS_URL', 'redis://localhost:6379/0')
+            backend = redis_url.replace('/0', '/2')
+        if broker:
+            lines.append(f"CELERY_BROKER_URL={broker}")
+        if backend:
+            lines.append(f"CELERY_RESULT_BACKEND={backend}")
+        lines.append("")
+
+    lines.append("# ========== 演示模式 ==========")
+    lines.append(f"ZASCA_DEMO={values.get('ZASCA_DEMO', '0')}")
+    lines.append("")
+
+    lines.append("# ========== 安全配置 ==========")
+    lines.append(f"SECURE_SSL_REDIRECT={values.get('SECURE_SSL_REDIRECT', 'False')}")
+    lines.append(f"SESSION_COOKIE_SECURE={values.get('SESSION_COOKIE_SECURE', 'False')}")
+    lines.append(f"CSRF_COOKIE_SECURE={values.get('CSRF_COOKIE_SECURE', 'False')}")
+    lines.append("")
+
+    lines.append("# ========== 日志配置 ==========")
+    lines.append(f"LOG_LEVEL={values.get('LOG_LEVEL', 'DEBUG')}")
+    lines.append(f"LOG_FILE={values.get('LOG_FILE', '/var/log/2c2a/application.log')}")
+    lines.append("")
+
+    if answers.get("winrm"):
+        lines.append("# ========== WinRM 配置 ==========")
+        lines.append(f"WINRM_TIMEOUT={values.get('WINRM_TIMEOUT', '30')}")
+        lines.append(f"WINRM_RETRY_COUNT={values.get('WINRM_RETRY_COUNT', '3')}")
+        lines.append("")
+
+    lines.append("# ========== Gateway 配置 ==========")
+    lines.append(f"GATEWAY_ENABLED={values.get('GATEWAY_ENABLED', 'False')}")
+    lines.append(f"GATEWAY_CONTROL_SOCKET={values.get('GATEWAY_CONTROL_SOCKET', '/run/zasca/control.sock')}")
+    lines.append("")
+
+    beta_fields = ['BETA_DB_NAME', 'BETA_DB_USER', 'BETA_DB_PASSWORD', 'BETA_DB_HOST', 'BETA_DB_PORT']
+    has_beta = any(values.get(f, '') for f in beta_fields)
+    if has_beta:
+        lines.append("# ========== Beta 数据库配置 ==========")
+        for f in beta_fields:
+            lines.append(f"{f}={values.get(f, '')}")
+        lines.append("")
+
+    lines.append("# ========== Bootstrap 认证配置 ==========")
+    lines.append(f"BOOTSTRAP_SHARED_SALT={values.get('BOOTSTRAP_SHARED_SALT', '')}")
+    lines.append("")
+
+    return "\n".join(lines)
 
 
 def compute_dependencies(answers):
